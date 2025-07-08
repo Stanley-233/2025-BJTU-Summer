@@ -1,4 +1,8 @@
+import base64
 import os
+
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
 from dotenv import load_dotenv
 import jwt
 import datetime
@@ -42,3 +46,17 @@ def get_current_user(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+def encrypt_password(password: str) -> str:
+    key = b'my_16_byte_key!!'
+    cipher = AES.new(key, AES.MODE_ECB)
+    padded_password = pad(password.encode(), AES.block_size)
+    encrypted = cipher.encrypt(padded_password)
+    return base64.b64encode(encrypted).decode()
+
+def decrypt_password(encrypted_password: str) -> str:
+    key = b'my_16_byte_key!!'  # 与加密时使用的密钥相同
+    cipher = AES.new(key, AES.MODE_ECB)
+    encrypted_data = base64.b64decode(encrypted_password)
+    decrypted_data = unpad(cipher.decrypt(encrypted_data), AES.block_size)
+    return decrypted_data.decode()

@@ -5,7 +5,10 @@ from util.engine import init_db
 
 import router.auth
 
-app = FastAPI()
+app = FastAPI(
+    title="滴嘟出行",
+    description="滴嘟出行后端 API"
+)
 
 app.add_middleware(
     CORSMiddleware,

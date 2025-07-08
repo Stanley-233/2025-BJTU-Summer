@@ -1,3 +1,4 @@
+import ipaddress
 from typing import Optional
 
 from sqlmodel import SQLModel, Field
@@ -12,4 +13,4 @@ class User(SQLModel, table=True):
     is_admin: bool = False
     # 用户脸部数据(Base64)
     face_data: Optional[str] = None  # 可选字段，允许为空
-
+    last_ip: Optional[ipaddress.IPv4Address] = None

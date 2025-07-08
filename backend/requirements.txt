@@ -4,6 +4,15 @@ pydantic~=2.10.3
 sqlmodel~=0.0.24
 pyjwt~=2.10.1
 starlette~=0.40.0
-dotenv
 psycopg2-binary
 pandas
+numpy~=2.1.3
+
+deepface~=0.0.93
+deepface-antispoofing
+
+opencv-python~=4.12.0.88
+python-dotenv~=1.1.1
+tf-keras
+dotenv~=0.9.9
+pycryptodome~=3.23.0
