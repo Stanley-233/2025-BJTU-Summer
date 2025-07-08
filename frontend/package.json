@@ -12,7 +12,8 @@
   "dependencies": {
     "@types/es6-promise": "^0.0.33",
     "axios": "^1.10.0",
-    "vue": "^3.5.17"
+    "vue": "^3.5.17",
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "^2.21.0",
