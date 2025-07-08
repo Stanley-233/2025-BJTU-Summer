@@ -37,9 +37,7 @@ def register(request: UserRegisterRequest, session: Session = Depends(get_sessio
     user = session.get(User, request.username)
     if user:
         raise HTTPException(status_code=400, detail="Username already registered")
-    new_user = User(username=request.username,
-                    password=hash_password(request.password),
-                    email=request.email, phone=request.phone)
+    new_user = User.model_validate(user)
     session.add(new_user)
     session.commit()
     session.refresh(new_user)

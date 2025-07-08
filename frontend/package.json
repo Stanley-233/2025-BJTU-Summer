@@ -6,13 +6,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-client": "openapi-generator-cli generate -i http://127.0.0.1:8000/openapi.json -g typescript-axios --additional-properties=apiPackage=api,modelPackage=model,withSeparateModelsAndApi=true -o ./src/api/generated --skip-validate-spec"
   },
   "dependencies": {
+    "@types/es6-promise": "^0.0.33",
+    "axios": "^1.10.0",
     "vue": "^3.5.17"
   },
   "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.21.0",
     "@vitejs/plugin-vue": "^6.0.0",
+    "typescript": "^5.8.3",
     "vite": "^7.0.0",
     "vite-plugin-vue-devtools": "^7.7.7"
   }
