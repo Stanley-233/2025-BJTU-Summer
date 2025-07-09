@@ -8,10 +8,11 @@ All URIs are relative to *http://localhost*
 |[**getUserInfoGetUserInfoGet**](#getuserinfogetuserinfoget) | **GET** /get_user_info/ | 获取用户信息|
 |[**isMailVerifiedIsMailVerifiedGet**](#ismailverifiedismailverifiedget) | **GET** /is_mail_verified/ | 获取用户是否已验证邮箱|
 |[**loginLoginPost**](#loginloginpost) | **POST** /login | 用户登录|
-|[**putFaceDataPostFacePut**](#putfacedatapostfaceput) | **PUT** /post_face/ | 上传用户脸部数据|
+|[**postFaceDataPostFacePost**](#postfacedatapostfacepost) | **POST** /post_face/ | 注册用户脸部数据|
 |[**registerRegisterPost**](#registerregisterpost) | **POST** /register | 用户注册|
 |[**requestEmailVerificationVerifyEmailPut**](#requestemailverificationverifyemailput) | **PUT** /verify_email/ | 请求验证邮箱|
 |[**rootGet**](#rootget) | **GET** / | Root|
+|[**updateFaceDataUpdateFacePut**](#updatefacedataupdatefaceput) | **PUT** /update_face/ | 更新用户脸部数据|
 |[**verifyEmailCodeVerifyEmailCodePost**](#verifyemailcodeverifyemailcodepost) | **POST** /verify_email_code/ | 验证邮箱验证码|
 
 # **checkFaceDataCheckFacePost**
@@ -65,7 +66,7 @@ No authorization required
 |**200** | 人脸成功识别 |  -  |
 |**404** | 用户不存在或人脸数据不存在 |  -  |
 |**401** | 认证错误 |  -  |
-|**403** | 人脸数据不匹配 |  -  |
+|**402** | 活体检测失败 |  -  |
 |**422** | Validation Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -215,10 +216,10 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **putFaceDataPostFacePut**
-> any putFaceDataPostFacePut(imageModel)
+# **postFaceDataPostFacePost**
+> any postFaceDataPostFacePost(imageModel)
 
-更新用户脸部数据
+注册用户脸部数据
 
 ### Example
 
@@ -234,7 +235,7 @@ const apiInstance = new DefaultApi(configuration);
 
 let imageModel: ImageModel; //
 
-const { status, data } = await apiInstance.putFaceDataPostFacePut(
+const { status, data } = await apiInstance.postFaceDataPostFacePost(
     imageModel
 );
 ```
@@ -410,6 +411,61 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | Successful Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **updateFaceDataUpdateFacePut**
+> any updateFaceDataUpdateFacePut(imageModel)
+
+更新用户脸部数据
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ImageModel
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let imageModel: ImageModel; //
+
+const { status, data } = await apiInstance.updateFaceDataUpdateFacePut(
+    imageModel
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **imageModel** | **ImageModel**|  | |
+
+
+### Return type
+
+**any**
+
+### Authorization
+
+[HTTPBearer](../README.md#HTTPBearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | 成功更改 |  -  |
+|**404** | 用户不存在 |  -  |
+|**401** | 认证错误 |  -  |
+|**422** | Validation Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

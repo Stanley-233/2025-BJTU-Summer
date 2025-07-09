@@ -17,14 +17,16 @@
 /**
  * 
  * @export
- * @interface UserCheckFaceRequest
+ * @enum {string}
  */
-export interface UserCheckFaceRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof UserCheckFaceRequest
-     */
-    'face_data': string;
-}
+
+export const UserType = {
+    Sysadmin: 'sysadmin',
+    Driver: 'driver',
+    GovAdmin: 'gov_admin'
+} as const;
+
+export type UserType = typeof UserType[keyof typeof UserType];
+
+
 

@@ -17,7 +17,6 @@ class ImageModel(BaseModel):
     }
 
 class UserCheckFaceRequest(BaseModel):
-  username: str
   face_data: str
 
   class Config:

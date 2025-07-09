@@ -1,21 +1,22 @@
+import os
 from typing import Optional
 from datetime import datetime, timedelta, timezone
 import random
 import string
+import requests
+from dotenv import load_dotenv
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session
-from deepface import DeepFace
 
-from model.user import User, UserEmail, UserPhone
 from util.engine import get_session
-from util.image import decode_image, ImageModel, UserCheckFaceRequest, extract_last_frame_from_base64_video
+from util.image import ImageModel, UserCheckFaceRequest, extract_last_frame_from_base64_video
 from util.security import create_token, get_current_user, encrypt_password
 from util.mail import send_email
+from model.user import User, UserEmail, UserPhone
 
 auth_router = APIRouter()
-
 
 class UserRegisterRequest(BaseModel):
   username: str
@@ -32,7 +33,6 @@ class UserRegisterRequest(BaseModel):
         "password": "test_password"
       }
     }
-
 
 @auth_router.post("/register", summary="用户注册", description="用户注册，返回注册成功消息", responses={
   200: {
@@ -85,6 +85,7 @@ def register(request: UserRegisterRequest, session: Session = Depends(get_sessio
     "token": token
   }
 
+
 class UserLoginRequest(BaseModel):
   username: str
   password: str
@@ -96,6 +97,7 @@ class UserLoginRequest(BaseModel):
         "password": "test_password"
       }
     }
+
 
 @auth_router.post("/login", summary="用户登录", description="用户登录", responses={
   200: {
@@ -139,10 +141,14 @@ def login(request: UserLoginRequest, session: Session = Depends(get_session)):
   if user.password != encrypt_password(request.password):
     raise HTTPException(status_code=403, detail="Incorrect password")
 
-  return {"message": "登录成功",
-          "is_admin": user.is_admin}
+  token = create_token(user)
 
-@auth_router.put("/post_face/", summary="上传用户脸部数据", responses= {
+  return {"message": "登录成功",
+          "is_admin": user.is_admin,
+          "token": token}
+
+
+@auth_router.post("/post_face/", summary="注册用户脸部数据", responses={
   200: {
     "description": "成功更改",
     "content": {
@@ -174,14 +180,111 @@ def login(request: UserLoginRequest, session: Session = Depends(get_session)):
     }
   },
 })
-def put_face_data(face_data: ImageModel, session: Session = Depends(get_session),
-                  user: User = Depends(get_current_user)):
-  """ 更新用户脸部数据 """
-  user.face_data = face_data.image
+def post_face_data(face_data: ImageModel, session: Session = Depends(get_session),
+                   user: User = Depends(get_current_user)):
+  """ 注册用户脸部数据 """
+  image = face_data.image
+  image_type = "BASE64"
+
+  # 加载百度云 API Key 和 Access Token
+  load_dotenv("config.env")
+  api_key = os.getenv("BAIDU_API_KEY")
+  access_token = os.getenv("BAIDU_ACCESS_TOKEN")
+
+  if not api_key or not access_token:
+    raise HTTPException(status_code=500, detail="百度云 API Key 或 Access Token 未配置")
+
+  # 构造百度云人脸注册接口的 HTTP 请求
+  url = "https://aip.baidubce.com/rest/2.0/face/v3/faceset/user/add"
+  headers = {"Content-Type": "application/json"}
+  payload = {
+      "image": image,
+      "image_type": image_type,
+      "group_id": "default",
+      "user_id": user.username,
+      "user_info": user.username,
+      "quality_control": "NORMAL"
+  }
+
+  response = requests.post(url, headers=headers, json=payload, params={"access_token": access_token})
+
+  if response.status_code != 200 or response.json().get("error_code"):
+    error_msg = response.json().get("error_msg", "未知错误")
+    raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
+
+  user.face_data = image
   session.add(user)
   session.commit()
   session.refresh(user)
   return {"message": "脸部数据上传成功"}
+
+
+@auth_router.put("/update_face/", summary="更新用户脸部数据", responses={
+  200: {
+    "description": "成功更改",
+    "content": {
+      "application/json": {
+        "example": {
+          "message": "脸部数据上传成功"
+        }
+      }
+    }
+  },
+  404: {
+    "description": "用户不存在",
+    "content": {
+      "application/json": {
+        "example": {
+          "detail": "User not found"
+        }
+      }
+    }
+  },
+  401: {
+    "description": "认证错误",
+    "content": {
+      "application/json": {
+        "example": {
+          "detail": "Invalid token payload"
+        }
+      }
+    }
+  },
+})
+def update_face_data(face_data: ImageModel, session: Session = Depends(get_session),
+                     user: User = Depends(get_current_user)):
+  """ 更新用户脸部数据 """
+  image = face_data.image
+  image_type = "BASE64"
+
+  load_dotenv("config.env")
+  api_key = os.getenv("BAIDU_API_KEY")
+
+  # 构造百度云人脸更新接口的 HTTP 请求
+  url = "https://aip.baidubce.com/rest/2.0/face/v3/faceset/user/update"
+  access_token = api_key  # 替换为实际的 Access Token
+  headers = {"Content-Type": "application/json"}
+  payload = {
+      "image": image,
+      "image_type": image_type,
+      "group_id": user.user_type,
+      "user_id": user.username,
+      "user_info": user.username,
+      "quality_control": "NORMAL"
+  }
+
+  response = requests.post(url, headers=headers, json=payload, params={"access_token": access_token})
+
+  if response.status_code != 200 or response.json().get("error_code"):
+    error_msg = response.json().get("error_msg", "未知错误")
+    raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
+
+  user.face_data = image
+  session.add(user)
+  session.commit()
+  session.refresh(user)
+  return {"message": "脸部数据上传成功"}
+
 
 @auth_router.post("/check_face/", summary="人脸识别获取Token", responses={
   200: {
@@ -190,7 +293,12 @@ def put_face_data(face_data: ImageModel, session: Session = Depends(get_session)
       "application/json": {
         "example": {
           "message": "人脸数据匹配",
-          "token" : "example_token"
+          "token": "example_token",
+          "user": {
+            "username": "test_user",
+            "email": "test@bjtu.edu.cn",
+            "phone": "12341234123"
+          }
         }
       }
     }
@@ -215,12 +323,12 @@ def put_face_data(face_data: ImageModel, session: Session = Depends(get_session)
       }
     }
   },
-  403: {
-    "description": "人脸数据不匹配",
+  402: {
+    "description": "活体检测失败",
     "content": {
       "application/json": {
         "example": {
-          "detail": "人脸数据不匹配"
+          "detail": "活体检测失败"
         }
       }
     }
@@ -228,27 +336,67 @@ def put_face_data(face_data: ImageModel, session: Session = Depends(get_session)
 })
 def check_face_data(request: UserCheckFaceRequest, session: Session = Depends(get_session)):
   """ Base64 人脸识别匹配，识别成功后返回用户登录Token """
-  user = session.get(User, request.username)
-  if not user or not user.face_data:
-    raise HTTPException(status_code=404, detail="没有找到用户的人脸数据")
-  try:
-    # TODO: 人脸活体检测
+  # 加载百度云 API Key 和 Access Token
+  load_dotenv("config.env")
+  access_token = os.getenv("BAIDU_ACCESS_TOKEN")
 
-    # 解码存储的人脸数据和传入的人脸数据
-    stored_img = decode_image(user.face_data)
-    incoming_img = extract_last_frame_from_base64_video(request.face_data)
-    # 使用 DeepFace.verify 进行人脸比对
-    result = DeepFace.verify(stored_img, incoming_img, model_name='Facenet512')
-    print(result)
-    token = create_token(user)
-    if result.get("verified"):
-      return {"message": "人脸数据匹配", "token": token}
-    else:
-      raise HTTPException(status_code=403, detail="人脸数据不匹配")
-  except HTTPException as e:
-    raise HTTPException(status_code=e.status_code, detail="人脸数据不匹配")
-  except Exception as e:
-    raise HTTPException(status_code=500, detail="<UNK>" + str(e))
+  if not access_token:
+    raise HTTPException(status_code=500, detail="百度云 Access Token 未配置")
+
+  # 调用 H5 视频活体检测 API
+  liveness_url = "https://aip.baidubce.com/rest/2.0/face/v3/faceverify"
+  liveness_payload = [{
+    "video_base64": request.face_data,
+    "face_field": "spoofing,quality"
+  }]
+  liveness_response = requests.post(liveness_url, json=liveness_payload, params={"access_token": access_token})
+
+  if liveness_response.status_code != 200:
+    raise HTTPException(status_code=500, detail=f"活体检测失败: {liveness_response.content}")
+
+  if liveness_response.json().get("error_code") != 0:
+    raise HTTPException(status_code=402, detail=f"活体检测失败")
+
+  last_frame = extract_last_frame_from_base64_video(request.face_data)
+  # 调用 1:N 搜索 API
+  search_url = "https://aip.baidubce.com/rest/2.0/face/v3/search"
+  search_payload = {
+    "image": last_frame,
+    "image_type": "BASE64",
+    "group_id_list": "default,sysadmin,driver,gov_admin",
+    "quality_control": "NORMAL",
+    "max_user_num": 1,
+  }
+  search_response = requests.post(search_url, json=search_payload, params={"access_token": access_token})
+
+  if search_response.status_code != 200 or search_response.json().get("error_code"):
+    error_msg = search_response.json().get("error_msg", "未知错误")
+    raise HTTPException(status_code=404, detail=f"用户不存在或人脸数据不存在: {error_msg}")
+
+  # 获取搜索结果中的用户信息
+  result = search_response.json().get("result", {}).get("user_list", [{}])[0]
+  username = result.get("user_id")
+
+  if not username:
+    raise HTTPException(status_code=404, detail="用户不存在或人脸数据不存在")
+
+  user = session.get(User, username)
+  if not user:
+    raise HTTPException(status_code=404, detail="用户不存在")
+
+  # 生成 Token
+  token = create_token(user)
+
+  return {
+    "message": "人脸数据匹配",
+    "token": token,
+    "user": {
+      "username": user.username,
+      "email": user.email.email_address if user.email else None,
+      "phone": user.phone.phone_number if user.phone else None
+    }
+  }
+
 
 @auth_router.get("/is_mail_verified/", summary="获取用户是否已验证邮箱", responses={
   200: {
@@ -285,6 +433,7 @@ def check_face_data(request: UserCheckFaceRequest, session: Session = Depends(ge
 def is_mail_verified(user: User = Depends(get_current_user)):
   """ 获取用户是否已验证邮箱 """
   return user.email
+
 
 @auth_router.put("/verify_email/", summary="请求验证邮箱", responses={
   404: {
@@ -424,7 +573,15 @@ def verify_email_code(code: str, user: User = Depends(get_current_user), session
 
   return {"message": "邮箱验证成功"}
 
+
 @auth_router.get("/get_user_info/", summary="获取用户信息", response_model=User)
 def get_user_info(user: User = Depends(get_current_user)):
-    """获取当前用户信息"""
-    return user
+  """获取当前用户信息"""
+  return user
+
+@auth_router.get("/get_user_email/", summary="获取用户邮箱信息", response_model=UserEmail)
+def get_user_email(user: User = Depends(get_current_user)):
+  """获取用户邮箱信息"""
+  if not user.email:
+    raise HTTPException(status_code=404, detail="User email not found")
+  return user.email

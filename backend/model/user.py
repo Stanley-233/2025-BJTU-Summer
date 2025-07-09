@@ -1,18 +1,24 @@
+import enum
 import ipaddress
 from typing import Optional
 from datetime import datetime
 
 from sqlmodel import SQLModel, Field, Relationship
 
+class UserType(enum.Enum):
+  SYSADMIN = "sysadmin"
+  DRIVER = "driver"
+  GOV_ADMIN = "gov_admin"
+
 class User(SQLModel, table=True):
   username: str = Field(primary_key=True, index=True)
   password: str = None
-  is_admin: bool = False
   # 用户脸部数据(Base64)
   face_data: Optional[str] = None  # 可选字段，允许为空
   last_ip: Optional[ipaddress.IPv4Address] = None
+  user_type: UserType = None
   # 邮箱信息
-  email: Optional["UserEmail"] = Relationship(back_populates="user",)
+  email: Optional["UserEmail"] = Relationship(back_populates="user")
   phone: Optional["UserPhone"] = Relationship(back_populates="user")
 
 class UserEmail(SQLModel, table=True):

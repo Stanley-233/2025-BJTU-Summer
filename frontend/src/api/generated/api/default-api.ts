@@ -180,15 +180,15 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * 更新用户脸部数据
-         * @summary 上传用户脸部数据
+         * 注册用户脸部数据
+         * @summary 注册用户脸部数据
          * @param {ImageModel} imageModel 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        putFaceDataPostFacePut: async (imageModel: ImageModel, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        postFaceDataPostFacePost: async (imageModel: ImageModel, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'imageModel' is not null or undefined
-            assertParamExists('putFaceDataPostFacePut', 'imageModel', imageModel)
+            assertParamExists('postFaceDataPostFacePost', 'imageModel', imageModel)
             const localVarPath = `/post_face/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -197,7 +197,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -320,6 +320,46 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * 更新用户脸部数据
+         * @summary 更新用户脸部数据
+         * @param {ImageModel} imageModel 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateFaceDataUpdateFacePut: async (imageModel: ImageModel, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'imageModel' is not null or undefined
+            assertParamExists('updateFaceDataUpdateFacePut', 'imageModel', imageModel)
+            const localVarPath = `/update_face/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(imageModel, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * 验证用户提交的验证码
          * @summary 验证邮箱验证码
          * @param {string} code 
@@ -421,16 +461,16 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * 更新用户脸部数据
-         * @summary 上传用户脸部数据
+         * 注册用户脸部数据
+         * @summary 注册用户脸部数据
          * @param {ImageModel} imageModel 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async putFaceDataPostFacePut(imageModel: ImageModel, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.putFaceDataPostFacePut(imageModel, options);
+        async postFaceDataPostFacePost(imageModel: ImageModel, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.postFaceDataPostFacePost(imageModel, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.putFaceDataPostFacePut']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.postFaceDataPostFacePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -468,6 +508,19 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.rootGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.rootGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 更新用户脸部数据
+         * @summary 更新用户脸部数据
+         * @param {ImageModel} imageModel 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateFaceDataUpdateFacePut(imageModel: ImageModel, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateFaceDataUpdateFacePut(imageModel, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.updateFaceDataUpdateFacePut']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -532,14 +585,14 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.loginLoginPost(userLoginRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * 更新用户脸部数据
-         * @summary 上传用户脸部数据
+         * 注册用户脸部数据
+         * @summary 注册用户脸部数据
          * @param {ImageModel} imageModel 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        putFaceDataPostFacePut(imageModel: ImageModel, options?: RawAxiosRequestConfig): AxiosPromise<any> {
-            return localVarFp.putFaceDataPostFacePut(imageModel, options).then((request) => request(axios, basePath));
+        postFaceDataPostFacePost(imageModel: ImageModel, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.postFaceDataPostFacePost(imageModel, options).then((request) => request(axios, basePath));
         },
         /**
          * 用户注册，返回注册成功消息
@@ -568,6 +621,16 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         rootGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
             return localVarFp.rootGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 更新用户脸部数据
+         * @summary 更新用户脸部数据
+         * @param {ImageModel} imageModel 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateFaceDataUpdateFacePut(imageModel: ImageModel, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.updateFaceDataUpdateFacePut(imageModel, options).then((request) => request(axios, basePath));
         },
         /**
          * 验证用户提交的验证码
@@ -636,15 +699,15 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
-     * 更新用户脸部数据
-     * @summary 上传用户脸部数据
+     * 注册用户脸部数据
+     * @summary 注册用户脸部数据
      * @param {ImageModel} imageModel 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public putFaceDataPostFacePut(imageModel: ImageModel, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).putFaceDataPostFacePut(imageModel, options).then((request) => request(this.axios, this.basePath));
+    public postFaceDataPostFacePost(imageModel: ImageModel, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).postFaceDataPostFacePost(imageModel, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -679,6 +742,18 @@ export class DefaultApi extends BaseAPI {
      */
     public rootGet(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).rootGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 更新用户脸部数据
+     * @summary 更新用户脸部数据
+     * @param {ImageModel} imageModel 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public updateFaceDataUpdateFacePut(imageModel: ImageModel, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).updateFaceDataUpdateFacePut(imageModel, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -5,7 +5,6 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**username** | **string** |  | [default to undefined]
 **face_data** | **string** |  | [default to undefined]
 
 ## Example
@@ -14,7 +13,6 @@ Name | Type | Description | Notes
 import { UserCheckFaceRequest } from './api';
 
 const instance: UserCheckFaceRequest = {
-    username,
     face_data,
 };
 ```

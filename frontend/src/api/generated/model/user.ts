@@ -13,6 +13,9 @@
  */
 
 
+// May contain unused imports in some cases
+// @ts-ignore
+import type { UserType } from './user-type';
 
 /**
  * 
@@ -34,12 +37,6 @@ export interface User {
     'password'?: string;
     /**
      * 
-     * @type {boolean}
-     * @memberof User
-     */
-    'is_admin'?: boolean;
-    /**
-     * 
      * @type {string}
      * @memberof User
      */
@@ -50,5 +47,13 @@ export interface User {
      * @memberof User
      */
     'last_ip'?: string | null;
+    /**
+     * 
+     * @type {UserType}
+     * @memberof User
+     */
+    'user_type'?: UserType;
 }
+
+
 

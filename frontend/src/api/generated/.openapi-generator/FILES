@@ -12,6 +12,7 @@ docs/User.md
 docs/UserCheckFaceRequest.md
 docs/UserLoginRequest.md
 docs/UserRegisterRequest.md
+docs/UserType.md
 docs/ValidationError.md
 docs/ValidationErrorLocInner.md
 git_push.sh
@@ -22,6 +23,7 @@ model/index.ts
 model/user-check-face-request.ts
 model/user-login-request.ts
 model/user-register-request.ts
+model/user-type.ts
 model/user.ts
 model/validation-error-loc-inner.ts
 model/validation-error.ts
