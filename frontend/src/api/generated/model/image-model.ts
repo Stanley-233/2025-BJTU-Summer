@@ -14,5 +14,17 @@
 
 
 
-export * from './api/default-api';
+/**
+ * 
+ * @export
+ * @interface ImageModel
+ */
+export interface ImageModel {
+    /**
+     * 
+     * @type {string}
+     * @memberof ImageModel
+     */
+    'image': string;
+}
 

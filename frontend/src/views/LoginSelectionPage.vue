@@ -2,7 +2,7 @@
   <div class="start-page">
     <h1 class="welcome-title">欢迎！</h1>
     <div class="card">
-      <button class="fab-btn">
+      <button class="fab-btn" @click="goLogin">
         <span class="icon">
           <!-- 账户图标SVG线性风格 -->
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -14,7 +14,7 @@
         <span class="label">登录现有账户</span>
       </button>
       <div class="divider">或</div>
-      <button class="fab-btn">
+      <button class="fab-btn" @click="goRegister">
         <span class="icon">
           <!-- 添加图标SVG线性风格 -->
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -29,7 +29,14 @@
 </template>
 
 <script setup>
-// 暂无逻辑，后续可添加点击事件
+import { useRouter } from 'vue-router'
+const router = useRouter()
+const goLogin = () => {
+  router.push('/login')
+}
+const goRegister = () => {
+  router.push('/register')
+}
 </script>
 
 <style scoped>
@@ -122,4 +129,3 @@
   }
 }
 </style>
-

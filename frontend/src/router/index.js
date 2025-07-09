@@ -4,6 +4,8 @@ import DangerRecognition from '../views/DangerRecognition.vue';
 import CityVisualization from '../views/CityVisualization.vue';
 import ConsolePage from '../views/ConsolePage.vue';
 import LoginSelectionPage from '../views/LoginSelectionPage.vue';
+import LoginPage from '../views/LoginPage.vue';
+import RegisterPage from '../views/RegisterPage.vue';
 
 const routes = [
   { path: '/', name: 'WelcomePage', component: WelcomePage },
@@ -11,6 +13,8 @@ const routes = [
   { path: '/city', name: 'CityVisualization', component: CityVisualization },
   { path: '/console', name: 'ConsolePage', component: ConsolePage },
   { path: '/login_select', name: 'LoginSelectionPage', component: LoginSelectionPage },
+  { path: '/login', name: 'LoginPage', component: LoginPage },
+  { path: '/register', name: 'RegisterPage', component: RegisterPage },
 ];
 
 const router = createRouter({

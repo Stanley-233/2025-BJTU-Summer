@@ -45,7 +45,12 @@ def register(request: UserRegisterRequest, session: Session = Depends(get_sessio
     session.add(new_user)
     session.commit()
     session.refresh(new_user)
-    return {"message": "注册成功"}
+    token = create_token(new_user)
+    return {
+        "message": "注册成功",
+        "is_admin": new_user.is_admin,
+        "token" : token
+    }
 
 class UserLoginRequest(BaseModel):
     username: str
@@ -75,7 +80,7 @@ def login(request: UserLoginRequest, session: Session = Depends(get_session)):
             "token": token}
 
 @auth_router.put("/post_face/", summary="上传用户脸部数据")
-def post_face_data(face_data: ImageModel, session: Session = Depends(get_session), user: User = Depends(get_current_user)):
+def put_face_data(face_data: ImageModel, session: Session = Depends(get_session), user: User = Depends(get_current_user)):
     """ 更新用户脸部数据 """
     user.face_data = face_data.image
     session.add(user)
@@ -103,3 +108,5 @@ def check_face_data(face_data: ImageModel, user: User = Depends(get_current_user
         raise HTTPException(status_code=e.status_code, detail="人脸数据不匹配")
     except Exception as e:
         raise HTTPException(status_code=500, detail="<UNK>"+ str(e))
+
+
