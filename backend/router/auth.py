@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlmodel import Session
 from deepface import DeepFace
 
-from model.user import User, UserEmail
+from model.user import User, UserEmail, UserPhone
 from util.engine import get_session
 from util.image import decode_image, ImageModel
 from util.security import create_token, get_current_user, encrypt_password
@@ -44,8 +44,14 @@ def register(request: UserRegisterRequest, session: Session = Depends(get_sessio
         password=encrypt_password(request.password),
         is_admin=False
     )
-    new_user.email.email_address = request.email
-    new_user.phone.phone_number = request.phone
+    new_user.email = UserEmail(
+        user = new_user,
+        email_address = request.email
+    )
+    new_user.phone = UserPhone(
+        user = new_user,
+        phone_number = request.phone
+    )
     session.add(new_user)
     session.commit()
     session.refresh(new_user)

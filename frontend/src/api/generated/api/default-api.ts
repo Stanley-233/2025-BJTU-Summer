@@ -76,6 +76,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * 获取用户是否已验证邮箱
+         * @summary 获取用户是否已验证邮箱
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        isMailVerifiedIsMailVerifiedGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/is_mail_verified/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * 用户登录，返回token
          * @summary 用户登录
          * @param {UserLoginRequest} userLoginRequest 
@@ -118,9 +152,9 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        postFaceDataPostFacePut: async (imageModel: ImageModel, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        putFaceDataPostFacePut: async (imageModel: ImageModel, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'imageModel' is not null or undefined
-            assertParamExists('postFaceDataPostFacePut', 'imageModel', imageModel)
+            assertParamExists('putFaceDataPostFacePut', 'imageModel', imageModel)
             const localVarPath = `/post_face/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -188,6 +222,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * 生成验证码并发送到用户邮箱
+         * @summary 请求验证邮箱
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        requestEmailVerificationVerifyEmailPut: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/verify_email/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * 
          * @summary Root
          * @param {*} [options] Override http request option.
@@ -205,6 +273,47 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 验证用户提交的验证码
+         * @summary 验证邮箱验证码
+         * @param {string} code 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        verifyEmailCodeVerifyEmailCodePost: async (code: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'code' is not null or undefined
+            assertParamExists('verifyEmailCodeVerifyEmailCodePost', 'code', code)
+            const localVarPath = `/verify_email_code/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (code !== undefined) {
+                localVarQueryParameter['code'] = code;
+            }
 
 
     
@@ -241,6 +350,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * 获取用户是否已验证邮箱
+         * @summary 获取用户是否已验证邮箱
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async isMailVerifiedIsMailVerifiedGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.isMailVerifiedIsMailVerifiedGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.isMailVerifiedIsMailVerifiedGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * 用户登录，返回token
          * @summary 用户登录
          * @param {UserLoginRequest} userLoginRequest 
@@ -260,10 +381,10 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async postFaceDataPostFacePut(imageModel: ImageModel, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.postFaceDataPostFacePut(imageModel, options);
+        async putFaceDataPostFacePut(imageModel: ImageModel, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.putFaceDataPostFacePut(imageModel, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.postFaceDataPostFacePut']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.putFaceDataPostFacePut']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -280,6 +401,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * 生成验证码并发送到用户邮箱
+         * @summary 请求验证邮箱
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async requestEmailVerificationVerifyEmailPut(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.requestEmailVerificationVerifyEmailPut(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.requestEmailVerificationVerifyEmailPut']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * 
          * @summary Root
          * @param {*} [options] Override http request option.
@@ -289,6 +422,19 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.rootGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.rootGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 验证用户提交的验证码
+         * @summary 验证邮箱验证码
+         * @param {string} code 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async verifyEmailCodeVerifyEmailCodePost(code: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.verifyEmailCodeVerifyEmailCodePost(code, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.verifyEmailCodeVerifyEmailCodePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
@@ -312,6 +458,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.checkFaceDataCheckFacePost(imageModel, options).then((request) => request(axios, basePath));
         },
         /**
+         * 获取用户是否已验证邮箱
+         * @summary 获取用户是否已验证邮箱
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        isMailVerifiedIsMailVerifiedGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.isMailVerifiedIsMailVerifiedGet(options).then((request) => request(axios, basePath));
+        },
+        /**
          * 用户登录，返回token
          * @summary 用户登录
          * @param {UserLoginRequest} userLoginRequest 
@@ -328,8 +483,8 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        postFaceDataPostFacePut(imageModel: ImageModel, options?: RawAxiosRequestConfig): AxiosPromise<any> {
-            return localVarFp.postFaceDataPostFacePut(imageModel, options).then((request) => request(axios, basePath));
+        putFaceDataPostFacePut(imageModel: ImageModel, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.putFaceDataPostFacePut(imageModel, options).then((request) => request(axios, basePath));
         },
         /**
          * 用户注册，返回注册成功消息
@@ -342,6 +497,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.registerRegisterPost(userRegisterRequest, options).then((request) => request(axios, basePath));
         },
         /**
+         * 生成验证码并发送到用户邮箱
+         * @summary 请求验证邮箱
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        requestEmailVerificationVerifyEmailPut(options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.requestEmailVerificationVerifyEmailPut(options).then((request) => request(axios, basePath));
+        },
+        /**
          * 
          * @summary Root
          * @param {*} [options] Override http request option.
@@ -349,6 +513,16 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         rootGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
             return localVarFp.rootGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 验证用户提交的验证码
+         * @summary 验证邮箱验证码
+         * @param {string} code 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        verifyEmailCodeVerifyEmailCodePost(code: string, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.verifyEmailCodeVerifyEmailCodePost(code, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -373,6 +547,17 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
+     * 获取用户是否已验证邮箱
+     * @summary 获取用户是否已验证邮箱
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public isMailVerifiedIsMailVerifiedGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).isMailVerifiedIsMailVerifiedGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * 用户登录，返回token
      * @summary 用户登录
      * @param {UserLoginRequest} userLoginRequest 
@@ -392,8 +577,8 @@ export class DefaultApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public postFaceDataPostFacePut(imageModel: ImageModel, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).postFaceDataPostFacePut(imageModel, options).then((request) => request(this.axios, this.basePath));
+    public putFaceDataPostFacePut(imageModel: ImageModel, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).putFaceDataPostFacePut(imageModel, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -409,6 +594,17 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
+     * 生成验证码并发送到用户邮箱
+     * @summary 请求验证邮箱
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public requestEmailVerificationVerifyEmailPut(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).requestEmailVerificationVerifyEmailPut(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * 
      * @summary Root
      * @param {*} [options] Override http request option.
@@ -417,6 +613,18 @@ export class DefaultApi extends BaseAPI {
      */
     public rootGet(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).rootGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 验证用户提交的验证码
+     * @summary 验证邮箱验证码
+     * @param {string} code 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public verifyEmailCodeVerifyEmailCodePost(code: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).verifyEmailCodeVerifyEmailCodePost(code, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

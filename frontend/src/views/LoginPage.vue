@@ -4,7 +4,7 @@
     <form @submit.prevent="onLogin" class="form">
       <div class="form-group">
         <label for="username">用户名</label>
-        <input id="username" v-model="username" type="username" required />
+        <input id="username" v-model="username" type="text" required />
       </div>
       <div class="form-group">
         <label for="password">密码</label>
@@ -16,16 +16,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-const router = useRouter()
-const username = ref('')
-const password = ref('')
-const onLogin = () => {
-  // TODO: 调用登录 API
-  console.log('登录，用户名:', username.value)
-  router.push('/')
-}
+import useLoginPageViewModel from '@/viewmodels/LoginPageViewModel'
+const { username, password, onLogin } = useLoginPageViewModel()
 </script>
 
 <style scoped>

@@ -24,22 +24,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-const router = useRouter()
-const username = ref('')
-const email = ref('')
-const password = ref('')
-const confirm = ref('')
-const onRegister = () => {
-  // TODO: 调用注册 API
-  if (password.value !== confirm.value) {
-    alert('两次输入的密码不一致')
-    return
-  }
-  console.log('注册，用户名:', username.value)
-  router.push('/login')
-}
+import useRegisterPageViewModel from '@/viewmodels/RegisterPageViewModel'
+const { username, email, password, confirm, onRegister } = useRegisterPageViewModel()
 </script>
 
 <style scoped>
