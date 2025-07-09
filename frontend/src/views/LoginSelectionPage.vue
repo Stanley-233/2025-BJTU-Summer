@@ -2,7 +2,7 @@
   <div class="start-page">
     <h1 class="welcome-title">欢迎！</h1>
     <div class="card">
-      <button class="fab-btn" @click="goLogin">
+      <button class="fab-btn" @click="goLogin" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
         <span class="icon">
           <!-- 账户图标SVG线性风格 -->
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -14,7 +14,7 @@
         <span class="label">登录现有账户</span>
       </button>
       <div class="divider">或</div>
-      <button class="fab-btn" @click="goRegister">
+      <button class="fab-btn" @click="goRegister" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
         <span class="icon">
           <!-- 添加图标SVG线性风格 -->
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
