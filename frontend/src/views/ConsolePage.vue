@@ -11,7 +11,25 @@
         <div class="tab-title-underline"></div>
       </div>
       <template v-if="activeTab === 'user'">
-        <div class="user-info-row">
+        <div class="user-info-section">
+          <div class="user-info-row">
+            <span class="user-info-label">用户名：</span>
+            <span class="user-info-value">{{ userInfo.username || '（无）' }}</span>
+          </div>
+          <div class="user-info-row">
+            <span class="user-info-label">是否管理员：</span>
+            <span class="user-info-value">{{ userInfo.is_admin ? '是' : '否' }}</span>
+          </div>
+          <div class="user-info-row">
+            <span class="user-info-label">最近登录IP：</span>
+            <span class="user-info-value">{{ userInfo.last_ip || '（无）' }}</span>
+          </div>
+          <div class="user-info-row">
+            <span class="user-info-label">人脸数据：</span>
+            <span class="user-info-value">{{ userInfo.face_data ? '已录入' : '未录入' }}</span>
+          </div>
+        </div>
+        <div class="user-info-row user-info-row-editable">
           <span class="user-info-label">注册手机号：</span>
           <span class="user-info-value">
             <template v-if="editingPhone">
@@ -26,7 +44,7 @@
           </button>
           <button class="user-info-btn" @click="onVerifyPhone">验证</button>
         </div>
-        <div class="user-info-row">
+        <div class="user-info-row user-info-row-editable">
           <span class="user-info-label">注册邮箱：</span>
           <span class="user-info-value">
             <template v-if="editingEmail">
@@ -77,6 +95,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import BubbleMessage from '../components/BubbleMessage.vue'
+import useVerifyInfoViewModel from '../viewmodels/VerifyInfoViewModel'
+import { DefaultApi } from '../api/generated'
 const activeTab = ref('user')
 
 // 编辑状态
@@ -87,12 +107,26 @@ const phone = ref("")
 const email = ref("")
 
 const bubbleRef = ref(null)
+const api = new DefaultApi()
+
+const userInfo = ref({
+  username: '',
+  is_admin: false,
+  face_data: '',
+  last_ip: ''
+})
+
+async function fetchUserInfo() {
+  try {
+    const res = await api.getUserInfoGetUserInfoGet()
+    userInfo.value = res.data
+  } catch (e) {
+    showBubbleError('获取用户信息失败')
+  }
+}
 
 onMounted(() => {
-  const savedEmail = localStorage.getItem('user_email')
-  if (savedEmail) {
-    email.value = savedEmail
-  }
+  fetchUserInfo()
 })
 
 function onEditEmail() {
@@ -171,19 +205,15 @@ function onEditPhone() {
 function onVerifyPhone() {
   // TODO: 验证手机号逻辑
 }
-function onVerifyEmail() {
-  if (!email.value) {
-    showBubbleError('邮箱不能为空')
-    return
-  }
-  // TODO: 真实邮箱验证逻辑
+async function onVerifyEmail() {
+  await sendVerifyEmail(email.value, showBubbleError)
 }
 </script>
 
 <style scoped>
 .console-layout {
   display: flex;
-  height: calc(100vh - 92px); /* 72px为顶部bar高度，底部再留20px间距 */
+  height: calc(100vh - 92px); /* 72px为顶���bar高度，底部再留20px间距 */
   min-height: 400px;
   margin-top: 0;
   margin-bottom: 20px; /* 屏幕底部留出间距 */
@@ -252,12 +282,22 @@ function onVerifyEmail() {
   border-radius: 2px;
   margin-bottom: 8px;
 }
+.user-info-section {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(79,55,138,0.06);
+  padding: 24px 32px 8px 32px;
+  margin-bottom: 32px;
+}
 .user-info-row {
   display: flex;
   align-items: center;
   font-size: 1.1em;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
   color: #333;
+}
+.user-info-row-editable {
+  margin-bottom: 16px;
 }
 .user-info-label {
   min-width: 110px;
