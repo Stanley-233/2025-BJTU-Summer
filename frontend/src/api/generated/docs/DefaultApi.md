@@ -4,7 +4,8 @@ All URIs are relative to *http://localhost*
 
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
-|[**checkFaceDataCheckFacePost**](#checkfacedatacheckfacepost) | **POST** /check_face/ | 人脸识别比对|
+|[**checkFaceDataCheckFacePost**](#checkfacedatacheckfacepost) | **POST** /check_face/ | 人脸识别获取Token|
+|[**getUserInfoGetUserInfoGet**](#getuserinfogetuserinfoget) | **GET** /get_user_info/ | 获取用户信息|
 |[**isMailVerifiedIsMailVerifiedGet**](#ismailverifiedismailverifiedget) | **GET** /is_mail_verified/ | 获取用户是否已验证邮箱|
 |[**loginLoginPost**](#loginloginpost) | **POST** /login | 用户登录|
 |[**putFaceDataPostFacePut**](#putfacedatapostfaceput) | **PUT** /post_face/ | 上传用户脸部数据|
@@ -14,9 +15,9 @@ All URIs are relative to *http://localhost*
 |[**verifyEmailCodeVerifyEmailCodePost**](#verifyemailcodeverifyemailcodepost) | **POST** /verify_email_code/ | 验证邮箱验证码|
 
 # **checkFaceDataCheckFacePost**
-> any checkFaceDataCheckFacePost(imageModel)
+> any checkFaceDataCheckFacePost(userCheckFaceRequest)
 
-Base64 人脸识别匹配
+Base64 人脸识别匹配，识别成功后返回用户登录Token
 
 ### Example
 
@@ -24,16 +25,16 @@ Base64 人脸识别匹配
 import {
     DefaultApi,
     Configuration,
-    ImageModel
+    UserCheckFaceRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let imageModel: ImageModel; //
+let userCheckFaceRequest: UserCheckFaceRequest; //
 
 const { status, data } = await apiInstance.checkFaceDataCheckFacePost(
-    imageModel
+    userCheckFaceRequest
 );
 ```
 
@@ -41,7 +42,7 @@ const { status, data } = await apiInstance.checkFaceDataCheckFacePost(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **imageModel** | **ImageModel**|  | |
+| **userCheckFaceRequest** | **UserCheckFaceRequest**|  | |
 
 
 ### Return type
@@ -50,7 +51,7 @@ const { status, data } = await apiInstance.checkFaceDataCheckFacePost(
 
 ### Authorization
 
-[HTTPBearer](../README.md#HTTPBearer)
+No authorization required
 
 ### HTTP request headers
 
@@ -66,6 +67,50 @@ const { status, data } = await apiInstance.checkFaceDataCheckFacePost(
 |**401** | 认证错误 |  -  |
 |**403** | 人脸数据不匹配 |  -  |
 |**422** | Validation Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getUserInfoGetUserInfoGet**
+> User getUserInfoGetUserInfoGet()
+
+获取当前用户信息
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.getUserInfoGetUserInfoGet();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**User**
+
+### Authorization
+
+[HTTPBearer](../README.md#HTTPBearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Successful Response |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -118,7 +163,7 @@ This endpoint does not have any parameters.
 # **loginLoginPost**
 > any loginLoginPost(userLoginRequest)
 
-用户登录，返回token
+用户登录
 
 ### Example
 

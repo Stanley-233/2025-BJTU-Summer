@@ -26,6 +26,10 @@ import type { HTTPValidationError } from '../model';
 // @ts-ignore
 import type { ImageModel } from '../model';
 // @ts-ignore
+import type { User } from '../model';
+// @ts-ignore
+import type { UserCheckFaceRequest } from '../model';
+// @ts-ignore
 import type { UserLoginRequest } from '../model';
 // @ts-ignore
 import type { UserRegisterRequest } from '../model';
@@ -36,15 +40,15 @@ import type { UserRegisterRequest } from '../model';
 export const DefaultApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Base64 人脸识别匹配
-         * @summary 人脸识别比对
-         * @param {ImageModel} imageModel 
+         * Base64 人脸识别匹配，识别成功后返回用户登录Token
+         * @summary 人脸识别获取Token
+         * @param {UserCheckFaceRequest} userCheckFaceRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        checkFaceDataCheckFacePost: async (imageModel: ImageModel, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'imageModel' is not null or undefined
-            assertParamExists('checkFaceDataCheckFacePost', 'imageModel', imageModel)
+        checkFaceDataCheckFacePost: async (userCheckFaceRequest: UserCheckFaceRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'userCheckFaceRequest' is not null or undefined
+            assertParamExists('checkFaceDataCheckFacePost', 'userCheckFaceRequest', userCheckFaceRequest)
             const localVarPath = `/check_face/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -57,10 +61,6 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
-            // authentication HTTPBearer required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
 
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
@@ -68,7 +68,41 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(imageModel, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(userCheckFaceRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 获取当前用户信息
+         * @summary 获取用户信息
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUserInfoGetUserInfoGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/get_user_info/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -110,7 +144,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * 用户登录，返回token
+         * 用户登录
          * @summary 用户登录
          * @param {UserLoginRequest} userLoginRequest 
          * @param {*} [options] Override http request option.
@@ -337,16 +371,28 @@ export const DefaultApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = DefaultApiAxiosParamCreator(configuration)
     return {
         /**
-         * Base64 人脸识别匹配
-         * @summary 人脸识别比对
-         * @param {ImageModel} imageModel 
+         * Base64 人脸识别匹配，识别成功后返回用户登录Token
+         * @summary 人脸识别获取Token
+         * @param {UserCheckFaceRequest} userCheckFaceRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async checkFaceDataCheckFacePost(imageModel: ImageModel, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.checkFaceDataCheckFacePost(imageModel, options);
+        async checkFaceDataCheckFacePost(userCheckFaceRequest: UserCheckFaceRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.checkFaceDataCheckFacePost(userCheckFaceRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.checkFaceDataCheckFacePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 获取当前用户信息
+         * @summary 获取用户信息
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getUserInfoGetUserInfoGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getUserInfoGetUserInfoGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getUserInfoGetUserInfoGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -362,7 +408,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * 用户登录，返回token
+         * 用户登录
          * @summary 用户登录
          * @param {UserLoginRequest} userLoginRequest 
          * @param {*} [options] Override http request option.
@@ -448,14 +494,23 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
     const localVarFp = DefaultApiFp(configuration)
     return {
         /**
-         * Base64 人脸识别匹配
-         * @summary 人脸识别比对
-         * @param {ImageModel} imageModel 
+         * Base64 人脸识别匹配，识别成功后返回用户登录Token
+         * @summary 人脸识别获取Token
+         * @param {UserCheckFaceRequest} userCheckFaceRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        checkFaceDataCheckFacePost(imageModel: ImageModel, options?: RawAxiosRequestConfig): AxiosPromise<any> {
-            return localVarFp.checkFaceDataCheckFacePost(imageModel, options).then((request) => request(axios, basePath));
+        checkFaceDataCheckFacePost(userCheckFaceRequest: UserCheckFaceRequest, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.checkFaceDataCheckFacePost(userCheckFaceRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 获取当前用户信息
+         * @summary 获取用户信息
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUserInfoGetUserInfoGet(options?: RawAxiosRequestConfig): AxiosPromise<User> {
+            return localVarFp.getUserInfoGetUserInfoGet(options).then((request) => request(axios, basePath));
         },
         /**
          * 获取用户是否已验证邮箱
@@ -467,7 +522,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.isMailVerifiedIsMailVerifiedGet(options).then((request) => request(axios, basePath));
         },
         /**
-         * 用户登录，返回token
+         * 用户登录
          * @summary 用户登录
          * @param {UserLoginRequest} userLoginRequest 
          * @param {*} [options] Override http request option.
@@ -535,15 +590,26 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
  */
 export class DefaultApi extends BaseAPI {
     /**
-     * Base64 人脸识别匹配
-     * @summary 人脸识别比对
-     * @param {ImageModel} imageModel 
+     * Base64 人脸识别匹配，识别成功后返回用户登录Token
+     * @summary 人脸识别获取Token
+     * @param {UserCheckFaceRequest} userCheckFaceRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public checkFaceDataCheckFacePost(imageModel: ImageModel, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).checkFaceDataCheckFacePost(imageModel, options).then((request) => request(this.axios, this.basePath));
+    public checkFaceDataCheckFacePost(userCheckFaceRequest: UserCheckFaceRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).checkFaceDataCheckFacePost(userCheckFaceRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 获取当前用户信息
+     * @summary 获取用户信息
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public getUserInfoGetUserInfoGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).getUserInfoGetUserInfoGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -558,7 +624,7 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
-     * 用户登录，返回token
+     * 用户登录
      * @summary 用户登录
      * @param {UserLoginRequest} userLoginRequest 
      * @param {*} [options] Override http request option.

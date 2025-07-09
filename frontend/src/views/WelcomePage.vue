@@ -46,4 +46,3 @@ const router = useRouter()
   .enter-btn { font-size: 16px; padding: 10px 24px; }
 }
 </style>
-

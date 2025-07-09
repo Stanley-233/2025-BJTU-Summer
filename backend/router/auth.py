@@ -10,7 +10,7 @@ from deepface import DeepFace
 
 from model.user import User, UserEmail, UserPhone
 from util.engine import get_session
-from util.image import decode_image, ImageModel
+from util.image import decode_image, ImageModel, UserCheckFaceRequest, extract_last_frame_from_base64_video
 from util.security import create_token, get_current_user, encrypt_password
 from util.mail import send_email
 
@@ -85,7 +85,6 @@ def register(request: UserRegisterRequest, session: Session = Depends(get_sessio
     "token": token
   }
 
-
 class UserLoginRequest(BaseModel):
   username: str
   password: str
@@ -98,8 +97,7 @@ class UserLoginRequest(BaseModel):
       }
     }
 
-
-@auth_router.post("/login", summary="用户登录", description="用户登录，返回token", responses={
+@auth_router.post("/login", summary="用户登录", description="用户登录", responses={
   200: {
     "description": "登录成功",
     "content": {
@@ -141,12 +139,8 @@ def login(request: UserLoginRequest, session: Session = Depends(get_session)):
   if user.password != encrypt_password(request.password):
     raise HTTPException(status_code=403, detail="Incorrect password")
 
-  token = create_token(user)
-
   return {"message": "登录成功",
-          "is_admin": user.is_admin,
-          "token": token}
-
+          "is_admin": user.is_admin}
 
 @auth_router.put("/post_face/", summary="上传用户脸部数据", responses= {
   200: {
@@ -189,14 +183,14 @@ def put_face_data(face_data: ImageModel, session: Session = Depends(get_session)
   session.refresh(user)
   return {"message": "脸部数据上传成功"}
 
-
-@auth_router.post("/check_face/", summary="人脸识别比对", responses={
+@auth_router.post("/check_face/", summary="人脸识别获取Token", responses={
   200: {
     "description": "人脸成功识别",
     "content": {
       "application/json": {
         "example": {
-          "message": "人脸数据匹配"
+          "message": "人脸数据匹配",
+          "token" : "example_token"
         }
       }
     }
@@ -232,26 +226,29 @@ def put_face_data(face_data: ImageModel, session: Session = Depends(get_session)
     }
   }
 })
-def check_face_data(face_data: ImageModel, user: User = Depends(get_current_user)):
-  """ Base64 人脸识别匹配 """
-  if not user.face_data:
+def check_face_data(request: UserCheckFaceRequest, session: Session = Depends(get_session)):
+  """ Base64 人脸识别匹配，识别成功后返回用户登录Token """
+  user = session.get(User, request.username)
+  if not user or not user.face_data:
     raise HTTPException(status_code=404, detail="没有找到用户的人脸数据")
   try:
+    # TODO: 人脸活体检测
+
     # 解码存储的人脸数据和传入的人脸数据
     stored_img = decode_image(user.face_data)
-    incoming_img = face_data.decode()
+    incoming_img = extract_last_frame_from_base64_video(request.face_data)
     # 使用 DeepFace.verify 进行人脸比对
     result = DeepFace.verify(stored_img, incoming_img, model_name='Facenet512')
     print(result)
+    token = create_token(user)
     if result.get("verified"):
-      return {"message": "人脸数据匹配"}
+      return {"message": "人脸数据匹配", "token": token}
     else:
       raise HTTPException(status_code=403, detail="人脸数据不匹配")
   except HTTPException as e:
     raise HTTPException(status_code=e.status_code, detail="人脸数据不匹配")
   except Exception as e:
     raise HTTPException(status_code=500, detail="<UNK>" + str(e))
-
 
 @auth_router.get("/is_mail_verified/", summary="获取用户是否已验证邮箱", responses={
   200: {
@@ -426,3 +423,8 @@ def verify_email_code(code: str, user: User = Depends(get_current_user), session
   session.commit()
 
   return {"message": "邮箱验证成功"}
+
+@auth_router.get("/get_user_info/", summary="获取用户信息", response_model=User)
+def get_user_info(user: User = Depends(get_current_user)):
+    """获取当前用户信息"""
+    return user
