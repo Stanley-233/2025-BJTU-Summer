@@ -11,6 +11,7 @@
         </div>
       </nav>
     </header>
+    <BubbleMessage :model-value="bubbleVisible" :message="bubbleMessage" type="warning" />
     <main class="main-content">
       <router-view />
     </main>
@@ -18,7 +19,19 @@
 </template>
 
 <script setup>
-// 使用 Vue Router 提供的 router-link 和 router-view，无需额外逻辑
+import { ref, provide } from 'vue'
+import BubbleMessage from '@/components/BubbleMessage.vue'
+
+const bubbleVisible = ref(false)
+const bubbleMessage = ref('')
+
+function showGlobalBubble(msg) {
+  bubbleMessage.value = msg
+  bubbleVisible.value = true
+  setTimeout(() => { bubbleVisible.value = false }, 2000)
+}
+
+provide('showGlobalBubble', showGlobalBubble)
 </script>
 
 <style scoped>

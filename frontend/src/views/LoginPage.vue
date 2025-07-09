@@ -16,8 +16,18 @@
 </template>
 
 <script setup>
+import { ref, inject } from 'vue'
 import useLoginPageViewModel from '@/viewmodels/LoginPageViewModel'
-const { username, password, onLogin } = useLoginPageViewModel()
+
+const showGlobalBubble = inject('showGlobalBubble')
+
+const { username, password, onLogin } = useLoginPageViewModel((msg) => {
+  if (msg.includes('用户不存在')) {
+    showGlobalBubble && showGlobalBubble('用户不存在')
+  } else {
+    showGlobalBubble && showGlobalBubble(msg)
+  }
+})
 </script>
 
 <style scoped>

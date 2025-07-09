@@ -7,7 +7,7 @@ import { DefaultApi, Configuration, UserRegisterRequest } from '../api/generated
 
 const api = new DefaultApi(new Configuration({ basePath: 'http://127.0.0.1:8000' }))
 
-export default function useRegisterPageViewModel() {
+export default function useRegisterPageViewModel(onError?: (msg: string) => void, onSuccess?: (msg: string) => void) {
   const router = useRouter()
   const username = ref<string>('')
   const email = ref<string>('')
@@ -16,16 +16,20 @@ export default function useRegisterPageViewModel() {
 
   const onRegister = async () => {
     if (password.value !== confirm.value) {
-      alert('两次输入的密码不一致')
+      onError?.('两次输入的密码不一致')
       return
     }
     const requestBody: UserRegisterRequest = { username: username.value, email: email.value, phone: null, password: password.value }
     try {
       await api.registerRegisterPost(requestBody)
-      alert('注册成功')
+      onSuccess?.('注册成功，欢迎加入！')
       await router.push('/login')
     } catch (err: any) {
-      alert('注册失败：' + (err.response?.data?.message || err.message))
+      if (err.response?.status === 400) {
+        onError?.('用户名或邮箱已被注册，请更换后重试。')
+      } else {
+        onError?.('注册失败：' + (err.response?.data?.message || err.message))
+      }
     }
   }
 

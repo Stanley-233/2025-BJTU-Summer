@@ -24,8 +24,14 @@
 </template>
 
 <script setup>
+import { inject } from 'vue'
 import useRegisterPageViewModel from '@/viewmodels/RegisterPageViewModel'
-const { username, email, password, confirm, onRegister } = useRegisterPageViewModel()
+
+const showGlobalBubble = inject('showGlobalBubble')
+const { username, email, password, confirm, onRegister } = useRegisterPageViewModel(
+  (msg) => showGlobalBubble && showGlobalBubble(msg),
+  (msg) => showGlobalBubble && showGlobalBubble(msg)
+)
 </script>
 
 <style scoped>

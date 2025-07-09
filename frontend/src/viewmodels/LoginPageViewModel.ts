@@ -8,7 +8,7 @@ import { DefaultApi, Configuration, UserLoginRequest } from '../api/generated'
 
 const api = new DefaultApi(new Configuration({ basePath: 'http://127.0.0.1:8000' }))
 
-export default function useLoginPageViewModel() {
+export default function useLoginPageViewModel(onError?: (msg: string) => void) {
   const router = useRouter()
   const username = ref<string>('')
   const password = ref<string>('')
@@ -22,12 +22,19 @@ export default function useLoginPageViewModel() {
         localStorage.setItem('token', token)
         router.push('/')
       } else {
-        alert('登录失败：未获取到令牌')
+        onError?.('登录失败：未获取到令牌')
       }
     } catch (err: any) {
-      alert('登录失败：' + (err.response?.data?.message || err.message))
+      // 处理不同的错误码，给出更友好的提示
+      if (err.response?.status === 404) {
+        onError?.('用户不存在，请检查用户名是否正确。')
+      } else if (err.response?.status === 403) {
+        onError?.('密码错误，请重新输入。')
+      } else {
+        const msg = err.response?.data?.message || err.message
+        onError?.('登录失败：' + msg)
+      }
     }
   }
-
   return { username, password, onLogin }
 }
