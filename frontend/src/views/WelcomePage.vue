@@ -2,15 +2,12 @@
   <div class="welcome-container">
     <h1 class="app-title">滴嘟出行</h1>
     <p class="app-subtitle">欢迎使用滴嘟出行综合平台</p>
-    <button class="enter-btn" @click="goNext">进入应用</button>
+    <button class="enter-btn" @click="router.push('/login_select')">进入应用</button>
   </div>
 </template>
 <script setup>
 import { useRouter } from 'vue-router'
 const router = useRouter()
-function goNext() {
-  router.push('/login_select')
-}
 </script>
 <style scoped>
 .welcome-container {
