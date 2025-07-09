@@ -6,24 +6,24 @@ from util.engine import init_db
 import router.auth
 
 app = FastAPI(
-    title="滴嘟出行",
-    description="滴嘟出行后端 API"
+  title="滴嘟出行",
+  description="滴嘟出行后端 API"
 )
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 允许所有来源，生产环境中建议指定具体域名
-    allow_credentials=True,
-    allow_methods=["*"],  # 允许所有方法
-    allow_headers=["*"],  # 允许所有头部
+  CORSMiddleware,
+  allow_origins=["*"],  # 允许所有来源，生产环境中建议指定具体域名
+  allow_credentials=True,
+  allow_methods=["*"],  # 允许所有方法
+  allow_headers=["*"],  # 允许所有头部
 )
 
 app.include_router(router.auth.auth_router)
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+  return {"message": "Hello World"}
 
 if __name__ == "__main__":
-    init_db()
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+  init_db()
+  uvicorn.run(app, host="127.0.0.1", port=8000)

@@ -61,7 +61,10 @@ const { status, data } = await apiInstance.checkFaceDataCheckFacePost(
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | Successful Response |  -  |
+|**200** | 人脸成功识别 |  -  |
+|**404** | 用户不存在或人脸数据不存在 |  -  |
+|**401** | 认证错误 |  -  |
+|**403** | 人脸数据不匹配 |  -  |
 |**422** | Validation Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -106,7 +109,9 @@ This endpoint does not have any parameters.
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | Successful Response |  -  |
+|**200** | 返回验证状态 |  -  |
+|**404** | 用户不存在 |  -  |
+|**401** | 认证错误 |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -158,7 +163,9 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | Successful Response |  -  |
+|**200** | 登录成功 |  -  |
+|**404** | 用户不存在 |  -  |
+|**403** | 密码错误 |  -  |
 |**422** | Validation Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -211,7 +218,9 @@ const { status, data } = await apiInstance.putFaceDataPostFacePut(
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | Successful Response |  -  |
+|**200** | 成功更改 |  -  |
+|**404** | 用户不存在 |  -  |
+|**401** | 认证错误 |  -  |
 |**422** | Validation Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -264,7 +273,8 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | Successful Response |  -  |
+|**200** | 注册成功 |  -  |
+|**400** | 用户名已存在 |  -  |
 |**422** | Validation Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -309,7 +319,9 @@ This endpoint does not have any parameters.
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | Successful Response |  -  |
+|**200** | 验证码已发送 |  -  |
+|**404** | 用户不存在 |  -  |
+|**401** | 认证错误 |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -403,7 +415,12 @@ const { status, data } = await apiInstance.verifyEmailCodeVerifyEmailCodePost(
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | Successful Response |  -  |
+|**200** | 邮箱验证成功 |  -  |
+|**404** | 用户不存在 |  -  |
+|**401** | 认证错误 |  -  |
+|**201** | 未请求验证码 |  -  |
+|**202** | 验证码已过期 |  -  |
+|**203** | 验证码错误 |  -  |
 |**422** | Validation Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
