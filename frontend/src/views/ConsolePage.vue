@@ -15,7 +15,7 @@
           <span class="user-info-label">注册手机号：</span>
           <span class="user-info-value">
             <template v-if="editingPhone">
-              <input v-model="phone.value" class="user-info-input" placeholder="请输入手机号" />
+              <input v-model="phone" class="user-info-input" placeholder="请输入手机号" />
             </template>
             <template v-else>
               <span class="user-info-placeholder">（待接入）</span>
@@ -30,10 +30,10 @@
           <span class="user-info-label">注册邮箱：</span>
           <span class="user-info-value">
             <template v-if="editingEmail">
-              <input v-model="email.value" class="user-info-input" placeholder="请输入邮箱" />
+              <input v-model="email" class="user-info-input" placeholder="请输入邮箱" type="email" autocomplete="email" />
             </template>
             <template v-else>
-              <span class="user-info-placeholder">（待接入）</span>
+              <span>{{ email || '（未填写）' }}</span>
             </template>
           </span>
           <button class="user-info-btn" @click="onEditEmail">
@@ -70,19 +70,46 @@
       </template>
       <!-- TODO: 根据activeTab渲染对应子界面 -->
     </main>
+    <BubbleMessage ref="bubbleRef" />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import BubbleMessage from '../components/BubbleMessage.vue'
 const activeTab = ref('user')
 
 // 编辑状态
 const editingPhone = ref(false)
 const editingEmail = ref(false)
 // 预留数据
-const phone = ref('')
-const email = ref('')
+const phone = ref("")
+const email = ref("")
+
+const bubbleRef = ref(null)
+
+onMounted(() => {
+  const savedEmail = localStorage.getItem('user_email')
+  if (savedEmail) {
+    email.value = savedEmail
+  }
+})
+
+function onEditEmail() {
+  if (editingEmail.value) {
+    // 校验邮箱格式
+    const emailPattern = /^([A-Za-z0-9_\-.])+@([A-Za-z0-9_\-.])+\.([A-Za-z]{2,4})$/
+    console.log(email.value)
+    if (!emailPattern.test(email.value)) {
+      showBubbleError('请输入合法的邮件地址')
+      return
+    }
+    localStorage.setItem('user_email', email.value)
+    editingEmail.value = false // 保存后立即切换为不可编辑
+    return
+  }
+  editingEmail.value = true
+}
 
 // 日志类型枚举
 const LogType = {
@@ -93,7 +120,7 @@ const LogType = {
 // 图标（可用 emoji 或 svg，后续可替换为 icon 组件）
 const typeIconMap = {
   [LogType.OPERATION]: '🛠️', // 操作
-  [LogType.SECURITY]: '🔒',   // 安全
+  [LogType.SECURITY]: '���',   // 安全
 }
 
 // 日志记录结构
@@ -129,23 +156,27 @@ function addLogRecord({ type, username, content, ip }) {
   })
 }
 
+function showBubbleError(msg) {
+  if (bubbleRef.value) {
+    bubbleRef.value.show(msg, 'error')
+  }
+}
+
 function onEditPhone() {
   if (editingPhone.value) {
     // TODO: 保存手机号逻辑
   }
   editingPhone.value = !editingPhone.value
 }
-function onEditEmail() {
-  if (editingEmail.value) {
-    // TODO: 保存邮箱逻辑
-  }
-  editingEmail.value = !editingEmail.value
-}
 function onVerifyPhone() {
   // TODO: 验证手机号逻辑
 }
 function onVerifyEmail() {
-  // TODO: 验证邮箱逻辑
+  if (!email.value) {
+    showBubbleError('邮箱不能为空')
+    return
+  }
+  // TODO: 真实邮箱验证逻辑
 }
 </script>
 
@@ -166,7 +197,7 @@ function onVerifyEmail() {
   height: 100%;
   min-height: 100%;
   padding-top: 0;
-  /* 增加右侧分割线和投影 */
+  /* 增加右侧分割线���投影 */
   box-shadow: 2px 0 8px rgba(79,55,138,0.04);
   border-right: 2px solid #ede7f6;
 }
@@ -248,7 +279,7 @@ function onVerifyEmail() {
   margin-right: 12px;
   min-width: 180px;
   background: #fff;
-  height: 32px; /* 与非编辑状态保持一致 */
+  height: 32px; /* �����编辑状态保持一��� */
   box-sizing: border-box;
 }
 .user-info-placeholder {

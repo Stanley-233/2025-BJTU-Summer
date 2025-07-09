@@ -15,6 +15,11 @@ export default function useRegisterPageViewModel(onError?: (msg: string) => void
   const confirm = ref<string>('')
 
   const onRegister = async () => {
+    // 只做非空校验，邮箱格式交由浏览器原生input type=email处理
+    if (!email.value) {
+      onError?.('请输入邮箱地址')
+      return
+    }
     if (password.value !== confirm.value) {
       onError?.('两次输入的密码不一致')
       return
