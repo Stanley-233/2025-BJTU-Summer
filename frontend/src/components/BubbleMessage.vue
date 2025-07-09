@@ -1,3 +1,4 @@
+@ -1,92 +1,92 @@
 <template>
   <transition name="fade">
     <div v-if="visible" class="bubble-message" :class="typeClass">
@@ -15,28 +16,36 @@ import { ref, watch, defineProps, defineExpose } from 'vue';
 
 const props = defineProps({
   modelValue: Boolean,
+  message: String,
   type: { type: String, default: 'warning' },
   duration: { type: Number, default: 2000 }
 });
 
-const visible = ref(false);
-const message = ref('');
-const typeClass = ref('');
+const visible = ref(props.modelValue);
+const typeClass = props.type ? `bubble-message--${props.type}` : '';
 
-function show(msg, type = 'warning', duration = props.duration) {
-  message.value = msg;
-  typeClass.value = `bubble-message--${type}`;
-  visible.value = true;
-  if (duration > 0) {
-    setTimeout(() => visible.value = false, duration);
+watch(() => props.modelValue, (val) => {
+  visible.value = val;
+  if (val && props.duration > 0) {
+    setTimeout(() => visible.value = false, props.duration);
   }
-}
+});
 
-function hide() {
-  visible.value = false;
-}
-
-defineExpose({ show, hide });
+defineExpose({
+  show(msg) {
+    visible.value = true;
+    if (msg) {
+      // @ts-ignore
+      this.message = msg;
+    }
+    if (props.duration > 0) {
+      setTimeout(() => visible.value = false, props.duration);
+    }
+  },
+  hide() {
+    visible.value = false;
+  }
+});
 </script>
 
 <style scoped>
@@ -51,25 +60,16 @@ defineExpose({ show, hide });
   color: #ad6800;
   border: none;
   border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(173,104,0,0.08);
-  padding: 10px 24px 10px 16px;
-  display: flex;
+  box-shadow: 0 2px 8px rgba(255,214,0,0.10);
+  padding: 10px 20px;
+  display: inline-flex;
   align-items: center;
-  font-size: 1.08em;
-  z-index: 9999;
-  animation: fadeInDown 0.3s;
-}
-.bubble-message--error {
-  background: #fff1f0;
-  color: #d32f2f;
-}
-.bubble-message--success {
-  background: #f6ffed;
-  color: #389e0d;
-}
-.bubble-message--warning {
-  background: #fffbe6;
-  color: #ad6800;
+  z-index: 1200;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  opacity: 0.98;
+  transition: box-shadow 0.2s;
 }
 .bubble-message .icon {
   margin-right: 10px;
@@ -77,16 +77,17 @@ defineExpose({ show, hide });
   align-items: center;
 }
 .bubble-message .content {
-  word-break: break-all;
+  flex: 1;
+  text-align: center;
+}
+.bubble-message--warning {
+  background: #fffbe6;
+  color: #ad6800;
 }
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s;
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
-}
-@keyframes fadeInDown {
-  from { opacity: 0; transform: translate(-50%, -20px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
 }
 </style>
