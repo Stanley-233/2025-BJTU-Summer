@@ -13,7 +13,7 @@ engine = create_engine(DATABASE_URL, echo=True)
 
 def init_db():
   """初始化数据库，创建所有表"""
-  # SQLModel.metadata.drop_all(engine)
+  SQLModel.metadata.drop_all(engine)
   SQLModel.metadata.create_all(engine)
   print("Initialized database and created tables.")
 

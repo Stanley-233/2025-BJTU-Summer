@@ -14,7 +14,7 @@ from util.engine import get_session
 from util.image import ImageModel, UserCheckFaceRequest, extract_last_frame_from_base64_video
 from util.security import create_token, get_current_user, encrypt_password
 from util.mail import send_email
-from model.user import User, UserEmail, UserPhone
+from model.user import User, UserEmail, UserPhone, UserType
 
 auth_router = APIRouter()
 
@@ -66,7 +66,7 @@ def register(request: UserRegisterRequest, session: Session = Depends(get_sessio
   new_user = User(
     username=request.username,
     password=encrypt_password(request.password),
-    is_admin=False
+    user_type=UserType.DRIVER
   )
   new_user.email = UserEmail(
     user=new_user,
