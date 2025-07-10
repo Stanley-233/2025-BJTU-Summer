@@ -3,7 +3,8 @@ from typing import Optional
 from datetime import datetime, timedelta, timezone
 import random
 import string
-import requests
+
+import aip
 from dotenv import load_dotenv
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -11,12 +12,23 @@ from pydantic import BaseModel
 from sqlmodel import Session
 
 from util.engine import get_session
-from util.image import ImageModel, UserCheckFaceRequest, extract_last_frame_from_base64_video
+from util.image import ImageModel, UserCheckFaceRequest
 from util.security import create_token, get_current_user, encrypt_password
 from util.mail import send_email
 from model.user import User, UserEmail, UserPhone, UserType
 
 auth_router = APIRouter()
+
+# 百度云配置
+load_dotenv("config.env")
+app_id = os.getenv("BAIDU_APP_ID")
+api_key = os.getenv("BAIDU_API_KEY")
+secret_key = os.getenv("BAIDU_SECRET_KEY")
+
+if not app_id or not api_key or not secret_key:
+    raise HTTPException(status_code=500, detail="百度云配置未正确设置")
+
+client = aip.AipFace(app_id, api_key, secret_key)
 
 class UserRegisterRequest(BaseModel):
   username: str
@@ -180,41 +192,25 @@ def login(request: UserLoginRequest, session: Session = Depends(get_session)):
 })
 def post_face_data(face_data: ImageModel, session: Session = Depends(get_session),
                    user: User = Depends(get_current_user)):
-  """ 注册用户脸部数据 """
-  image = face_data.image
-  image_type = "BASE64"
+    """ 注册用户脸部数据 """
+    image = face_data.image
+    image_type = "BASE64"
 
-  # 加载百度云 API Key 和 Access Token
-  load_dotenv("config.env")
-  api_key = os.getenv("BAIDU_API_KEY")
-  access_token = os.getenv("BAIDU_ACCESS_TOKEN")
+    options = {
+        "quality_control": "NORMAL"
+    }
 
-  if not api_key or not access_token:
-    raise HTTPException(status_code=500, detail="百度云 API Key 或 Access Token 未配置")
+    result = client.addUser(image, image_type, "default", user.username, options)
 
-  # 构造百度云人脸注册接口的 HTTP 请求
-  url = "https://aip.baidubce.com/rest/2.0/face/v3/faceset/user/add"
-  headers = {"Content-Type": "application/json"}
-  payload = {
-      "image": image,
-      "image_type": image_type,
-      "group_id": "default",
-      "user_id": user.username,
-      "user_info": user.username,
-      "quality_control": "NORMAL"
-  }
+    if result.get("error_code") != 0:
+        error_msg = result.get("error_msg", "未知错误")
+        raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
 
-  response = requests.post(url, headers=headers, json=payload, params={"access_token": access_token})
-
-  if response.status_code != 200 or response.json().get("error_code"):
-    error_msg = response.json().get("error_msg", "未知错误")
-    raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
-
-  user.face_data = image
-  session.add(user)
-  session.commit()
-  session.refresh(user)
-  return {"message": "脸部数据上传成功"}
+    user.face_data = image
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return {"message": "脸部数据上传成功"}
 
 
 @auth_router.put("/update_face/", summary="更新用户脸部数据", responses={
@@ -251,37 +247,25 @@ def post_face_data(face_data: ImageModel, session: Session = Depends(get_session
 })
 def update_face_data(face_data: ImageModel, session: Session = Depends(get_session),
                      user: User = Depends(get_current_user)):
-  """ 更新用户脸部数据 """
-  image = face_data.image
-  image_type = "BASE64"
+    """ 更新用户脸部数据 """
+    image = face_data.image
+    image_type = "BASE64"
 
-  load_dotenv("config.env")
-  api_key = os.getenv("BAIDU_API_KEY")
+    options = {
+        "quality_control": "NORMAL"
+    }
 
-  # 构造百度云人脸更新接口的 HTTP 请求
-  url = "https://aip.baidubce.com/rest/2.0/face/v3/faceset/user/update"
-  access_token = api_key  # 替换为实际的 Access Token
-  headers = {"Content-Type": "application/json"}
-  payload = {
-      "image": image,
-      "image_type": image_type,
-      "group_id": user.user_type,
-      "user_id": user.username,
-      "user_info": user.username,
-      "quality_control": "NORMAL"
-  }
+    result = client.updateUser(image, image_type, "default", user.username, options)
 
-  response = requests.post(url, headers=headers, json=payload, params={"access_token": access_token})
+    if result.get("error_code") != 0:
+        error_msg = result.get("error_msg", "未知错误")
+        raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
 
-  if response.status_code != 200 or response.json().get("error_code"):
-    error_msg = response.json().get("error_msg", "未知错误")
-    raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
-
-  user.face_data = image
-  session.add(user)
-  session.commit()
-  session.refresh(user)
-  return {"message": "脸部数据上传成功"}
+    user.face_data = image
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return {"message": "脸部数据上传成功"}
 
 
 @auth_router.post("/check_face/", summary="人脸识别获取Token", responses={
@@ -334,53 +318,36 @@ def update_face_data(face_data: ImageModel, session: Session = Depends(get_sessi
 })
 def check_face_data(request: UserCheckFaceRequest, session: Session = Depends(get_session)):
   """ Base64 人脸识别匹配，识别成功后返回用户登录Token """
-  # 加载百度云 API Key 和 Access Token
-  load_dotenv("config.env")
-  access_token = os.getenv("BAIDU_ACCESS_TOKEN")
-
-  if not access_token:
-    raise HTTPException(status_code=500, detail="百度云 Access Token 未配置")
-
-  # 调用 H5 视频活体检测 API
-  liveness_url = "https://aip.baidubce.com/rest/2.0/face/v3/faceverify"
-  liveness_payload = [{
-    "video_base64": request.face_data,
+  liveness_result = client.facelivenessVerifyV1(video_base64=request.face_data, options={
     "face_field": "spoofing,quality"
-  }]
-  liveness_response = requests.post(liveness_url, json=liveness_payload, params={"access_token": access_token})
+  })
 
-  if liveness_response.status_code != 200:
-    raise HTTPException(status_code=500, detail=f"活体检测失败: {liveness_response.content}")
+  if liveness_result.get("error_code") != 0:
+    raise HTTPException(status_code=500, detail=f"活体检测失败：{liveness_result.get('error_msg', '未知错误')}")
 
-  if liveness_response.json().get("error_code") != 0:
-    raise HTTPException(status_code=402, detail=f"活体检测失败")
+  best_img = liveness_result.get("result").get("best_img")
 
-  last_frame = extract_last_frame_from_base64_video(request.face_data)
-  # 调用 1:N 搜索 API
-  search_url = "https://aip.baidubce.com/rest/2.0/face/v3/search"
-  search_payload = {
-    "image": last_frame,
-    "image_type": "BASE64",
-    "group_id_list": "default,sysadmin,driver,gov_admin",
-    "quality_control": "NORMAL",
-    "max_user_num": 1,
-  }
-  search_response = requests.post(search_url, json=search_payload, params={"access_token": access_token})
+  if best_img is None:
+    raise HTTPException(status_code=402, detail="活体检测失败，未检测到人像")
+  if best_img.get("liveness_score") < 0.3:
+    raise HTTPException(status_code=402, detail="活体检测失败，分数过低")
+  if best_img.get("spoofing_score") > 0.00048:
+    raise HTTPException(status_code=402, detail="活体检测失败，为合成图")
 
-  if search_response.status_code != 200 or search_response.json().get("error_code"):
-    error_msg = search_response.json().get("error_msg", "未知错误")
-    raise HTTPException(status_code=404, detail=f"用户不存在或人脸数据不存在: {error_msg}")
+  search_response = client.search(image=best_img.get("pic"), image_type="BASE64", group_id_list="driver", options={
+    "max_user_num": 1
+  })
+
+  if search_response.get("error_code") == 222207:
+    raise HTTPException(status_code=404, detail="非认证用户，用户不存在或人脸数据不存在")
 
   # 获取搜索结果中的用户信息
   result = search_response.json().get("result", {}).get("user_list", [{}])[0]
   username = result.get("user_id")
-
-  if not username:
-    raise HTTPException(status_code=404, detail="用户不存在或人脸数据不存在")
-
   user = session.get(User, username)
+
   if not user:
-    raise HTTPException(status_code=404, detail="用户不存在")
+    raise HTTPException(status_code=404, detail="非认证用户，用户不存在或人脸数据不存在")
 
   # 生成 Token
   token = create_token(user)

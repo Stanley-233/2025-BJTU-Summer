@@ -18,6 +18,8 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { DefaultApi, Configuration } from '../api/generated'
+import { blobToBase64 } from '../util/base64'
 
 const videoRef = ref(null)
 const hasPermission = ref(false)
@@ -39,10 +41,24 @@ function capturePhoto() {
   }, 'image/jpeg')
 }
 
-function onUpload() {
+async function onUpload() {
   if (!capturedBlob.value) return
-  // TODO: 上传拍摄的照片到服务器
-  alert('上传人脸数据功能待实现')
+  try {
+    // convert blob to base64 string
+    const dataUrl = await blobToBase64(capturedBlob.value)
+    // strip prefix "data:*/*;base64,"
+    const base64 = dataUrl.split(',')[1]
+    // call upload API
+    const api = new DefaultApi(new Configuration({
+      basePath: 'http://127.0.0.1:8000',
+      accessToken: localStorage.getItem('token') ? () => localStorage.getItem('token') : undefined,
+    }))
+    await api.updateFaceDataUpdateFacePut({ image: base64 })
+    alert('人脸注册成功')
+  } catch (error) {
+    console.error(error)
+    alert('人脸注册失败，请重试')
+  }
 }
 
 onMounted(async () => {
