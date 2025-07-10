@@ -30,21 +30,6 @@
           </div>
         </div>
         <div class="user-info-row user-info-row-editable">
-          <span class="user-info-label">注册手机号：</span>
-          <span class="user-info-value">
-            <template v-if="editingPhone">
-              <input v-model="phone" class="user-info-input" placeholder="请输入手机号" />
-            </template>
-            <template v-else>
-              <span class="user-info-placeholder">（待接入）</span>
-            </template>
-          </span>
-          <button class="user-info-btn" @click="onEditPhone">
-            {{ editingPhone ? '保存' : '编辑' }}
-          </button>
-          <button class="user-info-btn" @click="onVerifyPhone">验证</button>
-        </div>
-        <div class="user-info-row user-info-row-editable">
           <span class="user-info-label">注册邮箱：</span>
           <span class="user-info-value">
             <template v-if="editingEmail">
@@ -54,9 +39,6 @@
               <span>{{ email || '（未填写）' }}</span>
             </template>
           </span>
-          <button class="user-info-btn" @click="onEditEmail">
-            {{ editingEmail ? '保存' : '编辑' }}
-          </button>
           <button class="user-info-btn" @click="onVerifyEmail">
             验证
           </button>
@@ -74,15 +56,11 @@
 <script setup>
 import {ref, onMounted, inject} from 'vue'
 import BubbleMessage from '../components/BubbleMessage.vue'
-import verifyEmail from '../viewmodels/VerifyInfoViewModel'
+import {verifyEmail} from '../viewmodels/VerifyInfoViewModel'
 import LogTable from '../components/LogTable.vue'
 const activeTab = ref('user')
 
-// 编辑状态
-const editingPhone = ref(false)
 const editingEmail = ref(false)
-// 预留数据
-const phone = ref("")
 const email = ref("")
 
 const bubbleRef = ref(null)
@@ -97,8 +75,12 @@ const userInfo = ref({
 
 async function fetchUserInfo() {
   try {
-
-    userInfo.value = res.data
+    // 假设后端返回的邮箱字段为 email
+    // const res = await api.getUserInfoGetUserInfoGet()
+    // userInfo.value = res.data
+    // email.value = res.data.email || ''
+    // 目前为演示，写死一个邮箱
+    email.value = 'user@example.com'
   } catch (e) {
     showGlobalBubble('获取用户信息失败')
   }
@@ -108,34 +90,8 @@ onMounted(() => {
   fetchUserInfo()
 })
 
-function onEditEmail() {
-  if (editingEmail.value) {
-    // 校验邮箱格式
-    const emailPattern = /^([A-Za-z0-9_\-.])+@([A-Za-z0-9_\-.])+\.([A-Za-z]{2,4})$/
-    console.log(email.value)
-    if (!emailPattern.test(email.value)) {
-      showGlobalBubble('请输入合法的邮件地址')
-      return
-    }
-    localStorage.setItem('user_email', email.value)
-    editingEmail.value = false // 保存后立即切换为不可编辑
-    return
-  }
-  editingEmail.value = true
-}
-
-function onEditPhone() {
-  if (editingPhone.value) {
-    // TODO: 保存手机号逻辑
-  }
-  editingPhone.value = !editingPhone.value
-}
-function onVerifyPhone() {
-  // TODO: 验证手机号逻辑
-}
-
 function onVerifyEmail() {
-  verifyEmail((msg) => {showGlobalBubble(msg)} )
+  verifyEmail((msg) => {showGlobalBubble(msg)})
 }
 </script>
 
