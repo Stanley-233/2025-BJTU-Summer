@@ -63,30 +63,7 @@
         </div>
       </template>
       <template v-else>
-        <div class="log-table-wrapper">
-          <table class="log-table">
-            <thead>
-              <tr>
-                <th>类型</th>
-                <th>ID</th>
-                <th>账户名</th>
-                <th>日志内容</th>
-                <th>创建时间</th>
-                <th>IP地址</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="log in logRecords" :key="log.id">
-                <td>{{ typeIconMap[log.type] }}</td>
-                <td>{{ log.id }}</td>
-                <td>{{ log.username }}</td>
-                <td>{{ log.content }}</td>
-                <td>{{ log.createdAt }}</td>
-                <td>{{ log.ip }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <LogTable />
       </template>
       <!-- TODO: 根据activeTab渲染对应子界面 -->
     </main>
@@ -98,6 +75,7 @@
 import {ref, onMounted, inject} from 'vue'
 import BubbleMessage from '../components/BubbleMessage.vue'
 import verifyEmail from '../viewmodels/VerifyInfoViewModel'
+import LogTable from '../components/LogTable.vue'
 const activeTab = ref('user')
 
 // 编辑状态
@@ -144,51 +122,6 @@ function onEditEmail() {
     return
   }
   editingEmail.value = true
-}
-
-// 日志类型枚举
-const LogType = {
-  OPERATION: 'operation',
-  SECURITY: 'security',
-}
-
-// 图标（可用 emoji 或 svg，后续可替换为 icon 组件）
-const typeIconMap = {
-  [LogType.OPERATION]: '🛠️', // 操作
-  [LogType.SECURITY]: '���',   // 安全
-}
-
-// 日志记录结构
-const logRecords = ref([
-  // 示例数据
-  {
-    type: LogType.OPERATION,
-    id: 1,
-    username: 'admin',
-    content: '修改了用户权限',
-    createdAt: '2025-07-09 10:00:00',
-    ip: '192.168.1.1',
-  },
-  {
-    type: LogType.SECURITY,
-    id: 2,
-    username: 'user1',
-    content: '登录失败',
-    createdAt: '2025-07-09 10:05:00',
-    ip: '192.168.1.2',
-  },
-])
-
-// 添加日志记录函数
-function addLogRecord({ type, username, content, ip }) {
-  logRecords.value.push({
-    type,
-    id: logRecords.value.length + 1,
-    username,
-    content,
-    createdAt: new Date().toLocaleString(),
-    ip,
-  })
 }
 
 function onEditPhone() {
