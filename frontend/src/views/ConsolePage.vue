@@ -97,8 +97,7 @@
 <script setup>
 import {ref, onMounted, inject} from 'vue'
 import BubbleMessage from '../components/BubbleMessage.vue'
-import useVerifyInfoViewModel from '../viewmodels/VerifyInfoViewModel'
-import { DefaultApi } from '../api/generated'
+import verifyEmail from '../viewmodels/VerifyInfoViewModel'
 const activeTab = ref('user')
 
 // 编辑状态
@@ -109,7 +108,6 @@ const phone = ref("")
 const email = ref("")
 
 const bubbleRef = ref(null)
-const api = new DefaultApi()
 const showGlobalBubble = inject('showGlobalBubble')
 
 const userInfo = ref({
@@ -121,10 +119,10 @@ const userInfo = ref({
 
 async function fetchUserInfo() {
   try {
-    const res = await api.getUserInfoGetUserInfoGet()
+
     userInfo.value = res.data
   } catch (e) {
-    showBubbleError('获取用户信息失败')
+    showGlobalBubble('获取用户信息失败')
   }
 }
 
@@ -138,7 +136,7 @@ function onEditEmail() {
     const emailPattern = /^([A-Za-z0-9_\-.])+@([A-Za-z0-9_\-.])+\.([A-Za-z]{2,4})$/
     console.log(email.value)
     if (!emailPattern.test(email.value)) {
-      showBubbleError('请输入合法的邮件地址')
+      showGlobalBubble('请输入合法的邮件地址')
       return
     }
     localStorage.setItem('user_email', email.value)
@@ -193,12 +191,6 @@ function addLogRecord({ type, username, content, ip }) {
   })
 }
 
-function showBubbleError(msg) {
-  if (bubbleRef.value) {
-    bubbleRef.value.show(msg, 'error')
-  }
-}
-
 function onEditPhone() {
   if (editingPhone.value) {
     // TODO: 保存手机号逻辑
@@ -210,8 +202,7 @@ function onVerifyPhone() {
 }
 
 function onVerifyEmail() {
-  alert("eee")
-  useVerifyInfoViewModel((msg) => {showBubbleError(msg)} )
+  verifyEmail((msg) => {showGlobalBubble(msg)} )
 }
 </script>
 

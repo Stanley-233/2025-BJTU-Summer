@@ -1,8 +1,11 @@
 import { ref } from 'vue'
 import {Configuration, DefaultApi} from '../api/generated'
 
-export default async function useVerifyInfoViewModel(onError?: (msg: string) => void) {
-  const api = new DefaultApi(new Configuration({basePath: 'http://127.0.0.1:8000'}))
+export default async function verifyEmail(onError?: (msg: string) => void) {
+  const api = new DefaultApi(new Configuration({
+    basePath: 'http://127.0.0.1:8000',
+    accessToken: localStorage.getItem('token') ? () => localStorage.getItem('token')! : undefined,
+  }))
   const isVerifying = ref(false)
   try {
     await api.requestEmailVerificationVerifyEmailPut();
