@@ -1,8 +1,10 @@
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import {ref, onMounted, onBeforeUnmount, nextTick, inject} from 'vue'
 import { DefaultApi, Configuration } from '../api/generated'
 import { blobToBase64 } from '../util/base64'
 
 export default function useFaceRecognition() {
+  // inject global bubble from root provider
+  const showGlobalBubble = inject<(msg: string) => void>('showGlobalBubble')
   const videoRef = ref<HTMLVideoElement | null>(null)
   const hasPermission = ref(false)
   const recording = ref(false)
@@ -20,7 +22,9 @@ export default function useFaceRecognition() {
       }
     } catch (e) {
       hasPermission.value = false
-      alert('无法获取摄像头权限，请检查浏览器设置。')
+      showGlobalBubble
+        ? showGlobalBubble('无法获取摄像头权限，请检查浏览器设置。')
+        : alert('无法获取摄像头权限，请检查浏览器设置。')
     }
   }
 
@@ -32,7 +36,9 @@ export default function useFaceRecognition() {
 
   async function startCapture() {
     if (!stream) {
-      alert('摄像头未就绪')
+      showGlobalBubble
+        ? showGlobalBubble('摄像头未就绪')
+        : alert('摄像头未就绪')
       return
     }
     recording.value = true
@@ -55,11 +61,34 @@ export default function useFaceRecognition() {
           basePath: 'http://127.0.0.1:8000',
           accessToken: sessionStorage.getItem('token') ? () => sessionStorage.getItem('token')! : undefined,
         }))
-        await api.checkFaceDataCheckFacePost({ face_data: base64 })
-        alert('识别成功')
-      } catch (error) {
-        console.error(error)
-        alert('识别失败，请重试')
+        const response = await api.checkFaceDataCheckFacePost({ face_data: base64 })
+        const token = response.data?.token
+        sessionStorage.setItem('token', token)
+        let user_name = response.data?.user.username
+        if (showGlobalBubble) {
+          showGlobalBubble("人脸识别成功，欢迎回来，" + user_name + "！");
+        } else {
+          alert("人脸识别成功，欢迎回来，" + user_name + "！");
+        }
+      } catch (error: any) {
+        console.error(error);
+        if (error.response?.code === 404) {
+          showGlobalBubble ?
+            showGlobalBubble("人脸识别失败：用户不存在或人脸数据不存在") :
+            alert("人脸识别失败：用户不存在或人脸数据不存在");
+        } else if (error.response?.code === 402) {
+          showGlobalBubble ?
+            showGlobalBubble(error.response.data?.detail || "活体检测失败") :
+            alert(error.response.data?.detail || "活体检测失败");
+        } else if (error.response?.code === 406) {
+          showGlobalBubble ?
+            showGlobalBubble("人脸识别失败：同时出现两人") :
+            alert("人脸识别失败：同时出现两人");
+        } else {
+          showGlobalBubble ?
+            showGlobalBubble("服务器内部错误") :
+            alert("服务器内部错误");
+        }
       }
     }
   }

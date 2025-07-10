@@ -21,6 +21,9 @@
 
 <script setup>
 import useFaceRecognition from '../viewmodels/FaceRecognitionViewModel'
+import {inject, provide} from "vue";
+const showGlobalBubble = inject('showGlobalBubble')
+provide('showFaceMessage', showGlobalBubble)
 
 const { videoRef, hasPermission, recording, startCapture } = useFaceRecognition()
 </script>
