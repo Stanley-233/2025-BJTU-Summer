@@ -26,6 +26,8 @@ import type { HTTPValidationError } from '../model';
 // @ts-ignore
 import type { ImageModel } from '../model';
 // @ts-ignore
+import type { MailLoginRequest } from '../model';
+// @ts-ignore
 import type { User } from '../model';
 // @ts-ignore
 import type { UserCheckFaceRequest } from '../model';
@@ -216,6 +218,42 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * 通过邮箱登录，请求验证码
+         * @summary 通过邮箱登录
+         * @param {MailLoginRequest} mailLoginRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        loginWithEmailLoginMailPost: async (mailLoginRequest: MailLoginRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'mailLoginRequest' is not null or undefined
+            assertParamExists('loginWithEmailLoginMailPost', 'mailLoginRequest', mailLoginRequest)
+            const localVarPath = `/login/mail/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(mailLoginRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * 注册用户脸部数据
          * @summary 注册用户脸部数据
          * @param {ImageModel} imageModel 
@@ -293,7 +331,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 生成验证码并发送到用户邮箱
-         * @summary 请求验证邮箱
+         * @summary 请求邮箱认证
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -397,7 +435,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 验证用户提交的验证码
-         * @summary 验证邮箱验证码
+         * @summary 邮箱认证验证码
          * @param {string} code 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -430,6 +468,42 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 通过邮箱登录，检查验证码
+         * @summary 通过邮箱验证码登录
+         * @param {MailLoginRequest} mailLoginRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        verifyLoginEmailCodeLoginMailCodePost: async (mailLoginRequest: MailLoginRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'mailLoginRequest' is not null or undefined
+            assertParamExists('verifyLoginEmailCodeLoginMailCodePost', 'mailLoginRequest', mailLoginRequest)
+            const localVarPath = `/login/mail_code/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(mailLoginRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -509,6 +583,19 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * 通过邮箱登录，请求验证码
+         * @summary 通过邮箱登录
+         * @param {MailLoginRequest} mailLoginRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async loginWithEmailLoginMailPost(mailLoginRequest: MailLoginRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.loginWithEmailLoginMailPost(mailLoginRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.loginWithEmailLoginMailPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * 注册用户脸部数据
          * @summary 注册用户脸部数据
          * @param {ImageModel} imageModel 
@@ -536,7 +623,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 生成验证码并发送到用户邮箱
-         * @summary 请求验证邮箱
+         * @summary 请求邮箱认证
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -573,7 +660,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 验证用户提交的验证码
-         * @summary 验证邮箱验证码
+         * @summary 邮箱认证验证码
          * @param {string} code 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -582,6 +669,19 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.verifyEmailCodeVerifyEmailCodePost(code, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.verifyEmailCodeVerifyEmailCodePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 通过邮箱登录，检查验证码
+         * @summary 通过邮箱验证码登录
+         * @param {MailLoginRequest} mailLoginRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest: MailLoginRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.verifyLoginEmailCodeLoginMailCodePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
@@ -642,6 +742,16 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.loginLoginPost(userLoginRequest, options).then((request) => request(axios, basePath));
         },
         /**
+         * 通过邮箱登录，请求验证码
+         * @summary 通过邮箱登录
+         * @param {MailLoginRequest} mailLoginRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        loginWithEmailLoginMailPost(mailLoginRequest: MailLoginRequest, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.loginWithEmailLoginMailPost(mailLoginRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
          * 注册用户脸部数据
          * @summary 注册用户脸部数据
          * @param {ImageModel} imageModel 
@@ -663,7 +773,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 生成验证码并发送到用户邮箱
-         * @summary 请求验证邮箱
+         * @summary 请求邮箱认证
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -691,13 +801,23 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 验证用户提交的验证码
-         * @summary 验证邮箱验证码
+         * @summary 邮箱认证验证码
          * @param {string} code 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         verifyEmailCodeVerifyEmailCodePost(code: string, options?: RawAxiosRequestConfig): AxiosPromise<any> {
             return localVarFp.verifyEmailCodeVerifyEmailCodePost(code, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 通过邮箱登录，检查验证码
+         * @summary 通过邮箱验证码登录
+         * @param {MailLoginRequest} mailLoginRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest: MailLoginRequest, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -767,6 +887,18 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
+     * 通过邮箱登录，请求验证码
+     * @summary 通过邮箱登录
+     * @param {MailLoginRequest} mailLoginRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public loginWithEmailLoginMailPost(mailLoginRequest: MailLoginRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).loginWithEmailLoginMailPost(mailLoginRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * 注册用户脸部数据
      * @summary 注册用户脸部数据
      * @param {ImageModel} imageModel 
@@ -792,7 +924,7 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 生成验证码并发送到用户邮箱
-     * @summary 请求验证邮箱
+     * @summary 请求邮箱认证
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
@@ -826,7 +958,7 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 验证用户提交的验证码
-     * @summary 验证邮箱验证码
+     * @summary 邮箱认证验证码
      * @param {string} code 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -834,6 +966,18 @@ export class DefaultApi extends BaseAPI {
      */
     public verifyEmailCodeVerifyEmailCodePost(code: string, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).verifyEmailCodeVerifyEmailCodePost(code, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 通过邮箱登录，检查验证码
+     * @summary 通过邮箱验证码登录
+     * @param {MailLoginRequest} mailLoginRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest: MailLoginRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

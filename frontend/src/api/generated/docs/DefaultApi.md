@@ -9,12 +9,14 @@ All URIs are relative to *http://localhost*
 |[**getUserInfoGetUserInfoGet**](#getuserinfogetuserinfoget) | **GET** /get_user_info/ | 获取用户信息|
 |[**isMailVerifiedIsMailVerifiedGet**](#ismailverifiedismailverifiedget) | **GET** /is_mail_verified/ | 获取用户是否已验证邮箱|
 |[**loginLoginPost**](#loginloginpost) | **POST** /login | 用户登录|
+|[**loginWithEmailLoginMailPost**](#loginwithemailloginmailpost) | **POST** /login/mail/ | 通过邮箱登录|
 |[**postFaceDataPostFacePost**](#postfacedatapostfacepost) | **POST** /post_face/ | 注册用户脸部数据|
 |[**registerRegisterPost**](#registerregisterpost) | **POST** /register | 用户注册|
-|[**requestEmailVerificationVerifyEmailPut**](#requestemailverificationverifyemailput) | **PUT** /verify_email/ | 请求验证邮箱|
+|[**requestEmailVerificationVerifyEmailPut**](#requestemailverificationverifyemailput) | **PUT** /verify_email/ | 请求邮箱认证|
 |[**rootGet**](#rootget) | **GET** / | Root|
 |[**updateFaceDataUpdateFacePut**](#updatefacedataupdatefaceput) | **PUT** /update_face/ | 更新用户脸部数据|
-|[**verifyEmailCodeVerifyEmailCodePost**](#verifyemailcodeverifyemailcodepost) | **POST** /verify_email_code/ | 验证邮箱验证码|
+|[**verifyEmailCodeVerifyEmailCodePost**](#verifyemailcodeverifyemailcodepost) | **POST** /verify_email_code/ | 邮箱认证验证码|
+|[**verifyLoginEmailCodeLoginMailCodePost**](#verifyloginemailcodeloginmailcodepost) | **POST** /login/mail_code/ | 通过邮箱验证码登录|
 
 # **checkFaceDataCheckFacePost**
 > any checkFaceDataCheckFacePost(userCheckFaceRequest)
@@ -68,6 +70,7 @@ No authorization required
 |**404** | 用户不存在或人脸数据不存在 |  -  |
 |**401** | 认证错误 |  -  |
 |**402** | 活体检测失败 |  -  |
+|**406** | 活体检测失败，有两人同时出现 |  -  |
 |**422** | Validation Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -257,6 +260,60 @@ No authorization required
 |**200** | 登录成功 |  -  |
 |**404** | 用户不存在 |  -  |
 |**403** | 密码错误 |  -  |
+|**422** | Validation Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **loginWithEmailLoginMailPost**
+> any loginWithEmailLoginMailPost(mailLoginRequest)
+
+通过邮箱登录，请求验证码
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    MailLoginRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let mailLoginRequest: MailLoginRequest; //
+
+const { status, data } = await apiInstance.loginWithEmailLoginMailPost(
+    mailLoginRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **mailLoginRequest** | **MailLoginRequest**|  | |
+
+
+### Return type
+
+**any**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | 成功发送验证邮件 |  -  |
+|**404** | 邮箱未注册 |  -  |
 |**422** | Validation Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -564,6 +621,63 @@ const { status, data } = await apiInstance.verifyEmailCodeVerifyEmailCodePost(
 |**200** | 邮箱验证成功 |  -  |
 |**404** | 用户不存在 |  -  |
 |**401** | 认证错误 |  -  |
+|**201** | 未请求验证码 |  -  |
+|**202** | 验证码已过期 |  -  |
+|**203** | 验证码错误 |  -  |
+|**422** | Validation Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **verifyLoginEmailCodeLoginMailCodePost**
+> any verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest)
+
+通过邮箱登录，检查验证码
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    MailLoginRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let mailLoginRequest: MailLoginRequest; //
+
+const { status, data } = await apiInstance.verifyLoginEmailCodeLoginMailCodePost(
+    mailLoginRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **mailLoginRequest** | **MailLoginRequest**|  | |
+
+
+### Return type
+
+**any**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | 邮箱登录成功 |  -  |
+|**404** | 用户不存在 |  -  |
 |**201** | 未请求验证码 |  -  |
 |**202** | 验证码已过期 |  -  |
 |**203** | 验证码错误 |  -  |

@@ -1,5 +1,6 @@
 export * from './httpvalidation-error';
 export * from './image-model';
+export * from './mail-login-request';
 export * from './user';
 export * from './user-check-face-request';
 export * from './user-email';
