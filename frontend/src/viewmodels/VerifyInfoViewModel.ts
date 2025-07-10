@@ -46,3 +46,36 @@ export async function getUserInfo() {
     return null
   }
 }
+
+export async function codeCheck(code: string, onError?: (msg: string) => void) {
+  const api = new DefaultApi(new Configuration({
+    basePath: 'http://127.0.0.1:8000',
+    accessToken: sessionStorage.getItem('token') ? () => sessionStorage.getItem('token')! : undefined,
+  }))
+  try {
+    const response = await api.verifyEmailCodeVerifyEmailCodePost(code)
+    if (response?.status === 201) {
+      onError?.('未请求验证码')
+      return false;
+    } else if (response?.status === 202) {
+      onError?.('验证码已过期')
+      return false;
+    } else if (response?.status === 203) {
+      onError?.('验证码错误')
+      return false;
+    } else if (response?.status != 200) {
+      onError?.('Super Big Mistake!!!')
+      return false;
+    }
+    return true;
+  } catch (err: any) {
+    if (err.response?.status === 401) {
+      onError?.('认证错误')
+    } else if (err.response?.status === 404) {
+      onError?.('用户不存在')
+    } else if (err.response?.status === 422) {
+      onError?.('Validation error')
+    }
+    return false;
+  }
+}

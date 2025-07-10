@@ -134,19 +134,19 @@ def request_email_verification(user: User = Depends(get_current_user), session: 
 })
 def verify_email_code(code: str, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
   """验证用户提交的验证码"""
-  if not user.email_verification_code or not user.email_verification_expiry:
+  if not user.email.email_verification_code or not user.email.email_verification_expiry:
     raise HTTPException(status_code=201, detail="未请求验证码")
 
-  if datetime.now(timezone.utc) > user.email_verification_expiry:
+  if datetime.now() > user.email.email_verification_expiry:
     raise HTTPException(status_code=202, detail="验证码已过期")
 
-  if user.email_verification_code != code:
+  if user.email.email_verification_code != code:
     raise HTTPException(status_code=203, detail="验证码错误")
 
   # 验证成功，更新用户状态
-  user.email_verified = True
-  user.email_verification_code = None
-  user.email_verification_expiry = None
+  user.email.email_verified = True
+  user.email.email_verification_code = None
+  user.email.email_verification_expiry = None
   session.add(user)
   session.commit()
 
@@ -324,13 +324,13 @@ def verify_login_email_code(request: MailLoginRequest, session: Session = Depend
     raise HTTPException(status_code=404, detail="User not found")
   if not user.email or not user.email.email_verification_code or not user.email.email_verification_expiry:
     raise HTTPException(status_code=201, detail="未请求验证码")
-  if datetime.now(timezone.utc) > user.email_verification_expiry:
+  if datetime.now(timezone.utc) > user.email.email_verification_expiry:
     raise HTTPException(status_code=202, detail="验证码已过期")
-  if user.email_verification_code != request.code:
+  if user.email.email_verification_code != request.code:
     raise HTTPException(status_code=203, detail="验证码错误")
 
-  user.email_verification_code = None
-  user.email_verification_expiry = None
+  user.email.email_verification_code = None
+  user.email.email_verification_expiry = None
 
   session.add(user)
   session.commit()

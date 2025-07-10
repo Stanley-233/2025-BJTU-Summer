@@ -37,6 +37,10 @@
             {{ isVerified ? '已验证' : '验证邮箱' }}
           </button>
         </div>
+        <div v-if="showVerificationInput" class="verification-section">
+          <input v-model="verificationCode" class="verification-input" placeholder="请输入验证码" />
+          <button class="verification-btn" @click="onConfirmVerification">确认</button>
+        </div>
       </template>
       <template v-else-if="activeTab === 'log'">
         <LogTable/>
@@ -52,7 +56,7 @@
 <script setup>
 import {ref, onMounted, inject} from 'vue'
 import BubbleMessage from '../components/BubbleMessage.vue'
-import {getUserEmail, getUserInfo, verifyEmail} from '../viewmodels/VerifyInfoViewModel'
+import {codeCheck, getUserEmail, getUserInfo, verifyEmail} from '../viewmodels/VerifyInfoViewModel'
 import LogTable from '../components/LogTable.vue'
 import FaceUpload from '../components/FaceUpload.vue'
 
@@ -60,6 +64,8 @@ const activeTab = ref('user')
 
 const email = ref("")
 const isVerified = ref(false)
+const showVerificationInput = ref(false);
+const verificationCode = ref("");
 
 const bubbleRef = ref(null)
 const showGlobalBubble = inject('showGlobalBubble')
@@ -111,10 +117,20 @@ onMounted(() => {
   fetchUserInfo()
 })
 
-function onVerifyEmail() {
-  verifyEmail((msg) => {
+async function onVerifyEmail() {
+  await verifyEmail((msg) => {
     showGlobalBubble(msg)
+    if (!isVerified.value) {
+      showVerificationInput.value = true;
+    }
   })
+}
+
+async function onConfirmVerification() {
+  isVerified.value = await codeCheck(verificationCode.value, (msg) => {
+    showGlobalBubble(msg)
+  });
+  showVerificationInput.value = false;
 }
 </script>
 
@@ -259,5 +275,32 @@ function onVerifyEmail() {
 
 .log-table tr:last-child td {
   border-bottom: none;
+}
+
+.verification-section {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.verification-input {
+  flex: 1;
+  padding: 5px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.verification-btn {
+  padding: 5px 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.verification-btn:hover {
+  background-color: #0056b3;
 }
 </style>
