@@ -32,17 +32,12 @@
           </div>
         </div>
         <div class="user-info-row user-info-row-editable">
-          <span class="user-info-label">注册邮箱：</span>
+          <span class="user-info-label">注册邮箱: </span>
           <span class="user-info-value">
-            <template v-if="editingEmail">
-              <input v-model="email" class="user-info-input" placeholder="请输入邮箱" type="email" autocomplete="email" />
-            </template>
-            <template v-else>
-              <span>{{ email || '（未填写）' }}</span>
-            </template>
+            <span>{{ email }}</span>
           </span>
-          <button class="user-info-btn" @click="onVerifyEmail">
-            验证
+          <button class="user-info-btn" @click="onVerifyEmail" :disabled = "isVerified">
+            {{ isVerified ? '已验证' : '验证邮箱' }}
           </button>
         </div>
       </template>
@@ -60,13 +55,13 @@
 <script setup>
 import {ref, onMounted, inject} from 'vue'
 import BubbleMessage from '../components/BubbleMessage.vue'
-import {verifyEmail} from '../viewmodels/VerifyInfoViewModel'
+import {getUserEmail, verifyEmail} from '../viewmodels/VerifyInfoViewModel'
 import LogTable from '../components/LogTable.vue'
 import FaceUpload from '../components/FaceUpload.vue'
 const activeTab = ref('user')
 
-const editingEmail = ref(false)
 const email = ref("")
+const isVerified = ref(false)
 
 const bubbleRef = ref(null)
 const showGlobalBubble = inject('showGlobalBubble')
@@ -80,12 +75,14 @@ const userInfo = ref({
 
 async function fetchUserInfo() {
   try {
-    // 假设后端返回的邮箱字段为 email
-    // const res = await api.getUserInfoGetUserInfoGet()
-    // userInfo.value = res.data
-    // email.value = res.data.email || ''
-    // 目前为演示，写死一个邮箱
-    email.value = 'user@example.com'
+    const userEmail = await getUserEmail()
+    if(userEmail == null){
+      email.value = '邮箱获取失败，请检查登录状态'
+      isVerified.value = true
+    }else{
+      email.value = userEmail.email_address;
+      isVerified.value = userEmail.is_verified;
+    }
   } catch (e) {
     showGlobalBubble('获取用户信息失败')
   }
