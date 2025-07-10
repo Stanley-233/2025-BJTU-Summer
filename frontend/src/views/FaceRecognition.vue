@@ -12,43 +12,17 @@
         <video ref="videoRef" autoplay playsinline class="video-preview"></video>
       </div>
       <div class="tip-text">请正对摄像头，保持面部居中，并确保环境光线充足</div>
-      <button class="action-button" @click="startCapture">开始采集</button>
+      <button class="action-button" @click="startCapture" :disabled="recording">
+        {{ recording ? '采集中...' : '开始采集' }}
+      </button>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import useFaceRecognition from '../viewmodels/FaceRecognitionViewModel'
 
-const videoRef = ref(null)
-const hasPermission = ref(false)
-let stream = null
-
-onMounted(async () => {
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: true })
-    hasPermission.value = true
-    await nextTick()
-    if (videoRef.value) {
-      videoRef.value.srcObject = stream
-      videoRef.value.play && videoRef.value.play()
-    }
-  } catch (e) {
-    hasPermission.value = false
-    alert('无法获取摄像头权限，请检查浏览器设置。')
-  }
-})
-
-onBeforeUnmount(() => {
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop())
-  }
-})
-
-function startCapture() {
-  // TODO: 实现人脸识别采集逻辑
-  alert('开始进行人脸识别采集')
-}
+const { videoRef, hasPermission, recording, startCapture } = useFaceRecognition()
 </script>
 
 <style scoped>

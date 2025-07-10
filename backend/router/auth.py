@@ -314,6 +314,16 @@ def update_face_data(face_data: ImageModel, session: Session = Depends(get_sessi
         }
       }
     }
+  },
+  406: {
+    "description": "活体检测失败，有两人同时出现",
+    "content": {
+      "application/json": {
+        "example": {
+          "detail": "活体检测失败，有两人同时出现"
+        }
+      }
+    }
   }
 })
 def check_face_data(request: UserCheckFaceRequest, session: Session = Depends(get_session)):
@@ -323,18 +333,20 @@ def check_face_data(request: UserCheckFaceRequest, session: Session = Depends(ge
   })
 
   if liveness_result.get("error_code") != 0:
+    if liveness_result.get("error_code") == 216909:
+      raise HTTPException(status_code=406, detail="活体检测失败，有两人同时出现")
     raise HTTPException(status_code=500, detail=f"活体检测失败：{liveness_result.get('error_msg', '未知错误')}")
 
-  best_img = liveness_result.get("result").get("best_img")
+  best_img = liveness_result.get("result").get("best_image")
 
   if best_img is None:
     raise HTTPException(status_code=402, detail="活体检测失败，未检测到人像")
   if best_img.get("liveness_score") < 0.3:
     raise HTTPException(status_code=402, detail="活体检测失败，分数过低")
-  if best_img.get("spoofing_score") > 0.00048:
+  if best_img.get("spoofing") > 0.00048:
     raise HTTPException(status_code=402, detail="活体检测失败，为合成图")
 
-  search_response = client.search(image=best_img.get("pic"), image_type="BASE64", group_id_list="driver", options={
+  search_response = client.search(image=best_img.get("pic"), image_type="BASE64", group_id_list="default", options={
     "max_user_num": 1
   })
 
@@ -342,7 +354,7 @@ def check_face_data(request: UserCheckFaceRequest, session: Session = Depends(ge
     raise HTTPException(status_code=404, detail="非认证用户，用户不存在或人脸数据不存在")
 
   # 获取搜索结果中的用户信息
-  result = search_response.json().get("result", {}).get("user_list", [{}])[0]
+  result = search_response.get("result").get("user_list")[0]
   username = result.get("user_id")
   user = session.get(User, username)
 
