@@ -53,7 +53,7 @@ export default function useFaceRecognition() {
         const base64 = dataUrl.split(',')[1]
         const api = new DefaultApi(new Configuration({
           basePath: 'http://127.0.0.1:8000',
-          accessToken: localStorage.getItem('token') ? () => localStorage.getItem('token')! : undefined,
+          accessToken: sessionStorage.getItem('token') ? () => sessionStorage.getItem('token')! : undefined,
         }))
         await api.checkFaceDataCheckFacePost({ face_data: base64 })
         alert('识别成功')

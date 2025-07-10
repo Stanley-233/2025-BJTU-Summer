@@ -5,7 +5,7 @@ declare const sessionStorage:any
 export async function verifyEmail(onError?: (msg: string) => void) {
   const api = new DefaultApi(new Configuration({
     basePath: 'http://127.0.0.1:8000',
-    accessToken: sessionStorage.getItem('token') ? () => localStorage.getItem('token')! : undefined,
+    accessToken: sessionStorage.getItem('token') ? () => sessionStorage.getItem('token')! : undefined,
   }))
   try {
     await api.requestEmailVerificationVerifyEmailPut()

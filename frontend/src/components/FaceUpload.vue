@@ -51,7 +51,7 @@ async function onUpload() {
     // call upload API
     const api = new DefaultApi(new Configuration({
       basePath: 'http://127.0.0.1:8000',
-      accessToken: localStorage.getItem('token') ? () => localStorage.getItem('token') : undefined,
+      accessToken: sessionStorage.getItem('token') ? () => sessionStorage.getItem('token') : undefined,
     }))
     await api.updateFaceDataUpdateFacePut({ image: base64 })
     alert('人脸注册成功')
