@@ -53,7 +53,7 @@ def request_email_verification(user: User = Depends(get_current_user), session: 
 
   # 生成随机验证码
   code = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
-  expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
+  expiry = datetime.now() + timedelta(minutes=10)
 
   # 更新用户信息
   user.email.email_verification_code = code
@@ -234,7 +234,7 @@ def login_with_email(request: MailLoginRequest, session: Session = Depends(get_s
     raise HTTPException(status_code=404, detail="User not found")
   # 生成随机验证码
   code = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
-  expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
+  expiry = datetime.now() + timedelta(minutes=10)
 
   # 更新用户信息
   user.email.email_verification_code = code
@@ -324,7 +324,7 @@ def verify_login_email_code(request: MailLoginRequest, session: Session = Depend
     raise HTTPException(status_code=404, detail="User not found")
   if not user.email or not user.email.email_verification_code or not user.email.email_verification_expiry:
     raise HTTPException(status_code=201, detail="未请求验证码")
-  if datetime.now(timezone.utc) > user.email.email_verification_expiry:
+  if datetime.now() > user.email.email_verification_expiry:
     raise HTTPException(status_code=202, detail="验证码已过期")
   if user.email.email_verification_code != request.code:
     raise HTTPException(status_code=203, detail="验证码错误")

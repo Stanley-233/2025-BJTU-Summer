@@ -127,10 +127,17 @@ async function onVerifyEmail() {
 }
 
 async function onConfirmVerification() {
-  isVerified.value = await codeCheck(verificationCode.value, (msg) => {
+  const state = await codeCheck(verificationCode.value, (msg) => {
     showGlobalBubble(msg)
   });
-  showVerificationInput.value = false;
+  if(state === 1){
+    showVerificationInput.value = false;
+  }else if(state === 0){
+    showVerificationInput.value = false;
+    isVerified.value = true;
+  }else if(state === 2){
+    verificationCode.value = '';
+  }
 }
 </script>
 

@@ -56,16 +56,16 @@ export async function codeCheck(code: string, onError?: (msg: string) => void) {
     const response = await api.verifyEmailCodeVerifyEmailCodePost(code)
     if (response?.status === 201) {
       onError?.('未请求验证码')
-      return false;
+      return 0;
     } else if (response?.status === 202) {
       onError?.('验证码已过期')
-      return false;
+      return 1;
     } else if (response?.status === 203) {
       onError?.('验证码错误')
-      return false;
+      return 2;
     } else if (response?.status != 200) {
       onError?.('Super Big Mistake!!!')
-      return false;
+      return 2;
     }
     return true;
   } catch (err: any) {
@@ -76,6 +76,6 @@ export async function codeCheck(code: string, onError?: (msg: string) => void) {
     } else if (err.response?.status === 422) {
       onError?.('Validation error')
     }
-    return false;
+    return 1;
   }
 }
