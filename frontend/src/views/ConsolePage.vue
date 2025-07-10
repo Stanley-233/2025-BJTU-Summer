@@ -3,11 +3,13 @@
     <aside class="side-tabs">
       <div :class="['tab-item', activeTab === 'user' ? 'active' : '']" @click="activeTab = 'user'">用户信息</div>
       <div :class="['tab-item', activeTab === 'log' ? 'active' : '']" @click="activeTab = 'log'">日志记录</div>
+      <div :class="['tab-item', activeTab === 'upload' ? 'active' : '']" @click="activeTab = 'upload'">人脸上传</div>
     </aside>
     <main class="console-main">
       <div class="tab-title">
         <h2 v-if="activeTab === 'user'">用户信息</h2>
-        <h2 v-else>日志记录</h2>
+        <h2 v-else-if="activeTab === 'log'">日志记录</h2>
+        <h2 v-else-if="activeTab === 'upload'">人脸上传</h2>
         <div class="tab-title-underline"></div>
       </div>
       <template v-if="activeTab === 'user'">
@@ -44,10 +46,12 @@
           </button>
         </div>
       </template>
-      <template v-else>
+      <template v-else-if="activeTab === 'log'">
         <LogTable />
       </template>
-      <!-- TODO: 根据activeTab渲染对应子界面 -->
+      <template v-else>
+        <FaceUpload />
+      </template>
     </main>
     <BubbleMessage ref="bubbleRef" />
   </div>
@@ -58,6 +62,7 @@ import {ref, onMounted, inject} from 'vue'
 import BubbleMessage from '../components/BubbleMessage.vue'
 import {verifyEmail} from '../viewmodels/VerifyInfoViewModel'
 import LogTable from '../components/LogTable.vue'
+import FaceUpload from '../components/FaceUpload.vue'
 const activeTab = ref('user')
 
 const editingEmail = ref(false)
@@ -224,19 +229,6 @@ function onVerifyEmail() {
 }
 .user-info-btn:hover {
   background: #d1c4e9;
-}
-.log-table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-}
-.log-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(79,55,138,0.04);
-  border-radius: 6px;
-  font-size: 1em;
-  margin-bottom: 24px;
 }
 .log-table th, .log-table td {
   padding: 12px 10px;

@@ -30,6 +30,8 @@ import type { User } from '../model';
 // @ts-ignore
 import type { UserCheckFaceRequest } from '../model';
 // @ts-ignore
+import type { UserEmail } from '../model';
+// @ts-ignore
 import type { UserLoginRequest } from '../model';
 // @ts-ignore
 import type { UserRegisterRequest } from '../model';
@@ -69,6 +71,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(userCheckFaceRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 获取用户邮箱信息
+         * @summary 获取用户邮箱信息
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUserEmailGetUserEmailGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/get_user_email/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -424,6 +460,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * 获取用户邮箱信息
+         * @summary 获取用户邮箱信息
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getUserEmailGetUserEmailGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UserEmail>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getUserEmailGetUserEmailGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getUserEmailGetUserEmailGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * 获取当前用户信息
          * @summary 获取用户信息
          * @param {*} [options] Override http request option.
@@ -557,6 +605,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.checkFaceDataCheckFacePost(userCheckFaceRequest, options).then((request) => request(axios, basePath));
         },
         /**
+         * 获取用户邮箱信息
+         * @summary 获取用户邮箱信息
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUserEmailGetUserEmailGet(options?: RawAxiosRequestConfig): AxiosPromise<UserEmail> {
+            return localVarFp.getUserEmailGetUserEmailGet(options).then((request) => request(axios, basePath));
+        },
+        /**
          * 获取当前用户信息
          * @summary 获取用户信息
          * @param {*} [options] Override http request option.
@@ -662,6 +719,17 @@ export class DefaultApi extends BaseAPI {
      */
     public checkFaceDataCheckFacePost(userCheckFaceRequest: UserCheckFaceRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).checkFaceDataCheckFacePost(userCheckFaceRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 获取用户邮箱信息
+     * @summary 获取用户邮箱信息
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public getUserEmailGetUserEmailGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).getUserEmailGetUserEmailGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
