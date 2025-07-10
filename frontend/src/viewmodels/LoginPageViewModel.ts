@@ -12,7 +12,6 @@ export default function useLoginPageViewModel(onError?: (msg: string) => void) {
   const router = useRouter()
   const username = ref<string>('')
   const password = ref<string>('')
-
   const onLogin = async () => {
     const requestBody: UserLoginRequest = { username: username.value, password: password.value }
     try {

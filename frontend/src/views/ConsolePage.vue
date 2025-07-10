@@ -57,7 +57,9 @@
           <button class="user-info-btn" @click="onEditEmail">
             {{ editingEmail ? '保存' : '编辑' }}
           </button>
-          <button class="user-info-btn" @click="onVerifyEmail">验证</button>
+          <button class="user-info-btn" @click="onVerifyEmail">
+            验证
+          </button>
         </div>
       </template>
       <template v-else>
@@ -93,7 +95,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {ref, onMounted, inject} from 'vue'
 import BubbleMessage from '../components/BubbleMessage.vue'
 import useVerifyInfoViewModel from '../viewmodels/VerifyInfoViewModel'
 import { DefaultApi } from '../api/generated'
@@ -108,6 +110,7 @@ const email = ref("")
 
 const bubbleRef = ref(null)
 const api = new DefaultApi()
+const showGlobalBubble = inject('showGlobalBubble')
 
 const userInfo = ref({
   username: '',
@@ -205,8 +208,10 @@ function onEditPhone() {
 function onVerifyPhone() {
   // TODO: 验证手机号逻辑
 }
-async function onVerifyEmail() {
-  await sendVerifyEmail(email.value, showBubbleError)
+
+function onVerifyEmail() {
+  alert("eee")
+  useVerifyInfoViewModel((msg) => {showBubbleError(msg)} )
 }
 </script>
 

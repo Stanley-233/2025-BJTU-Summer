@@ -106,7 +106,6 @@ class UserLoginRequest(BaseModel):
       "application/json": {
         "example": {
           "message": "登录成功",
-          "is_admin": False,
           "token": "example_token"
         }
       }
@@ -144,7 +143,6 @@ def login(request: UserLoginRequest, session: Session = Depends(get_session)):
   token = create_token(user)
 
   return {"message": "登录成功",
-          "is_admin": user.is_admin,
           "token": token}
 
 
