@@ -16,19 +16,15 @@
         <div class="user-info-section">
           <div class="user-info-row">
             <span class="user-info-label">用户名：</span>
-            <span class="user-info-value">{{ userInfo.username || '（无）' }}</span>
+            <span class="user-info-value">{{ userInfo.username || 'unknown' }}</span>
           </div>
           <div class="user-info-row">
-            <span class="user-info-label">是否管理员：</span>
-            <span class="user-info-value">{{ userInfo.is_admin ? '是' : '否' }}</span>
+            <span class="user-info-label">身份：</span>
+            <span class="user-info-value">{{ userInfo.user_type || 'unknown'}}</span>
           </div>
           <div class="user-info-row">
             <span class="user-info-label">最近登录IP：</span>
-            <span class="user-info-value">{{ userInfo.last_ip || '（无）' }}</span>
-          </div>
-          <div class="user-info-row">
-            <span class="user-info-label">人脸数据：</span>
-            <span class="user-info-value">{{ userInfo.face_data ? '已录入' : '未录入' }}</span>
+            <span class="user-info-value">{{ userInfo.last_ip || 'unknown' }}</span>
           </div>
         </div>
         <div class="user-info-row user-info-row-editable">
@@ -36,28 +32,30 @@
           <span class="user-info-value">
             <span>{{ email }}</span>
           </span>
-          <button class="user-info-btn" @click="onVerifyEmail" :disabled = "isVerified">
+          <button class="user-info-btn" @click="onVerifyEmail" :disabled="isVerified"
+                  :class="{ 'disabled-btn': isVerified }">
             {{ isVerified ? '已验证' : '验证邮箱' }}
           </button>
         </div>
       </template>
       <template v-else-if="activeTab === 'log'">
-        <LogTable />
+        <LogTable/>
       </template>
       <template v-else>
-        <FaceUpload />
+        <FaceUpload/>
       </template>
     </main>
-    <BubbleMessage ref="bubbleRef" />
+    <BubbleMessage ref="bubbleRef"/>
   </div>
 </template>
 
 <script setup>
 import {ref, onMounted, inject} from 'vue'
 import BubbleMessage from '../components/BubbleMessage.vue'
-import {getUserEmail, verifyEmail} from '../viewmodels/VerifyInfoViewModel'
+import {getUserEmail, getUserInfo, verifyEmail} from '../viewmodels/VerifyInfoViewModel'
 import LogTable from '../components/LogTable.vue'
 import FaceUpload from '../components/FaceUpload.vue'
+
 const activeTab = ref('user')
 
 const email = ref("")
@@ -68,20 +66,41 @@ const showGlobalBubble = inject('showGlobalBubble')
 
 const userInfo = ref({
   username: '',
-  is_admin: false,
-  face_data: '',
-  last_ip: ''
+  last_ip: '',
+  user_type: ''
 })
 
 async function fetchUserInfo() {
   try {
     const userEmail = await getUserEmail()
-    if(userEmail == null){
+    if (userEmail == null) {
       email.value = '邮箱获取失败，请检查登录状态'
       isVerified.value = true
-    }else{
+    } else {
       email.value = userEmail.email_address;
-      isVerified.value = userEmail.is_verified;
+      isVerified.value = userEmail.email_verified;
+    }
+    const data = await getUserInfo()
+    if(data == null){
+      showGlobalBubble('获取用户信息失败，请检查登录状态')
+    } else {
+      userInfo.value = {
+        username: data.username,
+        last_ip: data.last_ip,
+      }
+      switch (data.user_type){
+        case 'sysadmin':
+          userInfo.value.user_type = '系统管理员'
+          break;
+        case 'driver':
+          userInfo.value.user_type = '司机'
+          break;
+        case 'gov_admin':
+          userInfo.value.user_type = '政府管理员'
+          break;
+        default:
+          userInfo.value.user_type = 'error'
+      }
     }
   } catch (e) {
     showGlobalBubble('获取用户信息失败')
@@ -93,7 +112,9 @@ onMounted(() => {
 })
 
 function onVerifyEmail() {
-  verifyEmail((msg) => {showGlobalBubble(msg)})
+  verifyEmail((msg) => {
+    showGlobalBubble(msg)
+  })
 }
 </script>
 
@@ -105,6 +126,7 @@ function onVerifyEmail() {
   margin-top: 0;
   margin-bottom: 20px; /* 屏幕底部留出间距 */
 }
+
 .side-tabs {
   width: 140px;
   background: #f7f7fa;
@@ -115,9 +137,10 @@ function onVerifyEmail() {
   min-height: 100%;
   padding-top: 0;
   /* 增加右侧分割线���投影 */
-  box-shadow: 2px 0 8px rgba(79,55,138,0.04);
+  box-shadow: 2px 0 8px rgba(79, 55, 138, 0.04);
   border-right: 2px solid #ede7f6;
 }
+
 .tab-item {
   padding: 16px 0;
   text-align: center;
@@ -127,14 +150,7 @@ function onVerifyEmail() {
   border-left: 4px solid transparent;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
-.tab-item.active {
-  color: #4F378A;
-  /* 增加右侧小投影和背景渐变修饰 */
-  background: linear-gradient(90deg, #fff 80%, #ede7f6 100%);
-  box-shadow: 2px 0 8px rgba(79,55,138,0.04);
-  border-left: 4px solid #4F378A;
-  font-weight: 600;
-}
+
 .console-main {
   flex: 1;
   height: 100%;
@@ -145,23 +161,26 @@ function onVerifyEmail() {
   box-sizing: border-box;
   border-radius: 0;
   /* 增加更明显的阴影和顶部边框修饰 */
-  box-shadow: 0 4px 24px rgba(79,55,138,0.10), 0 1.5px 6px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 24px rgba(79, 55, 138, 0.10), 0 1.5px 6px rgba(0, 0, 0, 0.08);
   border-top: 4px solid #ede7f6;
   font-size: 18px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
 }
+
 .tab-title {
   width: 100%;
   margin-bottom: 32px;
 }
+
 .tab-title h2 {
   font-size: 1.5em;
   font-weight: 600;
   margin: 0 0 8px 0;
   color: #4F378A;
 }
+
 .tab-title-underline {
   width: 100%;
   height: 3px;
@@ -169,13 +188,15 @@ function onVerifyEmail() {
   border-radius: 2px;
   margin-bottom: 8px;
 }
+
 .user-info-section {
   background: #fff;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(79,55,138,0.06);
+  box-shadow: 0 2px 8px rgba(79, 55, 138, 0.06);
   padding: 24px 32px 8px 32px;
   margin-bottom: 32px;
 }
+
 .user-info-row {
   display: flex;
   align-items: center;
@@ -183,36 +204,24 @@ function onVerifyEmail() {
   margin-bottom: 16px;
   color: #333;
 }
+
 .user-info-row-editable {
   margin-bottom: 16px;
 }
+
 .user-info-label {
   min-width: 110px;
   color: #666;
   font-weight: 500;
 }
+
 .user-info-value {
   flex: 1;
   display: flex;
   align-items: center;
   min-height: 32px; /* 保证编辑和非编辑状态高度一致，避免间距抖动 */
 }
-.user-info-input {
-  font-size: 1em;
-  padding: 4px 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  outline: none;
-  margin-right: 12px;
-  min-width: 180px;
-  background: #fff;
-  height: 32px; /* �����编辑状态保持一��� */
-  box-sizing: border-box;
-}
-.user-info-placeholder {
-  color: #bbb;
-  font-style: italic;
-}
+
 .user-info-btn {
   margin-left: 12px;
   padding: 4px 16px;
@@ -222,22 +231,32 @@ function onVerifyEmail() {
   background: #ede7f6;
   color: #4F378A;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
+
 .user-info-btn:hover {
   background: #d1c4e9;
 }
+
+.user-info-btn.disabled-btn {
+  background: #d9d9d9;
+  color: #8c8c8c;
+  cursor: not-allowed;
+}
+
 .log-table th, .log-table td {
   padding: 12px 10px;
   border-bottom: 1px solid #ede7f6;
   text-align: left;
   color: #333;
 }
+
 .log-table th {
   background: #f7f7fa;
   color: #4F378A;
   font-weight: 600;
 }
+
 .log-table tr:last-child td {
   border-bottom: none;
 }

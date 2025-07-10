@@ -28,6 +28,21 @@ export async function getUserEmail() {
   try {
     response = await api.getUserEmailGetUserEmailGet()
     return response.data
-  } catch (err: any) {}
-  return null
+  } catch (err: any) {
+    return null
+  }
+}
+
+export async function getUserInfo() {
+  const api = new DefaultApi(new Configuration({
+    basePath: 'http://127.0.0.1:8000',
+    accessToken: sessionStorage.getItem('token') ? () => sessionStorage.getItem('token')! : undefined,
+  }))
+  let response
+  try {
+    response = await api.getUserInfoGetUserInfoGet()
+    return response.data
+  } catch (err: any) {
+    return null
+  }
 }
