@@ -3,6 +3,7 @@ import base64
 import torch
 import numpy as np
 from PIL import Image
+from ultralytics import YOLO
 
 def load_model(model_path: str):
     # 加载预训练的模型
@@ -72,3 +73,11 @@ def extract_and_process_video(base64_video: str, model_path: str):
     # 转换为 base64 字符串
     jpg_as_text = base64.b64encode(buffer).decode('utf-8')
     return jpg_as_text
+
+def predict_result():
+    model = YOLO("runs/train/road_defect_detection_yolo12n_5/weights/best.pt")#自定义使用模型路径
+    results = model.predict(
+        source="datasets/BJTU2025_RDD/test",#自定义训练集路径
+        save=True,
+    )
+    return results
