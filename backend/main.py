@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from util.engine import init_db
 
-import router.auth, router.mail_router, router.log_router
+import router.auth, router.mail_router, router.log_router, router.video_detect_router
 
 app = FastAPI(
   title="滴嘟出行",
