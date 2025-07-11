@@ -294,6 +294,101 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * 获取日志类型列表  参数说明： - log_id：日志 ID，用于查询特定日志的详细信息  示例请求： /logs_detail?log_id=123e4567-e89b-12d3-a456-426614174000
+         * @summary 获取日志类型列表
+         * @param {string} logId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        queryLogDetailLogDetailGet: async (logId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'logId' is not null or undefined
+            assertParamExists('queryLogDetailLogDetailGet', 'logId', logId)
+            const localVarPath = `/log_detail`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (logId !== undefined) {
+                localVarQueryParameter['log_id'] = logId;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 根据查询条件返回日志记录，需要认证权限  参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤，格式自定义 - limit：限制返回结果数量，默认为 10 - offset：指定从哪个位置开始返回结果  示例请求： /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
+         * @summary 查询日志记录
+         * @param {string | null} [logType] 事件类型过滤
+         * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+         * @param {number} [limit] 查询返回条数，默认返回 10 条
+         * @param {number} [offset] 起始条数，默认从第 0 条记录开始
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        queryLogsLogsGet: async (logType?: string | null, logRange?: string | null, limit?: number, offset?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/logs`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (logType !== undefined) {
+                localVarQueryParameter['log_type'] = logType;
+            }
+
+            if (logRange !== undefined) {
+                localVarQueryParameter['log_range'] = logRange;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (offset !== undefined) {
+                localVarQueryParameter['offset'] = offset;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * 用户注册，返回注册成功消息
          * @summary 用户注册
          * @param {UserRegisterRequest} userRegisterRequest 
@@ -371,6 +466,36 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          */
         rootGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 测试添加日志记录的接口
+         * @summary 添加日志记录
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        testAddLogsLogsTestGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/logs/test`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -609,6 +734,35 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * 获取日志类型列表  参数说明： - log_id：日志 ID，用于查询特定日志的详细信息  示例请求： /logs_detail?log_id=123e4567-e89b-12d3-a456-426614174000
+         * @summary 获取日志类型列表
+         * @param {string} logId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async queryLogDetailLogDetailGet(logId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.queryLogDetailLogDetailGet(logId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.queryLogDetailLogDetailGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 根据查询条件返回日志记录，需要认证权限  参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤，格式自定义 - limit：限制返回结果数量，默认为 10 - offset：指定从哪个位置开始返回结果  示例请求： /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
+         * @summary 查询日志记录
+         * @param {string | null} [logType] 事件类型过滤
+         * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+         * @param {number} [limit] 查询返回条数，默认返回 10 条
+         * @param {number} [offset] 起始条数，默认从第 0 条记录开始
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async queryLogsLogsGet(logType?: string | null, logRange?: string | null, limit?: number, offset?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.queryLogsLogsGet(logType, logRange, limit, offset, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.queryLogsLogsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * 用户注册，返回注册成功消息
          * @summary 用户注册
          * @param {UserRegisterRequest} userRegisterRequest 
@@ -643,6 +797,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.rootGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.rootGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 测试添加日志记录的接口
+         * @summary 添加日志记录
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async testAddLogsLogsTestGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.testAddLogsLogsTestGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.testAddLogsLogsTestGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -762,6 +928,29 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.postFaceDataPostFacePost(imageModel, options).then((request) => request(axios, basePath));
         },
         /**
+         * 获取日志类型列表  参数说明： - log_id：日志 ID，用于查询特定日志的详细信息  示例请求： /logs_detail?log_id=123e4567-e89b-12d3-a456-426614174000
+         * @summary 获取日志类型列表
+         * @param {string} logId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        queryLogDetailLogDetailGet(logId: string, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.queryLogDetailLogDetailGet(logId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 根据查询条件返回日志记录，需要认证权限  参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤，格式自定义 - limit：限制返回结果数量，默认为 10 - offset：指定从哪个位置开始返回结果  示例请求： /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
+         * @summary 查询日志记录
+         * @param {string | null} [logType] 事件类型过滤
+         * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+         * @param {number} [limit] 查询返回条数，默认返回 10 条
+         * @param {number} [offset] 起始条数，默认从第 0 条记录开始
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        queryLogsLogsGet(logType?: string | null, logRange?: string | null, limit?: number, offset?: number, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.queryLogsLogsGet(logType, logRange, limit, offset, options).then((request) => request(axios, basePath));
+        },
+        /**
          * 用户注册，返回注册成功消息
          * @summary 用户注册
          * @param {UserRegisterRequest} userRegisterRequest 
@@ -788,6 +977,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         rootGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
             return localVarFp.rootGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 测试添加日志记录的接口
+         * @summary 添加日志记录
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        testAddLogsLogsTestGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.testAddLogsLogsTestGet(options).then((request) => request(axios, basePath));
         },
         /**
          * 更新用户脸部数据
@@ -911,6 +1109,33 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
+     * 获取日志类型列表  参数说明： - log_id：日志 ID，用于查询特定日志的详细信息  示例请求： /logs_detail?log_id=123e4567-e89b-12d3-a456-426614174000
+     * @summary 获取日志类型列表
+     * @param {string} logId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public queryLogDetailLogDetailGet(logId: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).queryLogDetailLogDetailGet(logId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 根据查询条件返回日志记录，需要认证权限  参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤，格式自定义 - limit：限制返回结果数量，默认为 10 - offset：指定从哪个位置开始返回结果  示例请求： /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
+     * @summary 查询日志记录
+     * @param {string | null} [logType] 事件类型过滤
+     * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+     * @param {number} [limit] 查询返回条数，默认返回 10 条
+     * @param {number} [offset] 起始条数，默认从第 0 条记录开始
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public queryLogsLogsGet(logType?: string | null, logRange?: string | null, limit?: number, offset?: number, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).queryLogsLogsGet(logType, logRange, limit, offset, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * 用户注册，返回注册成功消息
      * @summary 用户注册
      * @param {UserRegisterRequest} userRegisterRequest 
@@ -942,6 +1167,17 @@ export class DefaultApi extends BaseAPI {
      */
     public rootGet(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).rootGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 测试添加日志记录的接口
+     * @summary 添加日志记录
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public testAddLogsLogsTestGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).testAddLogsLogsTestGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
