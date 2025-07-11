@@ -225,13 +225,25 @@ class MailLoginRequest(BaseModel):
         }
       }
     }
-  }
+  },
+  401: {
+    "description": "邮箱未验证",
+    "content": {
+      "application/json": {
+        "example": {
+          "detail": "<UNK>"
+        }
+      }
+    }
+  },
 })
 def login_with_email(request: MailLoginRequest, session: Session = Depends(get_session)):
   """通过邮箱登录，请求验证码"""
   user = session.exec(User.select().where(User.email.has(UserEmail.email_address == request.email))).first()
   if not user:
     raise HTTPException(status_code=404, detail="User not found")
+  if not user.email.email_verified:
+    raise HTTPException(status_code=401, detail="邮箱未验证")
   # 生成随机验证码
   code = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
   expiry = datetime.now() + timedelta(minutes=10)
