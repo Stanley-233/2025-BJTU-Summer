@@ -27,7 +27,6 @@ class SpoofingDetail(SQLModel, table=True):
 class RoadDetail(SQLModel, table=True):
   id: uuid.UUID = Field(primary_key=True, index=True, foreign_key="securityevent.id")
   danger_nums: Optional[int] = Field(description="危险物品数量")
-  danger_lists: List["RoadDanger"] = Relationship(back_populates="roaddanger")
   predicted_image: str = Field(description="模型预测结果(Base64)")
 
 class RoadDangerType(enum.Enum):
@@ -38,8 +37,7 @@ class RoadDangerType(enum.Enum):
   REPAIR = 4
 
 class RoadDanger(SQLModel, table=True):
-  id: uuid.UUID = Field(primary_key=True, index=True)
-  detail: RoadDetail = Relationship(back_populates="roaddetail")
+  id: uuid.UUID = Field(primary_key=True, index=True, foreign_key="roaddetail.id")
   # 病害类型
   type: RoadDangerType = Field(description="病害类型")
   # 置信度
