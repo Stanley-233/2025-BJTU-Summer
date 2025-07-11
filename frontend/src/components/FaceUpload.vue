@@ -20,6 +20,7 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { DefaultApi, Configuration } from '../api/generated'
 import { blobToBase64 } from '../util/base64'
+import CryptoJS from "crypto-js";
 
 const videoRef = ref(null)
 const hasPermission = ref(false)
@@ -47,7 +48,8 @@ async function onUpload() {
     // convert blob to base64 string
     const dataUrl = await blobToBase64(capturedBlob.value)
     // strip prefix "data:*/*;base64,"
-    const base64 = dataUrl.split(',')[1]
+    let base64 = dataUrl.split(',')[1]
+    base64 = CryptoJS.AES.encrypt(base64, 'BrPz0VgQzNmhw1KmHfEyUFu1DHnq0schBijdSm0P_K0=').toString();
     // call upload API
     const api = new DefaultApi(new Configuration({
       basePath: 'http://127.0.0.1:8000',

@@ -1,6 +1,7 @@
 import {ref, onMounted, onBeforeUnmount, nextTick, inject} from 'vue'
 import { DefaultApi, Configuration } from '../api/generated'
 import { blobToBase64 } from '../util/base64'
+import CryptoJS from 'crypto-js'
 
 export default function useFaceRecognition() {
   // inject global bubble from root provider
@@ -56,7 +57,8 @@ export default function useFaceRecognition() {
       const videoBlob = new Blob(chunks, { type: 'video/mp4' })
       try {
         const dataUrl = await blobToBase64(videoBlob)
-        const base64 = dataUrl.split(',')[1]
+        let base64 = dataUrl.split(',')[1]
+        base64 = CryptoJS.AES.encrypt(base64, 'BrPz0VgQzNmhw1KmHfEyUFu1DHnq0schBijdSm0P_K0=').toString();
         const api = new DefaultApi(new Configuration({
           basePath: 'http://127.0.0.1:8000',
           accessToken: sessionStorage.getItem('token') ? () => sessionStorage.getItem('token')! : undefined,

@@ -10,7 +10,7 @@ from sqlmodel import Session
 
 from util.engine import get_session
 from util.image import ImageModel, UserCheckFaceRequest
-from util.security import create_token, get_current_user, encrypt_password
+from util.security import create_token, get_current_user, encrypt_password, aes_decrypt
 from model.user import User, UserEmail, UserPhone, UserType
 
 auth_router = APIRouter()
@@ -20,6 +20,10 @@ load_dotenv("config.env")
 app_id = os.getenv("BAIDU_APP_ID")
 api_key = os.getenv("BAIDU_API_KEY")
 secret_key = os.getenv("BAIDU_SECRET_KEY")
+AES_KEY = os.getenv("AES_KEY")
+if not AES_KEY:
+  raise HTTPException(status_code=500, detail="AES_KEY 未设置")
+PASSWORD = AES_KEY.encode()
 
 if not app_id or not api_key or not secret_key:
     raise HTTPException(status_code=500, detail="百度云配置未正确设置")
@@ -188,25 +192,25 @@ def login(request: UserLoginRequest, session: Session = Depends(get_session)):
 })
 def post_face_data(face_data: ImageModel, session: Session = Depends(get_session),
                    user: User = Depends(get_current_user)):
-    """ 注册用户脸部数据 """
-    image = face_data.image
-    image_type = "BASE64"
+  """ 注册用户脸部数据 """
+  image = aes_decrypt(face_data.image, PASSWORD)
+  image_type = "BASE64"
 
-    options = {
-        "quality_control": "NORMAL"
-    }
+  options = {
+    "quality_control": "NORMAL"
+  }
 
-    result = client.addUser(image, image_type, "default", user.username, options)
+  result = client.addUser(image, image_type, "default", user.username, options)
 
-    if result.get("error_code") != 0:
-        error_msg = result.get("error_msg", "未知错误")
-        raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
+  if result.get("error_code") != 0:
+    error_msg = result.get("error_msg", "未知错误")
+    raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
 
-    user.face_data = image
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-    return {"message": "脸部数据上传成功"}
+  user.face_data = image
+  session.add(user)
+  session.commit()
+  session.refresh(user)
+  return {"message": "脸部数据上传成功"}
 
 
 @auth_router.put("/update_face/", summary="更新用户脸部数据", responses={
@@ -243,25 +247,25 @@ def post_face_data(face_data: ImageModel, session: Session = Depends(get_session
 })
 def update_face_data(face_data: ImageModel, session: Session = Depends(get_session),
                      user: User = Depends(get_current_user)):
-    """ 更新用户脸部数据 """
-    image = face_data.image
-    image_type = "BASE64"
+  """ 更新用户脸部数据 """
+  image = aes_decrypt(face_data.image, PASSWORD)
+  image_type = "BASE64"
 
-    options = {
-        "quality_control": "NORMAL"
-    }
+  options = {
+    "quality_control": "NORMAL"
+  }
 
-    result = client.updateUser(image, image_type, "default", user.username, options)
+  result = client.updateUser(image, image_type, "default", user.username, options)
 
-    if result.get("error_code") != 0:
-        error_msg = result.get("error_msg", "未知错误")
-        raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
+  if result.get("error_code") != 0:
+    error_msg = result.get("error_msg", "未知错误")
+    raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
 
-    user.face_data = image
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-    return {"message": "脸部数据上传成功"}
+  user.face_data = image
+  session.add(user)
+  session.commit()
+  session.refresh(user)
+  return {"message": "脸部数据上传成功"}
 
 
 @auth_router.post("/check_face/", summary="人脸识别获取Token", responses={
@@ -324,7 +328,8 @@ def update_face_data(face_data: ImageModel, session: Session = Depends(get_sessi
 })
 def check_face_data(request: UserCheckFaceRequest, session: Session = Depends(get_session)):
   """ Base64 人脸识别匹配，识别成功后返回用户登录Token """
-  liveness_result = client.facelivenessVerifyV1(video_base64=request.face_data, options={
+  face_video = aes_decrypt(request.face_data, PASSWORD)
+  liveness_result = client.facelivenessVerifyV1(video_base64=face_video, options={
     "face_field": "spoofing,quality"
   })
 

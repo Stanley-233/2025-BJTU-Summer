@@ -2,6 +2,7 @@ import base64
 import os
 
 from Crypto.Cipher import AES
+from Crypto.Hash import MD5
 from Crypto.Util.Padding import pad, unpad
 from dotenv import load_dotenv
 import jwt
@@ -65,3 +66,21 @@ def decrypt_password(encrypted_password: str) -> str:
   encrypted_data = base64.b64decode(encrypted_password)
   decrypted_data = unpad(cipher.decrypt(encrypted_data), AES.block_size)
   return decrypted_data.decode()
+
+def openssl_key_iv(password: bytes, salt: bytes, key_len: int = 32, iv_len: int = 16):
+  d = d_i = b""
+  while len(d) < key_len + iv_len:
+    d_i = MD5.new(d_i + password + salt).digest()
+    d += d_i
+  return d[:key_len], d[key_len:key_len+iv_len]
+
+def aes_decrypt(ciphertext_b64: str, password: bytes) -> str:
+  ciphertext = base64.b64decode(ciphertext_b64)
+  if ciphertext[:8] != b"Salted__":
+    raise ValueError("无效的密文格式")
+  salt = ciphertext[8:16]
+  key, iv = openssl_key_iv(password, salt)
+  cipher = AES.new(key, AES.MODE_CBC, iv)
+  decrypted = cipher.decrypt(ciphertext[16:])
+  pad_len = decrypted[-1]
+  return decrypted[:-pad_len].decode('utf-8')
