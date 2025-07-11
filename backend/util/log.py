@@ -43,9 +43,10 @@ def add_road_safety_event(session: Session,
   img_base64 = base64.b64encode(img_bytes).decode("utf-8")
   detail = RoadDetail(id=event.id, danger_nums=danger_nums, predicted_image=img_base64)
   session.add(event)
+  session.commit()
   session.add(detail)
   for danger_type, confidence in dangers:
-    rd = RoadDanger(id=uuid.uuid4(), detail=detail, type=danger_type, confidence=confidence)
+    rd = RoadDanger(id=event.id, type=danger_type, confidence=confidence)
     session.add(rd)
   session.commit()
   return event

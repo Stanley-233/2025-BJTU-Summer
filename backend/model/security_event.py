@@ -12,7 +12,7 @@ class EventType(enum.Enum):
   ROAD_SAFETY = 2
 
 class SecurityEvent(SQLModel, table=True):
-  id: uuid.UUID = Field(primary_key=True, index=True)
+  id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
   event_type: EventType = Field(index=True, description="事件类型")
   description: Optional[str] = Field(description="事件描述")
   timestamp: datetime = Field(description="事件发生时间")
