@@ -77,7 +77,7 @@ def extract_and_process_video(base64_video: str, model_path: str):
 def predict_result():
     model = YOLO("runs/train/road_defect_detection_yolo12n_5/weights/best.pt")#自定义使用模型路径
     results = model.predict(
-        source="datasets/BJTU2025_RDD/test",#自定义训练集路径
+        source="datasets/BJTU2025_RDD/test",#自定义测试集路径
         save=True,
     )
     return results
