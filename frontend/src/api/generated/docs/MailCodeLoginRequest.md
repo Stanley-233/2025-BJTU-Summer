@@ -1,20 +1,22 @@
-# MailLoginRequest
+# MailCodeLoginRequest
 
-通过邮箱登录请求体
+邮箱+验证码登录请求体
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **email** | **string** |  | [default to undefined]
+**code** | **string** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { MailLoginRequest } from './api';
+import { MailCodeLoginRequest } from './api';
 
-const instance: MailLoginRequest = {
+const instance: MailCodeLoginRequest = {
     email,
+    code,
 };
 ```
 

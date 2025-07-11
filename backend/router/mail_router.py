@@ -198,12 +198,10 @@ def get_user_email(user: User = Depends(get_current_user)):
 class MailLoginRequest(BaseModel):
   """通过邮箱登录请求体"""
   email: str
-  code: str
   class Config:
     json_schema_extra = {
       "example": {
-        "email": "test@bearingwall.top",
-        "code": "123456"
+        "email": "test@bearingwall.top"
       }
     }
 
@@ -331,7 +329,7 @@ class MailCodeLoginRequest(BaseModel):
     }
   },
 })
-def verify_login_email_code(request: MailLoginRequest, session: Session = Depends(get_session)):
+def verify_login_email_code(request: MailCodeLoginRequest, session: Session = Depends(get_session)):
   """通过邮箱登录，检查验证码"""
   user = session.exec(User.select().where(User.email == request.email)).first()
   if not user:

@@ -790,7 +790,7 @@ const { status, data } = await apiInstance.verifyEmailCodeVerifyEmailCodePost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **verifyLoginEmailCodeLoginMailCodePost**
-> any verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest)
+> any verifyLoginEmailCodeLoginMailCodePost(mailCodeLoginRequest)
 
 通过邮箱登录，检查验证码
 
@@ -800,16 +800,16 @@ const { status, data } = await apiInstance.verifyEmailCodeVerifyEmailCodePost(
 import {
     DefaultApi,
     Configuration,
-    MailLoginRequest
+    MailCodeLoginRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let mailLoginRequest: MailLoginRequest; //
+let mailCodeLoginRequest: MailCodeLoginRequest; //
 
 const { status, data } = await apiInstance.verifyLoginEmailCodeLoginMailCodePost(
-    mailLoginRequest
+    mailCodeLoginRequest
 );
 ```
 
@@ -817,7 +817,7 @@ const { status, data } = await apiInstance.verifyLoginEmailCodeLoginMailCodePost
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **mailLoginRequest** | **MailLoginRequest**|  | |
+| **mailCodeLoginRequest** | **MailCodeLoginRequest**|  | |
 
 
 ### Return type

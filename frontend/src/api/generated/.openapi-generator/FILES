@@ -8,6 +8,7 @@ configuration.ts
 docs/DefaultApi.md
 docs/HTTPValidationError.md
 docs/ImageModel.md
+docs/MailCodeLoginRequest.md
 docs/MailLoginRequest.md
 docs/User.md
 docs/UserCheckFaceRequest.md
@@ -22,6 +23,7 @@ index.ts
 model/httpvalidation-error.ts
 model/image-model.ts
 model/index.ts
+model/mail-code-login-request.ts
 model/mail-login-request.ts
 model/user-check-face-request.ts
 model/user-email.ts

@@ -15,16 +15,22 @@
 
 
 /**
- * 通过邮箱登录请求体
+ * 邮箱+验证码登录请求体
  * @export
- * @interface MailLoginRequest
+ * @interface MailCodeLoginRequest
  */
-export interface MailLoginRequest {
+export interface MailCodeLoginRequest {
     /**
      * 
      * @type {string}
-     * @memberof MailLoginRequest
+     * @memberof MailCodeLoginRequest
      */
     'email': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof MailCodeLoginRequest
+     */
+    'code': string;
 }
 
