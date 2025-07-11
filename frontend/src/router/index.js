@@ -7,6 +7,7 @@ import LoginSelectionPage from '../views/LoginSelectionPage.vue';
 import LoginPage from '../views/LoginPage.vue';
 import RegisterPage from '../views/RegisterPage.vue';
 import FaceRecognition from '../views/FaceRecognition.vue';
+import EmailLoginPage from '../views/EmailLoginPage.vue';
 
 const routes = [
   { path: '/', name: 'WelcomePage', component: WelcomePage },
@@ -17,6 +18,7 @@ const routes = [
   { path: '/login', name: 'LoginPage', component: LoginPage },
   { path: '/register', name: 'RegisterPage', component: RegisterPage },
   { path: '/face', name: 'FaceRecognition', component: FaceRecognition },
+  { path: '/email_login', name: 'EmailLoginPage', component: EmailLoginPage },
 ];
 
 const router = createRouter({

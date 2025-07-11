@@ -146,9 +146,7 @@ async function onVerifyEmail() {
 }
 
 async function onConfirmVerification() {
-  const state = await codeCheck(verificationCode.value, (msg) => {
-    showGlobalBubble(msg)
-  });
+  const state = await codeCheck(verificationCode.value, showGlobalBubble);
   if(state === 1){
     showVerificationInput.value = false;
   }else if(state === 0){
@@ -172,15 +170,12 @@ async function onConfirmVerification() {
 .side-tabs {
   width: 140px;
   background: #f7f7fa;
-  border-right: 1px solid #ececec;
+  border-right: 2px solid #ede7f6;
+  box-shadow: 2px 0 8px rgba(79, 55, 138, 0.04);
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 100%;
   padding-top: 0;
-  /* 增加右侧分割线���投影 */
-  box-shadow: 2px 0 8px rgba(79, 55, 138, 0.04);
-  border-right: 2px solid #ede7f6;
+  min-height: 100%;
 }
 
 .tab-item {
@@ -191,6 +186,19 @@ async function onConfirmVerification() {
   cursor: pointer;
   border-left: 4px solid transparent;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
+  margin: 4px 0;
+}
+
+.tab-item.active {
+  background: #ede7f6;
+  color: #4F378A;
+  border-left: 4px solid #4F378A;
+  font-weight: 600;
+}
+
+.tab-item:hover {
+  background: #e0e0e0;
+  color: #4F378A;
 }
 
 .console-main {

@@ -10,6 +10,9 @@
         <label for="password">密码</label>
         <input id="password" v-model="password" type="password" required />
       </div>
+      <div class="email-login-link" @click="onEmailLoginClick">
+        使用邮箱登录
+      </div>
       <button class="btn" type="submit">登录</button>
     </form>
   </div>
@@ -18,7 +21,9 @@
 <script setup>
 import { ref, inject } from 'vue'
 import useLoginPageViewModel from '@/viewmodels/LoginPageViewModel'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const showGlobalBubble = inject('showGlobalBubble')
 
 const { username, password, onLogin } = useLoginPageViewModel((msg) => {
@@ -28,6 +33,10 @@ const { username, password, onLogin } = useLoginPageViewModel((msg) => {
     showGlobalBubble && showGlobalBubble(msg)
   }
 })
+
+const onEmailLoginClick = () => {
+  router.push('/email_login')
+}
 </script>
 
 <style scoped>
@@ -76,10 +85,22 @@ const { username, password, onLogin } = useLoginPageViewModel((msg) => {
   border-radius: 6px;
   font-size: 18px;
   cursor: pointer;
-  margin-top: 32px;
+  margin-top: 12px;
 }
 .btn:hover {
   background-color: #3a296f;
+}
+.email-login-link {
+  color: #4F378A;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 15px;
+  transition: color 0.2s;
+  display: inline;
+  margin: 0;
+}
+.email-login-link:hover {
+  color: #3a296f;
 }
 @media (max-width: 600px) {
   .auth-container { margin: calc(100vh - 72px)  10px; padding: 20px; }

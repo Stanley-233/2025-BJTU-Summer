@@ -1,6 +1,6 @@
-import { ref } from 'vue'
 import {Configuration, DefaultApi} from '../api/generated'
 declare const sessionStorage:any
+
 
 export async function verifyEmail(onError?: (msg: string) => void) {
   const api = new DefaultApi(new Configuration({
@@ -9,7 +9,7 @@ export async function verifyEmail(onError?: (msg: string) => void) {
   }))
   try {
     await api.requestEmailVerificationVerifyEmailPut()
-    onError?.('验证邮件已发送，请查收邮箱')
+    onError?.('验证邮件已发送，请在邮箱中查收')
   } catch (err: any) {
     if (err.response?.status === 403) {
       onError?.('认证错误')

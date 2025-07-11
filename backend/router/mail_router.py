@@ -4,7 +4,8 @@ from datetime import datetime, timezone, timedelta
 
 from fastapi import Depends, HTTPException, APIRouter
 from pydantic import BaseModel
-from sqlmodel import Session
+from sqlalchemy.orm import joinedload
+from sqlmodel import Session, select
 
 from util.engine import get_session
 from util.image import ImageModel, UserCheckFaceRequest
@@ -239,7 +240,7 @@ class MailLoginRequest(BaseModel):
 })
 def login_with_email(request: MailLoginRequest, session: Session = Depends(get_session)):
   """通过邮箱登录，请求验证码"""
-  user = session.exec(User.select().where(User.email.has(UserEmail.email_address == request.email))).first()
+  user = session.exec(select(User).where(User.email.has(UserEmail.email_address == request.email))).first()
   if not user:
     raise HTTPException(status_code=404, detail="User not found")
   if not user.email.email_verified:
@@ -331,7 +332,7 @@ class MailCodeLoginRequest(BaseModel):
 })
 def verify_login_email_code(request: MailCodeLoginRequest, session: Session = Depends(get_session)):
   """通过邮箱登录，检查验证码"""
-  user = session.exec(User.select().where(User.email == request.email)).first()
+  user = session.exec(select(User).where(User.email.has(UserEmail.email_address == request.email))).first()
   if not user:
     raise HTTPException(status_code=404, detail="User not found")
   if not user.email or not user.email.email_verification_code or not user.email.email_verification_expiry:
