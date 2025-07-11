@@ -32,9 +32,9 @@
           <span class="user-info-value">
             <span>{{ email }}</span>
           </span>
-          <button class="user-info-btn" @click="onVerifyEmail" :disabled="isVerified"
-                  :class="{ 'disabled-btn': isVerified }">
-            {{ isVerified ? '已验证' : '验证邮箱' }}
+          <button class="user-info-btn" @click="onVerifyEmail" :disabled="isVerified || cooldown > 0"
+                  :class="{ 'disabled-btn': isVerified || cooldown > 0 }">
+            {{ isVerified ? '已验证' : (cooldown > 0 ? `请稍候(${cooldown})` : '验证邮箱') }}
           </button>
         </div>
         <div v-if="showVerificationInput" class="verification-section">
@@ -66,6 +66,10 @@ const email = ref("")
 const isVerified = ref(false)
 const showVerificationInput = ref(false);
 const verificationCode = ref("");
+
+// 冷却相关变量
+const cooldown = ref(0); // 剩余冷却秒数
+let cooldownTimer = null;
 
 const bubbleRef = ref(null)
 const showGlobalBubble = inject('showGlobalBubble')
@@ -118,10 +122,25 @@ onMounted(() => {
 })
 
 async function onVerifyEmail() {
+  if (cooldown.value > 0) {
+    showGlobalBubble && showGlobalBubble(`请勿频繁发送验证码，请在${cooldown.value}秒后重试`)
+    return;
+  }
   await verifyEmail((msg) => {
     showGlobalBubble(msg)
     if (!isVerified.value) {
       showVerificationInput.value = true;
+      // 启动冷却
+      cooldown.value = 60;
+      if (cooldownTimer) clearInterval(cooldownTimer);
+      cooldownTimer = setInterval(() => {
+        if (cooldown.value > 0) {
+          cooldown.value--;
+        } else {
+          clearInterval(cooldownTimer);
+          cooldownTimer = null;
+        }
+      }, 1000);
     }
   })
 }
@@ -285,29 +304,49 @@ async function onConfirmVerification() {
 }
 
 .verification-section {
-  margin-top: 10px;
+  margin-top: 18px;
   display: flex;
   align-items: center;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(79, 55, 138, 0.06);
+  padding: 16px 24px;
+  width: fit-content;
 }
 
 .verification-input {
   flex: 1;
-  padding: 5px;
-  margin-right: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  min-width: 180px;
+  padding: 8px 14px;
+  margin-right: 16px;
+  border: 1.5px solid #ede7f6;
+  border-radius: 6px;
+  background: #f7f7fa;
+  font-size: 1em;
+  color: #4F378A;
+  transition: border 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.verification-input:focus {
+  border: 1.5px solid #4F378A;
+  box-shadow: 0 0 0 2px #ede7f6;
+  background: #fff;
 }
 
 .verification-btn {
-  padding: 5px 10px;
-  background-color: #007bff;
-  color: white;
+  padding: 8px 22px;
+  background-color: #4F378A;
+  color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
+  font-size: 1em;
+  font-weight: 500;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(79, 55, 138, 0.08);
+  transition: background 0.2s, box-shadow 0.2s;
 }
-
 .verification-btn:hover {
-  background-color: #0056b3;
+  background-color: #37205e;
+  box-shadow: 0 4px 16px rgba(79, 55, 138, 0.13);
 }
 </style>
