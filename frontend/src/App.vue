@@ -3,18 +3,20 @@
     <header class="app-bar">
       <nav>
         <router-link to="/" class="nav-link">首页</router-link>
-        <router-link to="/danger" class="nav-link">道路危险识别</router-link>
-        <router-link to="/city" class="nav-link">城市时空可视化</router-link>
+        <router-link v-if="isLogin" to="/danger" class="nav-link">道路危险识别</router-link>
+        <router-link v-if="isLogin" to="/city" class="nav-link">城市时空可视化</router-link>
         <router-link to="/face" class="nav-link">人脸识别</router-link>
         <div class="right-menu">
-          <router-link to="/console" class="nav-link">控制台</router-link>
-          <router-link to="/login_select" class="nav-link">登录</router-link>
+          <router-link v-if="isLogin" to="/console" class="nav-link">控制台</router-link>
+          <router-link v-if="!isLogin" to="/login_select" class="nav-link">登录</router-link>
         </div>
       </nav>
     </header>
     <BubbleMessage :model-value="bubbleVisible" :message="bubbleMessage" type="warning" />
     <main class="main-content">
-      <router-view />
+      <transition name="fade" mode="out-in">
+        <router-view />
+      </transition>
     </main>
   </div>
 </template>
@@ -33,6 +35,12 @@ function showGlobalBubble(msg) {
 }
 
 provide('showGlobalBubble', showGlobalBubble)
+
+// 判断登录状态
+const isLogin = ref(!!sessionStorage.getItem('token'))
+window.addEventListener('storage', () => {
+  isLogin.value = !!sessionStorage.getItem('token')
+})
 </script>
 
 <style scoped>
@@ -65,7 +73,12 @@ provide('showGlobalBubble', showGlobalBubble)
   text-decoration: none;
   position: relative;
   padding-bottom: 4px;
-  transition: color 0.2s;
+  transition: color 0.2s, background 0.2s;
+  border-radius: 6px 6px 0 0;
+}
+.nav-link:hover {
+  background: #ede7f6;
+  color: #4F378A;
 }
 .router-link-active {
   font-weight: 500;
