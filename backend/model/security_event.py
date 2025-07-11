@@ -1,11 +1,46 @@
+import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
+
+
+class EventType(enum.Enum):
+  UNVERIFIED_USER = 0
+  FACE_SPOOFING = 1
+  ROAD_SAFETY = 2
 
 class SecurityEvent(SQLModel, table=True):
   id: uuid.UUID = Field(primary_key=True, index=True)
-  event_type: str = Field(index=True, description="事件类型")
+  event_type: EventType = Field(index=True, description="事件类型")
   description: Optional[str] = Field(description="事件描述")
-  timestamp: datetime
+  timestamp: datetime = Field(description="事件发生时间")
+
+class SpoofingDetail(SQLModel, table=True):
+  id: uuid.UUID = Field(primary_key=True, index=True, foreign_key="securityevent.id")
+  face_data: Optional[str] = Field(description="人脸数据(Base64视频)")
+  # Event Type如果是0，后两项值就没有意义
+  liveness_score: Optional[float] = Field(description="活体检测分数")
+  spoofing_score: Optional[float] = Field(description="欺诈检测分数")
+
+class RoadDetail(SQLModel, table=True):
+  id: uuid.UUID = Field(primary_key=True, index=True, foreign_key="securityevent.id")
+  danger_nums: Optional[int] = Field(description="危险物品数量")
+  danger_lists: List["RoadDanger"] = Relationship(back_populates="roaddanger")
+  predicted_image: str = Field(description="模型预测结果(Base64)")
+
+class RoadDangerType(enum.Enum):
+  HORIZONTAL = 0
+  VERTICAL = 1
+  CHAP = 2
+  HOLE = 3
+  REPAIR = 4
+
+class RoadDanger(SQLModel, table=True):
+  id: uuid.UUID = Field(primary_key=True, index=True)
+  detail: RoadDetail = Relationship(back_populates="roaddetail")
+  # 病害类型
+  type: RoadDangerType = Field(description="病害类型")
+  # 置信度
+  confidence: Optional[float] = Field(description="置信度")

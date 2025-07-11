@@ -17,4 +17,5 @@ pycryptodome~=3.23.0
 SQLAlchemy~=2.0.41
 Markdown~=3.8.2
 requests~=2.32.4
-cryptography
+cryptography~=45.0.5
+pillow~=11.0.0

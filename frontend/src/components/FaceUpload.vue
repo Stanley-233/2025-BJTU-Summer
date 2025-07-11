@@ -17,11 +17,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import {ref, onMounted, onBeforeUnmount, nextTick, inject} from 'vue'
 import { DefaultApi, Configuration } from '../api/generated'
 import { blobToBase64 } from '../util/base64'
 import CryptoJS from "crypto-js";
 
+const showGlobalBubble = inject('showGlobalBubble')
 const videoRef = ref(null)
 const hasPermission = ref(false)
 let stream = null
@@ -56,10 +57,10 @@ async function onUpload() {
       accessToken: sessionStorage.getItem('token') ? () => sessionStorage.getItem('token') : undefined,
     }))
     await api.updateFaceDataUpdateFacePut({ image: base64 })
-    alert('人脸注册成功')
+    showGlobalBubble ? showGlobalBubble('人脸注册成功') : alert('人脸注册成功')
   } catch (error) {
     console.error(error)
-    alert('人脸注册失败，请重试')
+    showGlobalBubble ? showGlobalBubble('人脸注册失败，请重试') : alert('人脸注册失败，请重试')
   }
 }
 

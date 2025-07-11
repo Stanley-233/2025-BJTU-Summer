@@ -1,7 +1,6 @@
 import {ref, onMounted, onBeforeUnmount, nextTick, inject} from 'vue'
 import { DefaultApi, Configuration } from '../api/generated'
 import { blobToBase64 } from '../util/base64'
-import CryptoJS from 'crypto-js'
 
 export default function useFaceRecognition() {
   // inject global bubble from root provider

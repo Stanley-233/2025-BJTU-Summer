@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from util.engine import init_db
 
-import router.auth, router.mail_router
+import router.auth, router.mail_router, router.log_router
 
 app = FastAPI(
   title="滴嘟出行",
@@ -20,6 +20,7 @@ app.add_middleware(
 
 app.include_router(router.auth.auth_router)
 app.include_router(router.mail_router.mail_router)
+app.include_router(router.log_router.log_router)
 
 @app.get("/")
 async def root():
