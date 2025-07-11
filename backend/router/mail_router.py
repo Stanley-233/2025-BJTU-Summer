@@ -198,10 +198,12 @@ def get_user_email(user: User = Depends(get_current_user)):
 class MailLoginRequest(BaseModel):
   """通过邮箱登录请求体"""
   email: str
+  code: str
   class Config:
     json_schema_extra = {
       "example": {
-        "email": "test@bearingwall.top"
+        "email": "test@bearingwall.top",
+        "code": "123456"
       }
     }
 

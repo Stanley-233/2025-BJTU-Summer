@@ -7,6 +7,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **email** | **string** |  | [default to undefined]
+**code** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -15,6 +16,7 @@ import { MailLoginRequest } from './api';
 
 const instance: MailLoginRequest = {
     email,
+    code,
 };
 ```
 

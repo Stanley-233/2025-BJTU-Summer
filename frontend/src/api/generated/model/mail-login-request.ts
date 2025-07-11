@@ -26,5 +26,11 @@ export interface MailLoginRequest {
      * @memberof MailLoginRequest
      */
     'email': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof MailLoginRequest
+     */
+    'code': string;
 }
 
