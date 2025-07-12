@@ -32,7 +32,7 @@ class VideoDetectResponse(BaseModel):
   dangers: List[RoadDangerInfo]
 
 
-@video_detect_router.post("/video_detect/", description="视频流道路病害检测", response_model=VideoDetectResponse)
+@video_detect_router.post("/video_detect/", summary="视频流道路病害检测", response_model=VideoDetectResponse)
 def video_detect(request: VideoDetectRequest, session: Session = Depends(get_session)):
   """从上传的短视频中道路病害"""
   try:

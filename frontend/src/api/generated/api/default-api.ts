@@ -39,6 +39,10 @@ import type { UserEmail } from '../model';
 import type { UserLoginRequest } from '../model';
 // @ts-ignore
 import type { UserRegisterRequest } from '../model';
+// @ts-ignore
+import type { VideoDetectRequest } from '../model';
+// @ts-ignore
+import type { VideoDetectResponse } from '../model';
 /**
  * DefaultApi - axios parameter creator
  * @export
@@ -637,6 +641,42 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
                 options: localVarRequestOptions,
             };
         },
+        /**
+         * 从上传的短视频中道路病害
+         * @summary 视频流道路病害检测
+         * @param {VideoDetectRequest} videoDetectRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        videoDetectVideoDetectPost: async (videoDetectRequest: VideoDetectRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'videoDetectRequest' is not null or undefined
+            assertParamExists('videoDetectVideoDetectPost', 'videoDetectRequest', videoDetectRequest)
+            const localVarPath = `/video_detect/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(videoDetectRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
     }
 };
 
@@ -852,6 +892,19 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.verifyLoginEmailCodeLoginMailCodePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
+        /**
+         * 从上传的短视频中道路病害
+         * @summary 视频流道路病害检测
+         * @param {VideoDetectRequest} videoDetectRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async videoDetectVideoDetectPost(videoDetectRequest: VideoDetectRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VideoDetectResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.videoDetectVideoDetectPost(videoDetectRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.videoDetectVideoDetectPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
     }
 };
 
@@ -1018,6 +1071,16 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         verifyLoginEmailCodeLoginMailCodePost(mailCodeLoginRequest: MailCodeLoginRequest, options?: RawAxiosRequestConfig): AxiosPromise<any> {
             return localVarFp.verifyLoginEmailCodeLoginMailCodePost(mailCodeLoginRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 从上传的短视频中道路病害
+         * @summary 视频流道路病害检测
+         * @param {VideoDetectRequest} videoDetectRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        videoDetectVideoDetectPost(videoDetectRequest: VideoDetectRequest, options?: RawAxiosRequestConfig): AxiosPromise<VideoDetectResponse> {
+            return localVarFp.videoDetectVideoDetectPost(videoDetectRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -1216,6 +1279,18 @@ export class DefaultApi extends BaseAPI {
      */
     public verifyLoginEmailCodeLoginMailCodePost(mailCodeLoginRequest: MailCodeLoginRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).verifyLoginEmailCodeLoginMailCodePost(mailCodeLoginRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 从上传的短视频中道路病害
+     * @summary 视频流道路病害检测
+     * @param {VideoDetectRequest} videoDetectRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public videoDetectVideoDetectPost(videoDetectRequest: VideoDetectRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).videoDetectVideoDetectPost(videoDetectRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

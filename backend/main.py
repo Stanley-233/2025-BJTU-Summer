@@ -18,10 +18,10 @@ app.add_middleware(
   allow_headers=["*"],  # 允许所有头部
 )
 
-app.include_router(router.auth.auth_router, tags=["账户认证"])
-app.include_router(router.mail_router.mail_router, tags=["邮件系统"])
-app.include_router(router.log_router.log_router, tags=["日志系统"])
-app.include_router(router.video_detect_router.video_detect_router, tags=["道路病害识别"])
+app.include_router(router.auth.auth_router)
+app.include_router(router.mail_router.mail_router)
+app.include_router(router.log_router.log_router)
+app.include_router(router.video_detect_router.video_detect_router)
 
 @app.get("/")
 async def root():

@@ -20,6 +20,7 @@ All URIs are relative to *http://localhost*
 |[**updateFaceDataUpdateFacePut**](#updatefacedataupdatefaceput) | **PUT** /update_face/ | 更新用户脸部数据|
 |[**verifyEmailCodeVerifyEmailCodePost**](#verifyemailcodeverifyemailcodepost) | **POST** /verify_email_code/ | 邮箱认证验证码|
 |[**verifyLoginEmailCodeLoginMailCodePost**](#verifyloginemailcodeloginmailcodepost) | **POST** /login/mail_code/ | 通过邮箱验证码登录|
+|[**videoDetectVideoDetectPost**](#videodetectvideodetectpost) | **POST** /video_detect/ | 视频流道路病害检测|
 
 # **checkFaceDataCheckFacePost**
 > any checkFaceDataCheckFacePost(userCheckFaceRequest)
@@ -842,6 +843,59 @@ No authorization required
 |**201** | 未请求验证码 |  -  |
 |**202** | 验证码已过期 |  -  |
 |**203** | 验证码错误 |  -  |
+|**422** | Validation Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **videoDetectVideoDetectPost**
+> VideoDetectResponse videoDetectVideoDetectPost(videoDetectRequest)
+
+从上传的短视频中道路病害
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    VideoDetectRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let videoDetectRequest: VideoDetectRequest; //
+
+const { status, data } = await apiInstance.videoDetectVideoDetectPost(
+    videoDetectRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **videoDetectRequest** | **VideoDetectRequest**|  | |
+
+
+### Return type
+
+**VideoDetectResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Successful Response |  -  |
 |**422** | Validation Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
