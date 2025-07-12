@@ -37,7 +37,8 @@ class RoadDangerType(enum.Enum):
   REPAIR = 4
 
 class RoadDanger(SQLModel, table=True):
-  id: uuid.UUID = Field(primary_key=True, index=True, foreign_key="roaddetail.id")
+  danger_id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+  id: uuid.UUID = Field(index=True, foreign_key="roaddetail.id")
   # 病害类型
   type: RoadDangerType = Field(description="病害类型")
   # 置信度
