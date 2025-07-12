@@ -42,6 +42,7 @@ def video_detect(request: VideoDetectRequest, session: Session = Depends(get_ses
     img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
     model = YOLO(model_path)
     results = model.predict(
+        device='cpu',
         source=img,
         save=True,
     )

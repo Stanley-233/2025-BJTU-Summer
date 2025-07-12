@@ -25,9 +25,13 @@
         </div>
         <!-- 文字显示区域 -->
         <div class="text-display">
-          <template v-if="placeholderText">
-            <h3>{{ selectedModel }}</h3>
-            <p>{{ placeholderText }}</p>
+          <template v-if="Array.isArray(dangerList) ? dangerList.length > 0 : (dangerList && dangerList.value && dangerList.value.length > 0)">
+            <h3>{{ selectedModel }} 检测结果</h3>
+            <ul style="text-align:left;">
+              <li v-for="(danger, idx) in (Array.isArray(dangerList) ? dangerList : dangerList.value)" :key="idx">
+                危险类型: {{ danger.type }}，置信度: {{ (danger.confidence * 100).toFixed(1) }}%
+              </li>
+            </ul>
           </template>
           <template v-else>
             <p>尚无结果</p>
@@ -56,14 +60,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, inject } from 'vue';
+import { requestVideoDangerDetect } from '../viewmodels/DangerDetectModel';
 
 const models = ['模型A', '模型B', '模型C'];
 const selectedModel = ref(models[0]);
 const placeholderText = ref('');
 const imageSrc = ref(''); // 默认无图片
+const dangerList = ref([]); // 新增：危险信息列表，确保为数组
 const fileInput = ref(null);
 const thumbnailSrc = ref('');
+const videoFile = ref(null); // 新增：保存原始文件对象
+const showGlobalBubble = inject('showGlobalBubble')
 
 function selectModel(model) {
   selectedModel.value = model;
@@ -76,25 +84,24 @@ function uploadVideo() {
 function handleFileChange(event) {
   const file = event.target.files[0];
   if (file) {
-    const filePath = URL.createObjectURL(file);
-    generateThumbnail(filePath);
-    alert('视频已上传，文件路径已保存');
+    videoFile.value = file; // 保存文件对象
+    generateThumbnail(URL.createObjectURL(file));
+    showGlobalBubble && showGlobalBubble('视频已上传，文件路径已保存');
   }
 }
 
 function handleFileDrop(event) {
   const file = event.dataTransfer.files[0];
   if (file) {
-    const filePath = URL.createObjectURL(file);
+    videoFile.value = file; // 保存文件对象
     try {
-      generateThumbnail(filePath);
-      alert('视频已上传，文件路径已保存');
+      generateThumbnail(URL.createObjectURL(file));
+      showGlobalBubble && showGlobalBubble('视频已上传，文件路径已保存');
     } catch (error) {
-      console.error('文件处理失败:', error);
-      alert('文件处理失败，请重试。');
+      showGlobalBubble && showGlobalBubble('文件处理失败，请重试。');
     }
   } else {
-    alert('未检测到文件，请重试。');
+    showGlobalBubble && showGlobalBubble('未检测到文件，请重试。');
   }
 }
 
@@ -118,22 +125,48 @@ function generateThumbnail(filePath) {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       thumbnailSrc.value = canvas.toDataURL('image/png');
     } catch (error) {
-      console.error('生成缩略图失败:', error);
-      alert('生成缩略图失败，请检查视频文件是否有效。');
+      showGlobalBubble && showGlobalBubble('生成缩略图失败，请检查视频文件是否有效。');
     } finally {
       URL.revokeObjectURL(video.src);
     }
   });
 
   video.addEventListener('error', () => {
-    console.error('视频加载失败');
-    alert('视频加载失败，请检查文件格式是否正确。');
+    showGlobalBubble && showGlobalBubble('视频加载失败，请检查文件格式是否正确。');
   });
 }
 
 function onFloatingButtonClick() {
-  // TODO: 这里预留点击事件接口
-  alert('悬浮按钮被点击！');
+  if (!videoFile.value) {
+    showGlobalBubble && showGlobalBubble('请先上传视频文件');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    const base64 = String(reader.result).split(',')[1];
+    requestVideoDangerDetect(base64, selectedModel.value, (msg) => {
+      showGlobalBubble && showGlobalBubble('检测失败: ' + msg);
+    }).then((result) => {
+      if (result) {
+        // 处理图片
+        imageSrc.value = 'data:image/png;base64,' + result.predicted_image;
+        // 处理危险信息
+        dangerList.value = (result.dangers || []).map(item => ({
+          type: item.type,
+          confidence: item.confidence
+        }));
+      } else {
+        imageSrc.value = '';
+        dangerList.value = [];
+      }
+    }).catch(err => {
+      showGlobalBubble && showGlobalBubble('视频处理失败: ' + err);
+    });
+  };
+  reader.onerror = (err) => {
+    showGlobalBubble && showGlobalBubble('读取视频文件失败: ' + err);
+  };
+  reader.readAsDataURL(videoFile.value);
 }
 </script>
 
