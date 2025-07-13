@@ -4,7 +4,7 @@ from typing import Optional
 import aip
 from dotenv import load_dotenv
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlmodel import Session
 
@@ -145,7 +145,7 @@ class UserLoginRequest(BaseModel):
     }
   }
 })
-def login(request: UserLoginRequest, session: Session = Depends(get_session)):
+def login(request: UserLoginRequest, req: Request, session: Session = Depends(get_session)):
   user = session.get(User, request.username)
   if not user:
     raise HTTPException(status_code=404, detail="User not found")
@@ -154,6 +154,13 @@ def login(request: UserLoginRequest, session: Session = Depends(get_session)):
     raise HTTPException(status_code=403, detail="Incorrect password")
 
   token = create_token(user)
+  # 记录登录IP为字符串
+  try:
+    user.last_ip = req.client.host
+    session.add(user)
+    session.commit()
+  except Exception:
+    pass
 
   return {"message": "登录成功",
           "token": token}
@@ -327,7 +334,7 @@ def update_face_data(face_data: ImageModel, session: Session = Depends(get_sessi
     }
   }
 })
-def check_face_data(request: UserCheckFaceRequest, session: Session = Depends(get_session)):
+def check_face_data(request: UserCheckFaceRequest, req: Request, session: Session = Depends(get_session)):
   """ Base64 人脸识别匹配，识别成功后返回用户登录Token """
   face_video = aes_decrypt(request.face_data, PASSWORD)
   liveness_result = client.facelivenessVerifyV1(video_base64=face_video, options={
@@ -376,6 +383,13 @@ def check_face_data(request: UserCheckFaceRequest, session: Session = Depends(ge
 
   # 生成 Token
   token = create_token(user)
+  # 记录登录IP为字符串
+  try:
+    user.last_ip = req.client.host
+    session.add(user)
+    session.commit()
+  except Exception:
+    pass
 
   return {
     "message": "人脸数据匹配",

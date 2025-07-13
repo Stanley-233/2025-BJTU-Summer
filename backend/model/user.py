@@ -1,5 +1,4 @@
 import enum
-import ipaddress
 from typing import Optional
 from datetime import datetime
 
@@ -15,7 +14,7 @@ class User(SQLModel, table=True):
   password: str = None
   # 用户脸部数据(Base64)
   face_data: Optional[str] = None  # 可选字段，允许为空
-  last_ip: Optional[ipaddress.IPv4Address] = None
+  last_ip: Optional[str] = Field(default=None)
   user_type: UserType = None
   # 邮箱信息
   email: Optional["UserEmail"] = Relationship(back_populates="user")
