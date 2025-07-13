@@ -28,7 +28,7 @@
       </thead>
       <tbody>
         <tr v-for="log in pagedLogs" :key="log.id">
-          <td>{{ typeIconMap[log.event_type] }}</td>
+          <td>{{ typeIconMap[log.event_type] + LogType[log.event_type] }}</td>
           <td>{{ log.id }}</td>
           <td>{{ log.description }}</td>
           <td>{{ log.timestamp }}</td>
@@ -60,15 +60,15 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { queryLogs } from '../viewmodels/LogViewModel'
 
 const LogType = {
-  UNVERIFIED: '非法用户',
-  SPOOFING: '人脸欺诈',
-  ROAD_SAFETY: '道路安全',
+  0: '非法用户',
+  1: '人脸欺诈',
+  2: '道路安全',
 }
 
 const typeIconMap = {
-  [LogType.UNVERIFIED]: '🔒',
-  [LogType.SPOOFING]: '😡',
-  [LogType.ROAD_SAFETY]: '🚧',
+  0: '🔒',
+  1: '😡',
+  2: '🚧',
 }
 
 const logRecords = ref([])
