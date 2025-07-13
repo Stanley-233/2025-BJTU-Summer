@@ -11,27 +11,35 @@
     <table class="log-table">
       <thead>
         <tr>
-          <th class="clickable-type-th" @click="toggleTypeDropdown">
-            类型
-            <span class="dropdown-arrow">▼</span>
-            <div v-if="showTypeDropdown" class="type-dropdown">
-              <div class="type-option" v-for="(icon, type) in typeIconMap" :key="type" @click.stop="selectType(type)">
-                {{ icon }} {{ type }}
+          <th
+            v-for="(col, idx) in columns"
+            :key="col.key"
+            :style="{ width: colWidths[idx] + 'px' }"
+            class="resizable-th"
+          >
+            <span v-if="col.key === 'type'" class="clickable-type-th" @click="toggleTypeDropdown">
+              类型
+              <span class="dropdown-arrow">▼</span>
+              <div v-if="showTypeDropdown" class="type-dropdown">
+                <div class="type-option" v-for="(icon, type) in typeIconMap" :key="type" @click.stop="selectType(type)">
+                  {{ icon }} {{ LogType[type] }}
+                </div>
               </div>
-            </div>
+            </span>
+            <template v-else>{{ col.title }}</template>
+            <span
+              v-if="idx < columns.length - 1"
+              class="resize-handle"
+              @mousedown="startResize($event, idx)"
+            ></span>
           </th>
-          <th>ID</th>
-          <th>日志内容</th>
-          <th>创建时间</th>
-          <th>详情</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="log in pagedLogs" :key="log.id">
           <td>{{ typeIconMap[log.event_type] + LogType[log.event_type] }}</td>
-          <td>{{ log.id }}</td>
-          <td>{{ log.description }}</td>
-          <td>{{ log.timestamp }}</td>
+          <td class="log-content-cell">{{ log.description }}</td>
+          <td>{{ formatTimestamp(log.timestamp) }}</td>
           <td><button @click="viewDetail(log)">查看</button></td>
         </tr>
       </tbody>
@@ -46,9 +54,51 @@
     <div v-if="showDetailModal && detailLog" class="modal-overlay" @click.self="closeDetailModal">
       <div class="modal-content">
         <h3>日志详情</h3>
-        <p><strong>类型：</strong>{{ typeIconMap[detailLog.type] }} {{ detailLog.type }}</p>
-        <p><strong>内容：</strong>{{ detailLog.content }}</p>
-        <p><strong>时间：</strong>{{ detailLog.createdAt }}</p>
+        <template v-if="detailLog && detailLog.log">
+          <!-- 非法用户弹窗 -->
+          <template v-if="detailLog.log.event_type === 0">
+            <p><strong>事件类型：</strong>{{ typeIconMap[detailLog.log.event_type] }} 非法用户</p>
+            <p><strong>日志ID：</strong>{{ detailLog.log.id }}</p>
+            <p><strong>时间戳：</strong>{{ detailLog.log.timestamp }}</p>
+            <p><strong>描述：</strong>{{ detailLog.log.description }}</p>
+            <div v-if="detailLog.detail">
+              <p v-if="detailLog.detail.face_data"><strong>人脸数据：</strong>{{ detailLog.detail.face_data }}</p>
+              <p v-if="detailLog.detail.liveness_score !== undefined"><strong>活体检测分数：</strong>{{ detailLog.detail.liveness_score }}</p>
+              <p v-if="detailLog.detail.spoofing_score !== undefined"><strong>欺诈检测分数：</strong>{{ detailLog.detail.spoofing_score }}</p>
+            </div>
+          </template>
+          <!-- 人脸欺诈弹窗 -->
+          <template v-else-if="detailLog.log.event_type === 1">
+            <p><strong>事件类型：</strong>{{ typeIconMap[detailLog.log.event_type] }} 人脸欺诈</p>
+            <p><strong>日志ID：</strong>{{ detailLog.log.id }}</p>
+            <p><strong>时间戳：</strong>{{ detailLog.log.timestamp }}</p>
+            <p><strong>描述：</strong>{{ detailLog.log.description }}</p>
+            <div v-if="detailLog.detail">
+              <p v-if="detailLog.detail.face_data"><strong>人脸数据：</strong>{{ detailLog.detail.face_data }}</p>
+              <p v-if="detailLog.detail.liveness_score !== undefined"><strong>活体检测分数：</strong>{{ detailLog.detail.liveness_score }}</p>
+              <p v-if="detailLog.detail.spoofing_score !== undefined"><strong>欺诈检测分数：</strong>{{ detailLog.detail.spoofing_score }}</p>
+            </div>
+          </template>
+          <!-- 道路安全弹窗 -->
+          <template v-else-if="detailLog.log.event_type === 2">
+            <p><strong>事件类型：</strong>{{ typeIconMap[detailLog.log.event_type] }} 道路安全</p>
+            <p><strong>日志ID：</strong>{{ detailLog.log.id }}</p>
+            <p><strong>时间戳：</strong>{{ detailLog.log.timestamp }}</p>
+            <p><strong>描述：</strong>{{ detailLog.log.description }}</p>
+            <div v-if="detailLog.detail">
+              <p v-if="detailLog.detail.danger_nums !== undefined"><strong>危险物品数量：</strong>{{ detailLog.detail.danger_nums }}</p>
+              <p v-if="detailLog.detail.predicted_image"><strong>模型预测图片：</strong><img :src="detailLog.detail.predicted_image" alt="预测图片" style="max-width: 120px;" /></p>
+            </div>
+            <div v-if="detailLog.dangers && detailLog.dangers.length">
+              <h4>危险详情：</h4>
+              <ul>
+                <li v-for="danger in detailLog.dangers" :key="danger.danger_id">
+                  <span>类型：{{ danger.type }}，置信度：{{ danger.confidence }}</span>
+                </li>
+              </ul>
+            </div>
+          </template>
+        </template>
         <button class="close-btn" @click="closeDetailModal">关闭</button>
       </div>
     </div>
@@ -57,7 +107,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { queryLogs } from '../viewmodels/LogViewModel'
+import { queryLogs, queryLogDetail } from '../viewmodels/LogViewModel'
 
 const LogType = {
   0: '非法用户',
@@ -128,12 +178,26 @@ function goToPage(page) {
 const showDetailModal = ref(false)
 const detailLog = ref(null)
 
-function viewDetail(log) {
-  detailLog.value = log
-  showDetailModal.value = true
+async function viewDetail(log) {
+  // 可加loading状态
+  const detail = await queryLogDetail(log.id)
+  if (detail) {
+    detailLog.value = detail
+    showDetailModal.value = true
+  } else {
+    alert('获取日志详情失败')
+  }
 }
 function closeDetailModal() {
   showDetailModal.value = false
+}
+
+// 时间格式化到秒
+function formatTimestamp(ts) {
+  if (!ts) return ''
+  // 支持2025-07-09 10:10:00.123或2025-07-09T10:10:00.123Z等
+  const match = ts.match(/^(.{19})/)
+  return match ? match[1] : ts
 }
 
 // 监听筛选条件变化，自动加载日志
@@ -149,11 +213,49 @@ async function loadLogs() {
   setLogs(logs || [])
 }
 
-onMounted(() => {
+// 监听类型切换，重新查询日志
+watch(selectedType, () => {
   loadLogs()
 })
 
-watch([selectedType, startTime, endTime, currentPage], () => {
+// 监听日期变化，重新查询日志
+watch([startTime, endTime], () => {
+  loadLogs()
+})
+
+// 拖拽列宽相关
+const columns = [
+  { key: 'type', title: '类型' },
+  { key: 'description', title: '日志内容' },
+  { key: 'timestamp', title: '创建时间' },
+  { key: 'detail', title: '详情' }
+]
+const defaultWidths = [120, 400, 180, 80]
+const colWidths = ref([...defaultWidths])
+let resizing = false
+let startX = 0
+let startWidth = 0
+let colIdx = 0
+function startResize(e, idx) {
+  resizing = true
+  startX = e.clientX
+  startWidth = colWidths.value[idx]
+  colIdx = idx
+  document.addEventListener('mousemove', onResize)
+  document.addEventListener('mouseup', stopResize)
+}
+function onResize(e) {
+  if (!resizing) return
+  const delta = e.clientX - startX
+  colWidths.value[colIdx] = Math.max(60, startWidth + delta)
+}
+function stopResize() {
+  resizing = false
+  document.removeEventListener('mousemove', onResize)
+  document.removeEventListener('mouseup', stopResize)
+}
+
+onMounted(() => {
   loadLogs()
 })
 </script>
@@ -171,6 +273,7 @@ watch([selectedType, startTime, endTime, currentPage], () => {
   border-radius: 6px;
   font-size: 1em;
   margin-bottom: 24px;
+  table-layout: fixed;
 }
 .log-table th, .log-table td {
   padding: 12px 10px;
@@ -186,24 +289,13 @@ watch([selectedType, startTime, endTime, currentPage], () => {
 .log-table tr:last-child td {
   border-bottom: none;
 }
-.log-table th:nth-child(1), .log-table td:nth-child(1) {
-  width: 80px;
+.log-table th,
+.log-table td,
+.log-content-cell {
   min-width: 60px;
-  max-width: 100px;
-}
-.log-table th:nth-child(2), .log-table td:nth-child(2) {
-  width: 80px;
-  min-width: 60px;
-  max-width: 100px;
-}
-.log-table th:nth-child(3), .log-table td:nth-child(3) {
-  width: auto;
-  min-width: 200px;
-}
-.log-table th:nth-child(4), .log-table td:nth-child(4) {
-  width: 160px;
-  min-width: 120px;
-  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .clickable-type-th {
   cursor: pointer;
@@ -333,6 +425,21 @@ watch([selectedType, startTime, endTime, currentPage], () => {
 .pagination-bar span {
   color: #4F378A;
   font-size: 1em;
+}
+.resizable-th {
+  position: relative;
+  user-select: none;
+  padding-right: 0;
+}
+.resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+  background: transparent;
 }
 </style>
 
