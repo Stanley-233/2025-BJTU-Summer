@@ -13,35 +13,44 @@
     </aside>
     <!-- 主内容区 -->
     <main class="danger-main">
-      <div class="danger-card">
-        <!-- 图片显示模块 -->
-        <div class="image-preview">
-          <template v-if="imageSrc">
-            <img :src="imageSrc" alt="占位图片" />
-          </template>
-          <template v-else>
-            <p>尚无结果</p>
-          </template>
+      <!-- 添加过渡动画 -->
+      <transition name="fade">
+        <div class="danger-card" key="danger-card">
+          <!-- 图片显示模块 -->
+          <div class="image-preview">
+            <template v-if="isLoading">
+              <p>正在推理中</p>
+            </template>
+            <template v-else-if="imageSrc">
+              <img :src="imageSrc" alt="占位图片" />
+            </template>
+            <template v-else>
+              <p>尚无结果</p>
+            </template>
+          </div>
+          <!-- 文字显示区域 -->
+          <div class="text-display">
+            <template v-if="isLoading">
+              <p>正在推理中</p>
+            </template>
+            <template v-else-if="Array.isArray(dangerList) ? dangerList.length > 0 : (dangerList && dangerList.value && dangerList.value.length > 0)">
+              <h3>{{ selectedModel }} 检测结果</h3>
+              <ul style="text-align:left;">
+                <li v-for="(danger, idx) in (Array.isArray(dangerList) ? dangerList : dangerList.value)" :key="idx">
+                  危险类型: {{ danger.type }}，置信度: {{ (danger.confidence * 100).toFixed(1) }}%
+                </li>
+              </ul>
+            </template>
+            <template v-else>
+              <p>尚无结果</p>
+            </template>
+          </div>
         </div>
-        <!-- 文字显示区域 -->
-        <div class="text-display">
-          <template v-if="Array.isArray(dangerList) ? dangerList.length > 0 : (dangerList && dangerList.value && dangerList.value.length > 0)">
-            <h3>{{ selectedModel }} 检测结果</h3>
-            <ul style="text-align:left;">
-              <li v-for="(danger, idx) in (Array.isArray(dangerList) ? dangerList : dangerList.value)" :key="idx">
-                危险类型: {{ danger.type }}，置信度: {{ (danger.confidence * 100).toFixed(1) }}%
-              </li>
-            </ul>
-          </template>
-          <template v-else>
-            <p>尚无结果</p>
-          </template>
-        </div>
-      </div>
+      </transition>
       <!-- 上传视频按钮 -->
       <div class="upload-area" @dragover.prevent @drop.prevent="handleFileDrop">
         <template v-if="thumbnailSrc">
-          <img :src="thumbnailSrc" alt="视频缩略图" class="thumbnail" />
+          <img :src="thumbnailSrc" alt="视频缩略图" @click="uploadVideo" class="thumbnail" />
         </template>
         <template v-else>
           <p>拖拽文件到此处上传，或点击下方按钮选择文件</p>
@@ -49,11 +58,10 @@
         </template>
         <input type="file" ref="fileInput" accept="video/*" style="display: none" @change="handleFileChange" />
       </div>
-      <!-- 悬浮按钮 -->
-      <button class="floating-button" @click="onFloatingButtonClick">
-        <svg width="36" height="36" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <path d="M7 5C7 3.89543 8.11929 3.18415 9.08359 3.72361L28 15.5C28.9643 16.0395 28.9643 17.9605 28 18.5L9.08359 30.2764C8.11929 30.8159 7 30.1046 7 29V5Z" fill="white" transform="translate(1,0)"/>
-        </svg>
+      <!-- 推理按钮，移到主界面底部，文本更改 -->
+      <!-- 普通按钮替代悬浮按钮 -->
+      <button class="start-btn" @click="onFloatingButtonClick">
+        开始推理
       </button>
     </main>
   </div>
@@ -63,21 +71,27 @@
 import { ref, inject } from 'vue';
 import { requestVideoDangerDetect } from '../viewmodels/DangerDetectModel';
 
-const models = ['模型A', '模型B', '模型C'];
+const models = ['YOLOv8n', '模型B', '模型C'];
 const selectedModel = ref(models[0]);
-const placeholderText = ref('');
-const imageSrc = ref(''); // 默认无图片
-const dangerList = ref([]); // 新增：危险信息列表，确保为数组
+const imageSrc = ref('');
+const dangerList = ref([]);
+const isLoading = ref(false);
 const fileInput = ref(null);
 const thumbnailSrc = ref('');
-const videoFile = ref(null); // 新增：保存原始文件对象
-const showGlobalBubble = inject('showGlobalBubble')
+const videoFile = ref(null);
+const showGlobalBubble = inject('showGlobalBubble');
 
 function selectModel(model) {
   selectedModel.value = model;
+  // 切换模型时清空结果
+  isLoading.value = false;
+  imageSrc.value = '';
+  dangerList.value = [];
 }
 
 function uploadVideo() {
+  // 清空之前的选中文件，以便可以重新选择同一文件或更换文件
+  if (fileInput.value) fileInput.value.value = null;
   fileInput.value.click();
 }
 
@@ -141,30 +155,33 @@ function onFloatingButtonClick() {
     showGlobalBubble && showGlobalBubble('请先上传视频文件');
     return;
   }
+  // 开始推理，清空并显示loading
+  isLoading.value = true;
+  imageSrc.value = '';
+  dangerList.value = [];
+
   const reader = new FileReader();
   reader.onloadend = () => {
     const base64 = String(reader.result).split(',')[1];
     requestVideoDangerDetect(base64, selectedModel.value, (msg) => {
       showGlobalBubble && showGlobalBubble('检测失败: ' + msg);
-    }).then((result) => {
-      if (result) {
-        // 处理图片
-        imageSrc.value = 'data:image/png;base64,' + result.predicted_image;
-        // 处理危险信息
-        dangerList.value = (result.dangers || []).map(item => ({
-          type: item.type,
-          confidence: item.confidence
-        }));
-      } else {
-        imageSrc.value = '';
-        dangerList.value = [];
-      }
-    }).catch(err => {
-      showGlobalBubble && showGlobalBubble('视频处理失败: ' + err);
-    });
+    })
+      .then((result) => {
+        if (result) {
+          imageSrc.value = 'data:image/png;base64,' + result.predicted_image;
+          dangerList.value = (result.dangers || []).map(item => ({ type: item.type, confidence: item.confidence }));
+        }
+      })
+      .catch(err => {
+        showGlobalBubble && showGlobalBubble('视频处理失败: ' + err);
+      })
+      .finally(() => {
+        isLoading.value = false;
+      });
   };
   reader.onerror = (err) => {
     showGlobalBubble && showGlobalBubble('读取视频文件失败: ' + err);
+    isLoading.value = false;
   };
   reader.readAsDataURL(videoFile.value);
 }
@@ -211,7 +228,6 @@ function onFloatingButtonClick() {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
 }
 
 .danger-card {
@@ -239,12 +255,9 @@ function onFloatingButtonClick() {
 }
 
 .image-preview img {
-  width: auto;
+  width: 100%;
   height: auto;
-  max-width: 100%;
-  max-height: 240px;
-  display: block;
-  margin: auto;
+  object-fit: contain;
 }
 
 .text-display {
@@ -310,6 +323,8 @@ function onFloatingButtonClick() {
   background: #d1c4e9;
 }
 
+/* 更换视频按钮可复用upload-btn样式，无需额外样式 */
+
 .thumbnail {
   max-width: 100%;
   max-height: 100%;
@@ -323,27 +338,29 @@ function onFloatingButtonClick() {
   top: 0; left: 0; right: 0; bottom: 0;
 }
 
-.floating-button {
-  position: fixed;
-  right: 32px;
-  bottom: 32px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+/* 普通推理按钮样式 */
+.start-btn {
+  align-self: center;
+  margin-top: 16px;
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 24px;
   background: #b39ddb;
   color: #fff;
   border: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  font-size: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   cursor: pointer;
-  z-index: 1000;
   transition: background 0.3s;
 }
-.floating-button:hover {
+.start-btn:hover {
   background: #4F378A;
   color: #fff;
+}
+
+/* fade transition */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>

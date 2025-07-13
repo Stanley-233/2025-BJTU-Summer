@@ -12,42 +12,39 @@
         <h2 v-else-if="activeTab === 'upload'">人脸上传</h2>
         <div class="tab-title-underline"></div>
       </div>
-      <template v-if="activeTab === 'user'">
-        <div class="user-info-section">
-          <div class="user-info-row">
-            <span class="user-info-label">用户名：</span>
-            <span class="user-info-value">{{ userInfo.username || 'unknown' }}</span>
+      <transition name="fade" mode="out-in">
+        <div v-if="activeTab === 'user'" key="user">
+          <div class="user-info-section">
+            <div class="user-info-row">
+              <span class="user-info-label">用户名：</span>
+              <span class="user-info-value">{{ userInfo.username || 'unknown' }}</span>
+            </div>
+            <div class="user-info-row">
+              <span class="user-info-label">身份：</span>
+              <span class="user-info-value">{{ userInfo.user_type || 'unknown' }}</span>
+            </div>
+            <div class="user-info-row">
+              <span class="user-info-label">最近登录IP：</span>
+              <span class="user-info-value">{{ userInfo.last_ip || 'unknown' }}</span>
+            </div>
           </div>
-          <div class="user-info-row">
-            <span class="user-info-label">身份：</span>
-            <span class="user-info-value">{{ userInfo.user_type || 'unknown'}}</span>
+          <div class="user-info-row user-info-row-editable">
+            <span class="user-info-label">注册邮箱: </span>
+            <span class="user-info-value">{{ email }}</span>
+            <button class="user-info-btn" @click="onVerifyEmail" :disabled="isVerified || cooldown > 0" :class="{ 'disabled-btn': isVerified || cooldown > 0 }">{{ isVerified ? '已验证' : (cooldown > 0 ? `请稍候(${cooldown})` : '验证邮箱') }}</button>
           </div>
-          <div class="user-info-row">
-            <span class="user-info-label">最近登录IP：</span>
-            <span class="user-info-value">{{ userInfo.last_ip || 'unknown' }}</span>
+          <div v-if="showVerificationInput" class="verification-section">
+            <input v-model="verificationCode" class="verification-input" placeholder="请输入验证码" />
+            <button class="verification-btn" @click="onConfirmVerification">确认</button>
           </div>
         </div>
-        <div class="user-info-row user-info-row-editable">
-          <span class="user-info-label">注册邮箱: </span>
-          <span class="user-info-value">
-            <span>{{ email }}</span>
-          </span>
-          <button class="user-info-btn" @click="onVerifyEmail" :disabled="isVerified || cooldown > 0"
-                  :class="{ 'disabled-btn': isVerified || cooldown > 0 }">
-            {{ isVerified ? '已验证' : (cooldown > 0 ? `请稍候(${cooldown})` : '验证邮箱') }}
-          </button>
+        <div v-else-if="activeTab === 'log'" key="log">
+          <LogTable/>
         </div>
-        <div v-if="showVerificationInput" class="verification-section">
-          <input v-model="verificationCode" class="verification-input" placeholder="请输入验证码" />
-          <button class="verification-btn" @click="onConfirmVerification">确认</button>
+        <div v-else key="upload">
+          <FaceUpload/>
         </div>
-      </template>
-      <template v-else-if="activeTab === 'log'">
-        <LogTable/>
-      </template>
-      <template v-else>
-        <FaceUpload/>
-      </template>
+      </transition>
     </main>
     <BubbleMessage ref="bubbleRef"/>
   </div>
@@ -356,5 +353,13 @@ async function onConfirmVerification() {
 .verification-btn:hover {
   background-color: #37205e;
   box-shadow: 0 4px 16px rgba(79, 55, 138, 0.13);
+}
+
+/* fade transition for tab switch */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.1s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>

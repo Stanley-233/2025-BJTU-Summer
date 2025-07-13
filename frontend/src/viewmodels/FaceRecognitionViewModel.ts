@@ -1,6 +1,7 @@
 import {ref, onMounted, onBeforeUnmount, nextTick, inject} from 'vue'
 import { DefaultApi, Configuration } from '../api/generated'
 import { blobToBase64 } from '../util/base64'
+import CryptoJS from "crypto-js";
 
 export default function useFaceRecognition() {
   // inject global bubble from root provider
@@ -87,7 +88,7 @@ export default function useFaceRecognition() {
             alert("人脸识别失败：同时出现两人");
         } else {
           showGlobalBubble ?
-            showGlobalBubble("服务器内部错误") :
+            showGlobalBubble("服务器内部错误" + error.message) :
             alert("服务器内部错误");
         }
       }
