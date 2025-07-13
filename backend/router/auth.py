@@ -365,7 +365,8 @@ def check_face_data(request: UserCheckFaceRequest, req: Request, session: Sessio
     raise HTTPException(status_code=402, detail="活体检测失败，为合成图")
 
   search_response = client.search(image=best_img.get("pic"), image_type="BASE64", group_id_list="default", options={
-    "max_user_num": 1
+    "max_user_num": 1,
+    "match_threshold": 80
   })
 
   if search_response.get("error_code") == 222207:
