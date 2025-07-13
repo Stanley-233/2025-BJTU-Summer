@@ -10,6 +10,8 @@
       </div>
       <div v-else class="video-wrapper">
         <video ref="videoRef" autoplay playsinline class="video-preview"></video>
+        <div v-if="countdown > 0" class="overlay countdown">{{ countdown }}</div>
+        <div v-else-if="isLoading" class="overlay loading">识别中</div>
       </div>
       <div class="tip-text">请正对摄像头，保持面部居中，并确保环境光线充足</div>
       <button class="action-button" @click="startCapture" :disabled="recording">
@@ -25,7 +27,7 @@ import {inject, provide} from "vue";
 const showGlobalBubble = inject('showGlobalBubble')
 provide('showFaceMessage', showGlobalBubble)
 
-const { videoRef, hasPermission, recording, startCapture } = useFaceRecognition()
+const { videoRef, hasPermission, recording, startCapture, countdown, isLoading } = useFaceRecognition()
 </script>
 
 <style scoped>
@@ -55,6 +57,7 @@ const { videoRef, hasPermission, recording, startCapture } = useFaceRecognition(
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.15);
   padding: 24px;
+  position: relative;
 }
 .video-preview {
   width: 480px;
@@ -96,5 +99,17 @@ const { videoRef, hasPermission, recording, startCapture } = useFaceRecognition(
   border-radius: 4px;
   font-size: 16px;
   cursor: pointer;
+}
+/* overlay styles for countdown and loading */
+.overlay {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 48px;
+  padding: 16px 24px;
+  border-radius: 8px;
+  text-align: center;
 }
 </style>
