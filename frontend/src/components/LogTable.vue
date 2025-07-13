@@ -1,4 +1,3 @@
-@ -1,338 +1,445 @@
 <template>
   <div class="log-table-wrapper">
     <div class="log-table-controls">
@@ -9,31 +8,35 @@
         <input type="datetime-local" v-model="endTime" class="date-input" @change="onEndTimeChange" />
       </label>
     </div>
-    <table class="log-table">
+    <table class="log-table" :style="{ tableLayout: 'fixed' }">
       <thead>
       <tr>
-        <th class="clickable-type-th" @click="toggleTypeDropdown">
+        <th :style="{ width: columnWidths[0] + 'px' }" class="clickable-type-th" @click="toggleTypeDropdown" ref="typeTh">
           类型
           <span class="dropdown-arrow">▼</span>
           <div v-if="showTypeDropdown" class="type-dropdown">
             <div class="type-option" v-for="(icon, type) in typeIconMap" :key="type" @click.stop="selectType(type)">
-              {{ icon }} {{ type }}
+              {{ icon }} {{ LogType[type] }}
             </div>
           </div>
+          <div class="resize-handle" @mousedown.prevent="initResize($event, 0)"></div>
         </th>
-        <th>ID</th>
-        <th>日志内容</th>
-        <th>创建时间</th>
-        <th>详情</th>
+        <th :style="{ width: columnWidths[1] + 'px' }">日志内容
+          <div class="resize-handle" @mousedown.prevent="initResize($event, 1)"></div>
+        </th>
+        <th :style="{ width: columnWidths[2] + 'px' }">创建时间
+          <div class="resize-handle" @mousedown.prevent="initResize($event, 2)"></div>
+        </th>
+        <th :style="{ width: columnWidths[3] + 'px' }">详情
+        </th>
       </tr>
       </thead>
       <tbody>
       <tr v-for="log in pagedLogs" :key="log.id">
-        <td>{{ typeIconMap[log.event_type] + LogType[log.event_type] }}</td>
-        <td>{{ log.id }}</td>
-        <td>{{ log.description }}</td>
-        <td>{{ log.timestamp }}</td>
-        <td><button @click="viewDetail(log)">查看</button></td>
+        <td :style="{ width: columnWidths[0] + 'px' }">{{ typeIconMap[log.event_type] + LogType[log.event_type] }}</td>
+        <td :style="{ width: columnWidths[1] + 'px' }">{{ log.description }}</td>
+        <td :style="{ width: columnWidths[2] + 'px' }">{{ formatTimestamp(log.timestamp) }}</td>
+        <td :style="{ width: columnWidths[3] + 'px' }"><button @click="viewDetail(log)">查看</button></td>
       </tr>
       </tbody>
     </table>
@@ -47,9 +50,26 @@
     <div v-if="showDetailModal && detailLog" class="modal-overlay" @click.self="closeDetailModal">
       <div class="modal-content">
         <h3>日志详情</h3>
-        <p><strong>类型：</strong>{{ typeIconMap[detailLog.type] }} {{ detailLog.type }}</p>
-        <p><strong>内容：</strong>{{ detailLog.content }}</p>
-        <p><strong>时间：</strong>{{ detailLog.createdAt }}</p>
+        <template v-if="detailLog.log">
+          <p><strong>类型：</strong>{{ typeIconMap[detailLog.log.event_type] }} {{ LogType[detailLog.log.event_type] }}</p>
+          <p><strong>日志ID：</strong>{{ detailLog.log.id }}</p>
+          <p><strong>时间：</strong>{{ formatTimestamp(detailLog.log.timestamp) }}</p>
+          <p><strong>描述：</strong>{{ detailLog.log.description }}</p>
+          <div v-if="detailLog.detail">
+            <p v-if="detailLog.detail.face_data"><strong>人脸数据：</strong>{{ detailLog.detail.face_data }}</p>
+            <p v-if="detailLog.detail.liveness_score !== undefined"><strong>活体检测分数：</strong>{{ detailLog.detail.liveness_score }}</p>
+            <p v-if="detailLog.detail.spoofing_score !== undefined"><strong>欺诈检测分数：</strong>{{ detailLog.detail.spoofing_score }}</p>
+            <p v-if="detailLog.detail.danger_nums !== undefined"><strong>危险物品数量：</strong>{{ detailLog.detail.danger_nums }}</p>
+          </div>
+          <div v-if="detailLog.dangers && detailLog.dangers.length">
+            <h4>危险详情：</h4>
+            <ul>
+              <li v-for="d in detailLog.dangers" :key="d.danger_id">
+                类型：{{ d.type }}，置信度：{{ d.confidence }}
+              </li>
+            </ul>
+          </div>
+        </template>
         <button class="close-btn" @click="closeDetailModal">关闭</button>
       </div>
     </div>
@@ -58,7 +78,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { queryLogs } from '../viewmodels/LogViewModel'
+import { queryLogs, queryLogDetail } from '../viewmodels/LogViewModel'
 
 const LogType = {
   0: '非法用户',
@@ -129,12 +149,29 @@ function goToPage(page) {
 const showDetailModal = ref(false)
 const detailLog = ref(null)
 
-function viewDetail(log) {
-  detailLog.value = log
-  showDetailModal.value = true
+// 点击查看详情时获取详细数据
+async function viewDetail(log) {
+  try {
+    const detail = await queryLogDetail(log.id)
+    if (detail) {
+      detailLog.value = detail
+      showDetailModal.value = true
+    }
+  } catch (e) {
+    console.error(e)
+    alert('获取日志详情失败')
+  }
 }
 function closeDetailModal() {
   showDetailModal.value = false
+}
+
+// 格式化时间到秒
+function formatTimestamp(ts) {
+  if (!ts) return ''
+  const m = ts.match(/^(.{19})/)
+  const str = m ? m[1] : ts
+  return str.replace('T', ' ')
 }
 
 // 监听筛选条件变化，自动加载日志
@@ -157,6 +194,56 @@ onMounted(() => {
 watch([selectedType, startTime, endTime, currentPage], () => {
   loadLogs()
 })
+
+// column resize state
+const columnWidths = ref([80, 200, 160, 100])
+let resizingIndex = null
+let startX = 0
+let startWidth = 0
+let startNextWidth = 0
+
+function initResize(event, index) {
+  resizingIndex = index
+  startX = event.clientX
+  startWidth = columnWidths.value[index]
+  startNextWidth = columnWidths.value[index + 1] || 0
+  window.addEventListener('mousemove', onResize)
+  window.addEventListener('mouseup', stopResize)
+}
+
+function onResize(event) {
+  if (resizingIndex !== null) {
+    const i = resizingIndex
+    const delta = event.clientX - startX
+    let newWidth = startWidth + delta
+    let newNextWidth = startNextWidth - delta
+    const min = 60
+    const max = 300
+    // constrain both new widths
+    if (newWidth < min) {
+      newWidth = min
+      newNextWidth = startWidth + startNextWidth - min
+    }
+    if (newNextWidth < min) {
+      newNextWidth = min
+      newWidth = startWidth + startNextWidth - min
+    }
+    if (newWidth > max) {
+      newWidth = max
+      newNextWidth = startWidth + startNextWidth - max
+    }
+    columnWidths.value[i] = newWidth
+    if (columnWidths.value.length > i + 1) {
+      columnWidths.value[i + 1] = newNextWidth
+    }
+  }
+}
+
+function stopResize() {
+  window.removeEventListener('mousemove', onResize)
+  window.removeEventListener('mouseup', stopResize)
+  resizingIndex = null
+}
 </script>
 
 <style scoped>
@@ -170,41 +257,27 @@ watch([selectedType, startTime, endTime, currentPage], () => {
   background: #fff;
   box-shadow: 0 2px 8px rgba(79,55,138,0.04);
   border-radius: 6px;
-  font-size: 1em;
+  font-size: 0.9em; /* reduced font size */
   margin-bottom: 24px;
 }
 .log-table th, .log-table td {
-  padding: 12px 10px;
+  padding: 8px 10px; /* reduced row height */
   border-bottom: 1px solid #ede7f6;
   text-align: left;
   color: #333;
+  position: relative;
+}
+.log-table td {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .log-table th {
-  background: #f7f7fa;
   color: #4F378A;
   font-weight: 600;
 }
 .log-table tr:last-child td {
   border-bottom: none;
-}
-.log-table th:nth-child(1), .log-table td:nth-child(1) {
-  width: 80px;
-  min-width: 60px;
-  max-width: 100px;
-}
-.log-table th:nth-child(2), .log-table td:nth-child(2) {
-  width: 80px;
-  min-width: 60px;
-  max-width: 100px;
-}
-.log-table th:nth-child(3), .log-table td:nth-child(3) {
-  width: auto;
-  min-width: 200px;
-}
-.log-table th:nth-child(4), .log-table td:nth-child(4) {
-  width: 160px;
-  min-width: 120px;
-  max-width: 200px;
 }
 .clickable-type-th {
   cursor: pointer;
@@ -241,12 +314,6 @@ watch([selectedType, startTime, endTime, currentPage], () => {
 }
 .type-option:hover {
   background: #ede7f6;
-}
-.selected-type-info {
-  margin-bottom: 8px;
-  color: #4F378A;
-  font-size: 1em;
-  font-weight: 500;
 }
 .log-table-controls {
   display: flex;
@@ -334,5 +401,20 @@ watch([selectedType, startTime, endTime, currentPage], () => {
 .pagination-bar span {
   color: #4F378A;
   font-size: 1em;
+}
+.resize-handle {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 60%;
+  cursor: col-resize;
+  background: #e0e0e0;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+.resize-handle:hover {
+  background: rgba(0,0,0,0.1);
 }
 </style>
