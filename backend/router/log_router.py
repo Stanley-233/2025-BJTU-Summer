@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 import PIL.Image
 from fastapi import APIRouter, Query, Depends, HTTPException
@@ -53,11 +54,20 @@ def query_logs(
     raise HTTPException(status_code=403, detail="权限不足，只有管理员可以查询日志")
 
   stmt = select(SecurityEvent)
-  if log_type:
-    stmt = stmt.where(SecurityEvent.event_type == EventType[log_type])
+  if log_type == "0":
+    stmt = stmt.where(SecurityEvent.event_type == EventType.UNVERIFIED_USER)
+  elif log_type == "1":
+    stmt = stmt.where(SecurityEvent.event_type == EventType.FACE_SPOOFING)
+  elif log_type == "2":
+    stmt = stmt.where(SecurityEvent.event_type == EventType.ROAD_SAFETY)
   if log_range:
-    start, end = log_range.split("~")
-    stmt = stmt.where(SecurityEvent.timestamp.between(start, end))
+    try:
+      start_str, end_str = log_range.split("~")
+      start_dt = datetime.fromisoformat(start_str)
+      end_dt = datetime.fromisoformat(end_str)
+    except Exception:
+      raise HTTPException(status_code=500, detail="时间范围格式错误，应为YYYY-MM-DD~YYYY-MM-DD")
+    stmt = stmt.where(SecurityEvent.timestamp.between(start_dt, end_dt))
   stmt = stmt.limit(limit).offset(offset)
   results = session.exec(stmt).all()
   return results
