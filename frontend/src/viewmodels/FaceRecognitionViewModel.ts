@@ -84,23 +84,24 @@ export default function useFaceRecognition() {
           alert("人脸识别成功，欢迎回来，" + user_name + "！");
         }
       } catch (error: any) {
-        console.error(error);
-        if (error.response?.code === 404) {
+        console.error(error)
+        const status = error.response?.status
+        if (status === 404) {
           showGlobalBubble ?
             showGlobalBubble("人脸识别失败：用户不存在或人脸数据不存在") :
-            alert("人脸识别失败：用户不存在或人脸数据不存在");
-        } else if (error.response?.code === 402) {
+            alert("人脸识别失败：用户不存在或人脸数据不存在")
+        } else if (status === 402) {
           showGlobalBubble ?
             showGlobalBubble(error.response.data?.detail || "活体检测失败") :
-            alert(error.response.data?.detail || "活体检测失败");
-        } else if (error.response?.code === 406) {
+            alert(error.response.data?.detail || "活体检测失败")
+        } else if (status === 406) {
           showGlobalBubble ?
             showGlobalBubble("人脸识别失败：同时出现两人") :
-            alert("人脸识别失败：同时出现两人");
+            alert("人脸识别失败：同时出现两人")
         } else {
           showGlobalBubble ?
             showGlobalBubble("服务器内部错误" + error.message) :
-            alert("服务器内部错误");
+            alert("服务器内部错误")
         }
       } finally {
         isLoading.value = false
