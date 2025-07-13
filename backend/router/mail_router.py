@@ -1,17 +1,15 @@
 import random
 import string
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException, APIRouter
 from pydantic import BaseModel
-from sqlalchemy.orm import joinedload
 from sqlmodel import Session, select
 
 from util.engine import get_session
-from util.image import ImageModel, UserCheckFaceRequest
-from util.security import create_token, get_current_user, encrypt_password
+from util.security import create_token, get_current_user
 from util.mail import send_email
-from model.user import User, UserEmail, UserPhone, UserType
+from model.user import User, UserEmail
 
 mail_router = APIRouter()
 

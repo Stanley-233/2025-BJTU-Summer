@@ -1,6 +1,6 @@
 import base64
 import io
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Optional
 
 from PIL import Image
@@ -51,9 +51,10 @@ def video_detect(request: VideoDetectRequest, session: Session = Depends(get_ses
     annotated_img = Image.fromarray(annotated)
     buf = io.BytesIO()
     annotated_img.save(buf, format="JPEG", quality=85)
+
     predicted_image_base64 = base64.b64encode(buf.getvalue()).decode()
 
-    event = SecurityEvent(event_type=EventType.ROAD_SAFETY, timestamp=datetime.now())
+    event = SecurityEvent(event_type=EventType.ROAD_SAFETY, timestamp=datetime.now(), description="识别到道路病害")
     session.add(event)
     session.commit()
 
@@ -69,6 +70,7 @@ def video_detect(request: VideoDetectRequest, session: Session = Depends(get_ses
       # Response model
       dangers_resp.append(RoadDangerInfo(type=danger_type, confidence=confidence))
     danger_count = len(dangers_db)
+    event.description = f"通过视频识别到 {danger_count} 种道路病害"
 
     detail = RoadDetail(id=event.id, predicted_image=predicted_image_base64, danger_nums=danger_count)
     session.add(detail)

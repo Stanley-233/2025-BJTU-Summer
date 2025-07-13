@@ -2,7 +2,6 @@ import base64
 from typing import Optional
 
 from sqlmodel import Session
-import uuid
 from datetime import datetime
 from PIL.Image import Image
 
