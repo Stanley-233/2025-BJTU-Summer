@@ -23,22 +23,41 @@
           <th>ID</th>
           <th>日志内容</th>
           <th>创建时间</th>
+          <th>详情</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="log in logRecords" :key="log.id">
-          <td>{{ typeIconMap[log.type] }}</td>
+        <tr v-for="log in pagedLogs" :key="log.id">
+          <td>{{ typeIconMap[log.event_type] }}</td>
           <td>{{ log.id }}</td>
-          <td>{{ log.content }}</td>
-          <td>{{ log.createdAt }}</td>
+          <td>{{ log.description }}</td>
+          <td>{{ log.timestamp }}</td>
+          <td><button @click="viewDetail(log)">查看</button></td>
         </tr>
       </tbody>
     </table>
+    <!-- 翻页栏 -->
+    <div class="pagination-bar" v-if="totalPages > 1">
+      <button :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">上一页</button>
+      <span>第 {{ currentPage }} / {{ totalPages }} 页</span>
+      <button :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">下一页</button>
+    </div>
+    <!-- 日志详情弹窗 -->
+    <div v-if="showDetailModal && detailLog" class="modal-overlay" @click.self="closeDetailModal">
+      <div class="modal-content">
+        <h3>日志详情</h3>
+        <p><strong>类型：</strong>{{ typeIconMap[detailLog.type] }} {{ detailLog.type }}</p>
+        <p><strong>内容：</strong>{{ detailLog.content }}</p>
+        <p><strong>时间：</strong>{{ detailLog.createdAt }}</p>
+        <button class="close-btn" @click="closeDetailModal">关闭</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { queryLogs } from '../viewmodels/LogViewModel'
 
 const LogType = {
   UNVERIFIED: '非法用户',
@@ -52,34 +71,10 @@ const typeIconMap = {
   [LogType.ROAD_SAFETY]: '🚧',
 }
 
-const logRecords = ref([
-  {
-    type: LogType.UNVERIFIED,
-    id: 1,
-    content: '修改了用户权限',
-    createdAt: '2025-07-09 10:00:00',
-  },
-  {
-    type: LogType.SPOOFING,
-    id: 2,
-    content: '登录失败',
-    createdAt: '2025-07-09 10:05:00',
-  },
-  {
-    type: LogType.ROAD_SAFETY,
-    id: 3,
-    content: '检测到道路异常',
-    createdAt: '2025-07-09 10:10:00',
-  },
-])
+const logRecords = ref([])
 
-function addLogRecord({ type, content }) {
-  logRecords.value.push({
-    type,
-    id: logRecords.value.length + 1,
-    content,
-    createdAt: new Date().toLocaleString(),
-  })
+function setLogs(list) {
+  logRecords.value = Array.isArray(list) ? list : []
 }
 
 // 下拉筛选相关
@@ -114,6 +109,53 @@ function handleClickOutside(event) {
 if (typeof window !== 'undefined') {
   window.addEventListener('click', handleClickOutside)
 }
+
+// 分页相关
+const pageSize = 10
+const currentPage = ref(1)
+const totalPages = computed(() => Math.ceil(logRecords.value.length / pageSize))
+const pagedLogs = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return logRecords.value.slice(start, start + pageSize)
+})
+
+function goToPage(page) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+const showDetailModal = ref(false)
+const detailLog = ref(null)
+
+function viewDetail(log) {
+  detailLog.value = log
+  showDetailModal.value = true
+}
+function closeDetailModal() {
+  showDetailModal.value = false
+}
+
+// 监听筛选条件变化，自动加载日志
+async function loadLogs() {
+  // 格式化时间范围
+  let logRange = null
+  if (startTime.value && endTime.value) {
+    logRange = `${startTime.value.replace('T', ' ').slice(0, 16)}~${endTime.value.replace('T', ' ').slice(0, 16)}`
+  }
+  // 调用前弹窗显示参数
+  alert(`查询参数：\ntype: ${selectedType.value}\nlogRange: ${logRange}\nlimit: ${pageSize}\noffset: ${(currentPage.value - 1) * pageSize}`)
+  const logs = await queryLogs(selectedType.value, logRange, pageSize, (currentPage.value - 1) * pageSize)
+  setLogs(logs || [])
+}
+
+onMounted(() => {
+  loadLogs()
+})
+
+watch([selectedType, startTime, endTime, currentPage], () => {
+  loadLogs()
+})
 </script>
 
 <style scoped>
@@ -230,6 +272,67 @@ if (typeof window !== 'undefined') {
 .date-input:focus {
   border: 1.5px solid #4F378A;
   background: #fff;
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 32px 24px 20px 24px;
+  min-width: 320px;
+  box-shadow: 0 4px 24px rgba(79,55,138,0.12);
+  position: relative;
+  text-align: left;
+}
+.close-btn {
+  margin-top: 18px;
+  padding: 6px 18px;
+  background: #4F378A;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.2s;
+}
+.close-btn:hover {
+  background: #6c4bb6;
+}
+.pagination-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  margin: 18px 0 0 0;
+}
+.pagination-bar button {
+  padding: 4px 16px;
+  border: 1.5px solid #ede7f6;
+  border-radius: 6px;
+  background: #f7f7fa;
+  color: #4F378A;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.pagination-bar button:disabled {
+  background: #ede7f6;
+  color: #aaa;
+  cursor: not-allowed;
+}
+.pagination-bar span {
+  color: #4F378A;
+  font-size: 1em;
 }
 </style>
 
