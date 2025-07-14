@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query, Depends, HTTPException
 from typing import Optional
 
 from sqlmodel import Session, select
-from sqlalchemy import select, func, Integer, Table, Column, MetaData
+from sqlalchemy import func
 
 from model.security_event import SecurityEvent, RoadDangerType, EventType, SpoofingDetail, RoadDetail, RoadDanger, \
   LogLevel
@@ -46,7 +46,7 @@ def query_logs(
 
   参数说明：
   - log_type：允许根据日志类型过滤
-  - log_range：允许根据日志时间范围过滤，格式自定义
+  - log_range：允许根据日志时间范围过滤
   - limit：限制返回结果数量，默认为 10
   - offset：指定从哪个位置开始返回结果
   - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR
@@ -56,7 +56,7 @@ def query_logs(
   /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
   """
   # 这里添加实际的查询逻辑，例如从数据库中根据条件查询
-  if user.user_type not in [UserType.SYSADMIN, UserType.GOV_ADMIN]:
+  if user.user_type not in [UserType.SYSADMIN, UserType.GOV_ADMIN, UserType.ROAD_MAINTAINER]:
     raise HTTPException(status_code=403, detail="权限不足，只有管理员可以查询日志")
 
   stmt = select(SecurityEvent)
@@ -65,6 +65,10 @@ def query_logs(
   elif log_type == "1":
     stmt = stmt.where(SecurityEvent.event_type == EventType.FACE_SPOOFING)
   elif log_type == "2":
+    stmt = stmt.where(SecurityEvent.event_type == EventType.ROAD_SAFETY)
+  elif log_type == "3":
+    stmt = stmt.where(SecurityEvent.event_type == EventType.GENERAL)
+  if user.user_type not in [UserType.SYSADMIN]:
     stmt = stmt.where(SecurityEvent.event_type == EventType.ROAD_SAFETY)
 
   if level == "0":
@@ -105,17 +109,21 @@ def query_log_detail(
   /logs_detail?log_id=123e4567-e89b-12d3-a456-426614174000
   """
   # 这里添加实际的查询逻辑，例如从数据库中查询所有日志类型
-  if user.user_type not in [UserType.SYSADMIN, UserType.GOV_ADMIN]:
+  if user.user_type not in [UserType.SYSADMIN, UserType.GOV_ADMIN, UserType.ROAD_MAINTAINER]:
     raise HTTPException(status_code=403, detail="权限不足，只有管理员可以查询日志详情")
 
   log = session.get(SecurityEvent, log_id)
   if log.event_type == EventType.FACE_SPOOFING:
+    if user.user_type not in [UserType.SYSADMIN]:
+      raise HTTPException(status_code=403, detail="权限不足，只有管理员可以查询人脸识别告警详情")
     detail = session.get(SpoofingDetail, log_id)
     return {
       "log" : log,
       "detail": detail
     }
   elif log.event_type == EventType.UNVERIFIED_USER:
+    if user.user_type not in [UserType.SYSADMIN]:
+      raise HTTPException(status_code=403, detail="权限不足，只有管理员可以查询人脸识别告警详情")
     detail = session.get(SpoofingDetail, log_id)
     return {
       "log": log,
@@ -132,17 +140,44 @@ def query_log_detail(
   return HTTPException(status_code=404, detail="未找到日志详情")
 
 @log_router.get("/log_counts", summary="获取日志条数")
-def get_log_count(session: Session = Depends(get_session), user: User = Depends(get_current_user)):
+def get_log_count(log_type: Optional[str] = Query(None, description="事件类型过滤"),
+                  log_range: Optional[str] = Query(None, description="日志范围过滤，例如：2021-01-01~2021-12-31"),
+                  session: Session = Depends(get_session),
+                  user: User = Depends(get_current_user)):
   """
   获取日志条数
+  - 参数说明：
+  - log_type：允许根据日志类型过滤
+  - log_range：允许根据日志时间范围过滤
 
   示例请求：
   /log_counts
   """
-  if user.user_type not in [UserType.SYSADMIN, UserType.GOV_ADMIN]:
+  if user.user_type not in [UserType.SYSADMIN, UserType.GOV_ADMIN, UserType.ROAD_MAINTAINER]:
     raise HTTPException(status_code=403, detail="权限不足，只有管理员可以查询日志条数")
 
   stmt = select(func.count()).select_from(SecurityEvent)
-  log_count = session.exec(stmt).scalar_one()
+  # 根据日志类型过滤
+  if log_type == "0":
+    stmt = stmt.where(SecurityEvent.event_type == EventType.UNVERIFIED_USER)
+  elif log_type == "1":
+    stmt = stmt.where(SecurityEvent.event_type == EventType.FACE_SPOOFING)
+  elif log_type == "2":
+    stmt = stmt.where(SecurityEvent.event_type == EventType.ROAD_SAFETY)
+  elif log_type == "3":
+    stmt = stmt.where(SecurityEvent.event_type == EventType.GENERAL)
+  # 非SYSADMIN仅允许查询ROAD_SAFETY日志
+  if user.user_type != UserType.SYSADMIN:
+    stmt = stmt.where(SecurityEvent.event_type == EventType.ROAD_SAFETY)
+  # 根据时间范围过滤
+  if log_range:
+    try:
+      start_str, end_str = log_range.split("~")
+      start_dt = datetime.fromisoformat(start_str)
+      end_dt = datetime.fromisoformat(end_str)
+    except Exception:
+      raise HTTPException(status_code=500, detail="时间范围格式错误，应为YYYY-MM-DD~YYYY-MM-DD")
+    stmt = stmt.where(SecurityEvent.timestamp.between(start_dt, end_dt))
 
+  log_count = session.exec(stmt).scalar_one()
   return log_count

@@ -105,6 +105,9 @@ async function fetchUserInfo() {
         case 'gov_admin':
           userInfo.value.user_type = '政府管理员'
           break;
+        case 'road_maintainer':
+          userInfo.value.user_type = '道路维护人员'
+          break;
         default:
           userInfo.value.user_type = 'error'
       }

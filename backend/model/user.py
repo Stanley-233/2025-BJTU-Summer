@@ -8,6 +8,7 @@ class UserType(enum.Enum):
   SYSADMIN = "sysadmin"
   DRIVER = "driver"
   GOV_ADMIN = "gov_admin"
+  ROAD_MAINTAINER = "road_maintainer"
 
 class User(SQLModel, table=True):
   username: str = Field(primary_key=True, index=True)

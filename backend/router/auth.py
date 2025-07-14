@@ -418,3 +418,4 @@ def check_face_data(request: UserCheckFaceRequest, req: Request, session: Sessio
 def get_user_info(user: User = Depends(get_current_user)):
   """获取当前用户信息"""
   return user
+
