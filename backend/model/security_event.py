@@ -5,14 +5,24 @@ from typing import Optional, List
 
 from sqlmodel import SQLModel, Field, Relationship
 
+from model.user import User
+
 
 class EventType(enum.Enum):
   UNVERIFIED_USER = 0
   FACE_SPOOFING = 1
   ROAD_SAFETY = 2
+  GENERAL = 3
+
+class LogLevel(enum.Enum):
+  INFO = 0
+  WARNING = 1
+  ERROR = 2
 
 class SecurityEvent(SQLModel, table=True):
   id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+  log_level: LogLevel = Field(index=True, description="日志级别", default=LogLevel.INFO)
+  link_username: Optional[str] = Field(default=None, description="关联用户", foreign_key="user.username")
   event_type: EventType = Field(index=True, description="事件类型")
   description: Optional[str] = Field(description="事件描述")
   timestamp: datetime = Field(description="事件发生时间")

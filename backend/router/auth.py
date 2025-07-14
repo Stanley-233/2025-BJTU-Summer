@@ -8,9 +8,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlmodel import Session
 
+from model.security_event import LogLevel, EventType
 from util.engine import get_session
 from util.image import ImageModel, UserCheckFaceRequest
-from util.log import add_face_spoofing_event, add_unverified_user_event
+from util.log import add_face_spoofing_event, add_unverified_user_event, add_general_event
 from util.security import create_token, get_current_user, encrypt_password, aes_decrypt
 from model.user import User, UserEmail, UserPhone, UserType
 
@@ -93,6 +94,7 @@ def register(request: UserRegisterRequest, session: Session = Depends(get_sessio
   session.commit()
   session.refresh(new_user)
   token = create_token(new_user)
+  add_general_event(session,   EventType.GENERAL, f"用户 {new_user.username} 注册成功", link_user=user, log_level=LogLevel.INFO)
   return {
     "message": "注册成功",
     "token": token
@@ -148,9 +150,11 @@ class UserLoginRequest(BaseModel):
 def login(request: UserLoginRequest, req: Request, session: Session = Depends(get_session)):
   user = session.get(User, request.username)
   if not user:
+    add_general_event(session, f"用户 {request.username} 不存在", log_level=LogLevel.WARNING)
     raise HTTPException(status_code=404, detail="User not found")
 
   if user.password != encrypt_password(request.password):
+    add_general_event(session, f"用户 {request.username} 尝试登陆密码错误", log_level=LogLevel.WARNING)
     raise HTTPException(status_code=403, detail="Incorrect password")
 
   token = create_token(user)
@@ -162,6 +166,7 @@ def login(request: UserLoginRequest, req: Request, session: Session = Depends(ge
   except Exception:
     pass
 
+  add_general_event(session, f"用户 {user.username} 登录成功", link_user=user, log_level=LogLevel.INFO)
   return {"message": "登录成功",
           "token": token}
 
@@ -212,12 +217,15 @@ def post_face_data(face_data: ImageModel, session: Session = Depends(get_session
 
   if result.get("error_code") != 0:
     error_msg = result.get("error_msg", "未知错误")
+    add_general_event(session, f"用户 {user.username} 人脸注册失败，", link_user=user, log_level=LogLevel.INFO)
     raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
+
 
   user.face_data = image
   session.add(user)
   session.commit()
   session.refresh(user)
+  add_general_event(session, f"用户 {user.username} 人脸注册成功", link_user=user, log_level=LogLevel.INFO)
   return {"message": "脸部数据上传成功"}
 
 
@@ -273,6 +281,7 @@ def update_face_data(face_data: ImageModel, session: Session = Depends(get_sessi
   session.add(user)
   session.commit()
   session.refresh(user)
+  add_general_event(session, f"用户 {user.username} 人脸更新成功", link_user=user, log_level=LogLevel.INFO)
   return {"message": "脸部数据上传成功"}
 
 

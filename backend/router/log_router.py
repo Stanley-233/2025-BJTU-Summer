@@ -7,7 +7,8 @@ from typing import Optional
 
 from sqlmodel import Session, select
 
-from model.security_event import SecurityEvent, RoadDangerType, EventType, SpoofingDetail, RoadDetail, RoadDanger
+from model.security_event import SecurityEvent, RoadDangerType, EventType, SpoofingDetail, RoadDetail, RoadDanger, \
+  LogLevel
 from model.user import User, UserType
 from util.engine import get_session
 from util.log import add_face_spoofing_event, add_unverified_user_event, add_road_safety_event
@@ -34,6 +35,8 @@ def query_logs(
     log_range: Optional[str] = Query(None, description="日志范围过滤，例如：2021-01-01~2021-12-31"),
     limit: int = Query(10, description="查询返回条数，默认返回 10 条"),
     offset: int = Query(0, description="起始条数，默认从第 0 条记录开始"),
+    level: int = Query(None, description="日志级别过滤"),
+    log_username: Optional[str] = Query(None, description="查询关联用户名"),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
@@ -45,6 +48,8 @@ def query_logs(
   - log_range：允许根据日志时间范围过滤，格式自定义
   - limit：限制返回结果数量，默认为 10
   - offset：指定从哪个位置开始返回结果
+  - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR
+  - log_username: 查询关联用户名
 
   示例请求：
   /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
@@ -60,6 +65,17 @@ def query_logs(
     stmt = stmt.where(SecurityEvent.event_type == EventType.FACE_SPOOFING)
   elif log_type == "2":
     stmt = stmt.where(SecurityEvent.event_type == EventType.ROAD_SAFETY)
+
+  if level == "0":
+    stmt = stmt.where(SecurityEvent.log_level == LogLevel.INFO)
+  elif level == "1":
+    stmt = stmt.where(SecurityEvent.log_level == LogLevel.WARNING)
+  elif level == "2":
+    stmt = stmt.where(SecurityEvent.log_level == LogLevel.ERROR)
+
+  if log_username:
+    stmt.where(SecurityEvent.link_username == log_username)
+
   if log_range:
     try:
       start_str, end_str = log_range.split("~")

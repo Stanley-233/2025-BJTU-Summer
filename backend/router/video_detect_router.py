@@ -9,9 +9,11 @@ from pydantic import BaseModel
 from sqlmodel import Session
 from ultralytics import YOLO
 
-from model.security_event import SecurityEvent, EventType, RoadDetail, RoadDangerType, RoadDanger
+from model.security_event import SecurityEvent, EventType, RoadDetail, RoadDangerType, RoadDanger, LogLevel
+from model.user import User
 from util.engine import get_session
 from util.image import extract_last_frame_from_base64_video
+from util.security import get_current_user
 
 video_detect_router = APIRouter()
 
@@ -33,7 +35,7 @@ class VideoDetectResponse(BaseModel):
 
 
 @video_detect_router.post("/video_detect/", summary="视频流道路病害检测", response_model=VideoDetectResponse)
-def video_detect(request: VideoDetectRequest, session: Session = Depends(get_session)):
+def video_detect(request: VideoDetectRequest, session: Session = Depends(get_session), user: User = Depends(get_current_user)):
   """从上传的短视频中道路病害"""
   try:
     model_path = 'D:\\GitHub\\2025-BJTU-Summer\\backend\\model\\RDD_yolov8n_best.pt'
@@ -54,7 +56,11 @@ def video_detect(request: VideoDetectRequest, session: Session = Depends(get_ses
 
     predicted_image_base64 = base64.b64encode(buf.getvalue()).decode()
 
-    event = SecurityEvent(event_type=EventType.ROAD_SAFETY, timestamp=datetime.now(), description="识别到道路病害")
+    event = SecurityEvent(event_type=EventType.ROAD_SAFETY,
+                          timestamp=datetime.now(),
+                          description="识别到道路病害",
+                          link_username=user.username,
+                          log_level=LogLevel.WARNING)
     session.add(event)
     session.commit()
 
