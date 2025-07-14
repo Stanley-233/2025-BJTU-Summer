@@ -21,8 +21,9 @@
             <template v-if="isLoading">
               <p>正在推理中</p>
             </template>
-            <template v-else-if="imageSrc">
-              <img :src="imageSrc" alt="占位图片" />
+            <template v-else-if="mediaSrc">
+              <!-- show result thumbnail and play on click -->
+              <img :src="resultThumbnailSrc" alt="结果缩略图" class="thumbnail" @click="playVideo" />
             </template>
             <template v-else>
               <p>尚无结果</p>
@@ -37,7 +38,7 @@
               <h3>{{ selectedModel }} 检测结果</h3>
               <ul style="text-align:left;">
                 <li v-for="(danger, idx) in (Array.isArray(dangerList) ? dangerList : dangerList.value)" :key="idx">
-                  危险类型: {{ danger.type }}，置信度: {{ (danger.confidence * 100).toFixed(1) }}%
+                  危险类型: {{ dangerTypeMap[danger.type] ?? danger.type }}，置信度: {{ (danger.confidence * 100).toFixed(1) }}%
                 </li>
               </ul>
             </template>
@@ -73,19 +74,27 @@ import { requestVideoDangerDetect } from '../viewmodels/DangerDetectModel';
 
 const models = ['YOLOv8n', '模型B', '模型C'];
 const selectedModel = ref(models[0]);
-const imageSrc = ref('');
+const mediaSrc = ref('');
 const dangerList = ref([]);
 const isLoading = ref(false);
 const fileInput = ref(null);
 const thumbnailSrc = ref('');
 const videoFile = ref(null);
 const showGlobalBubble = inject('showGlobalBubble');
+const resultThumbnailSrc = ref('');
+const dangerTypeMap = {
+  0: '🚧纵向',
+  1: '🚧横向',
+  2: '🚧网状',
+  3: '🚧坑洼',
+  4: '🚧补丁'
+};
 
 function selectModel(model) {
   selectedModel.value = model;
   // 切换模型时清空结果
   isLoading.value = false;
-  imageSrc.value = '';
+  mediaSrc.value = '';
   dangerList.value = [];
 }
 
@@ -150,6 +159,13 @@ function generateThumbnail(filePath) {
   });
 }
 
+// play video in new window
+function playVideo() {
+  const win = window.open('', '_blank');
+  if (!win) return;
+  win.document.write(`<html lang="en"><body style="margin:0"><video src="${mediaSrc.value}" controls autoplay style="width:100%;height:100%;"></video></body></html>`);
+}
+
 function onFloatingButtonClick() {
   if (!videoFile.value) {
     showGlobalBubble && showGlobalBubble('请先上传视频文件');
@@ -157,7 +173,7 @@ function onFloatingButtonClick() {
   }
   // 开始推理，清空并显示loading
   isLoading.value = true;
-  imageSrc.value = '';
+  mediaSrc.value = '';
   dangerList.value = [];
 
   const reader = new FileReader();
@@ -168,7 +184,9 @@ function onFloatingButtonClick() {
     })
       .then((result) => {
         if (result) {
-          imageSrc.value = 'data:image/png;base64,' + result.predicted_image;
+          mediaSrc.value = 'data:video/mp4;base64,' + result.predicted_image;
+          // generate thumbnail for result video
+          generateResultThumbnail(mediaSrc.value);
           dangerList.value = (result.dangers || []).map(item => ({ type: item.type, confidence: item.confidence }));
         }
       })
@@ -184,6 +202,25 @@ function onFloatingButtonClick() {
     isLoading.value = false;
   };
   reader.readAsDataURL(videoFile.value);
+}
+
+// generate thumbnail for result video
+function generateResultThumbnail(filePath) {
+  const video = document.createElement('video');
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  video.src = filePath;
+  video.crossOrigin = 'anonymous';
+  video.load();
+  video.addEventListener('loadedmetadata', () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    video.currentTime = 0;
+  });
+  video.addEventListener('seeked', () => {
+    try { ctx.drawImage(video, 0, 0, canvas.width, canvas.height); resultThumbnailSrc.value = canvas.toDataURL('image/png'); }
+    catch {} finally { URL.revokeObjectURL(video.src); }
+  });
 }
 </script>
 
@@ -325,19 +362,6 @@ function onFloatingButtonClick() {
 
 /* 更换视频按钮可复用upload-btn样式，无需额外样式 */
 
-.thumbnail {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  display: block;
-  margin: auto;
-  border-radius: 8px;
-  object-fit: contain;
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-}
-
 /* 普通推理按钮样式 */
 .start-btn {
   align-self: center;
@@ -362,5 +386,14 @@ function onFloatingButtonClick() {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* .thumbnail styles */
+.thumbnail {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  cursor: pointer;
 }
 </style>
