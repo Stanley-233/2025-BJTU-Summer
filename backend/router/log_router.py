@@ -73,11 +73,11 @@ def query_logs(
   if user.user_type not in [UserType.SYSADMIN]:
     stmt = stmt.where(SecurityEvent.event_type == EventType.ROAD_SAFETY)
 
-  if level == "0":
+  if level == 0:
     stmt = stmt.where(SecurityEvent.log_level == LogLevel.INFO)
-  elif level == "1":
+  elif level == 1:
     stmt = stmt.where(SecurityEvent.log_level == LogLevel.WARNING)
-  elif level == "2":
+  elif level == 2:
     stmt = stmt.where(SecurityEvent.log_level == LogLevel.ERROR)
 
   if log_username:
