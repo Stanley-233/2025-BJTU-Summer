@@ -39,7 +39,11 @@
           </div>
         </div>
         <div v-else-if="activeTab === 'log'" key="log">
-          <LogTable/>
+          <div class="log-content-auto-bg">
+            <div class="log-table-scroll-area log-table-bottom-gap" style="margin-bottom:32px;">
+              <LogTable/>
+            </div>
+          </div>
         </div>
         <div v-else key="upload">
           <FaceUpload/>
@@ -217,6 +221,12 @@ async function onConfirmVerification() {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  overflow: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.console-main::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-title {
@@ -364,5 +374,22 @@ async function onConfirmVerification() {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* 保证日志表格与底部有间距，不出现滚动条 */
+.log-table-scroll-area {
+  width: 100%;
+}
+.log-table-bottom-gap {
+  margin-bottom: 0;
+}
+.log-content-auto-bg {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(79, 55, 138, 0.06);
+  padding: 24px 32px 8px 32px;
+  margin-bottom: 8px;
+  display: inline-block;
+  min-width: 60%;
 }
 </style>
