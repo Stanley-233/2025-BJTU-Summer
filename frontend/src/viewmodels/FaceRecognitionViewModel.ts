@@ -1,6 +1,7 @@
 import {ref, onMounted, onBeforeUnmount, nextTick, inject} from 'vue'
 import { DefaultApi, Configuration } from '../api/generated'
 import { blobToBase64 } from '../util/base64'
+import CryptoJS from "crypto-js";
 
 export default function useFaceRecognition() {
   // inject global bubble from root provider
@@ -8,6 +9,8 @@ export default function useFaceRecognition() {
   const videoRef = ref<HTMLVideoElement | null>(null)
   const hasPermission = ref(false)
   const recording = ref(false)
+  const countdown = ref(0)
+  const isLoading = ref(false)
   let stream: MediaStream | null = null
   let mediaRecorder: MediaRecorder | null = null
 
@@ -41,7 +44,13 @@ export default function useFaceRecognition() {
         : alert('摄像头未就绪')
       return
     }
+    // 初始化倒计时并开始采集
     recording.value = true
+    countdown.value = 2
+    const ct = setInterval(() => {
+      if (countdown.value > 0) countdown.value--
+      if (countdown.value <= 0) clearInterval(ct)
+    }, 1000)
     const chunks: Blob[] = []
     try {
       mediaRecorder = new MediaRecorder(stream as MediaStream, { mimeType: 'video/mp4' })
@@ -53,6 +62,9 @@ export default function useFaceRecognition() {
     setTimeout(() => mediaRecorder?.stop(), 2000)
     mediaRecorder.onstop = async () => {
       recording.value = false
+      countdown.value = 0
+      // 等待API响应，显示识别中
+      isLoading.value = true
       const videoBlob = new Blob(chunks, { type: 'video/mp4' })
       try {
         const dataUrl = await blobToBase64(videoBlob)
@@ -72,24 +84,27 @@ export default function useFaceRecognition() {
           alert("人脸识别成功，欢迎回来，" + user_name + "！");
         }
       } catch (error: any) {
-        console.error(error);
-        if (error.response?.code === 404) {
+        console.error(error)
+        const status = error.response?.status
+        if (status === 404) {
           showGlobalBubble ?
             showGlobalBubble("人脸识别失败：用户不存在或人脸数据不存在") :
-            alert("人脸识别失败：用户不存在或人脸数据不存在");
-        } else if (error.response?.code === 402) {
+            alert("人脸识别失败：用户不存在或人脸数据不存在")
+        } else if (status === 402) {
           showGlobalBubble ?
             showGlobalBubble(error.response.data?.detail || "活体检测失败") :
-            alert(error.response.data?.detail || "活体检测失败");
-        } else if (error.response?.code === 406) {
+            alert(error.response.data?.detail || "活体检测失败")
+        } else if (status === 406) {
           showGlobalBubble ?
             showGlobalBubble("人脸识别失败：同时出现两人") :
-            alert("人脸识别失败：同时出现两人");
+            alert("人脸识别失败：同时出现两人")
         } else {
           showGlobalBubble ?
-            showGlobalBubble("服务器内部错误") :
-            alert("服务器内部错误");
+            showGlobalBubble("服务器内部错误" + error.message) :
+            alert("服务器内部错误")
         }
+      } finally {
+        isLoading.value = false
       }
     }
   }
@@ -97,5 +112,5 @@ export default function useFaceRecognition() {
   onMounted(init)
   onBeforeUnmount(cleanup)
 
-  return { videoRef, hasPermission, recording, startCapture }
+  return { videoRef, hasPermission, recording, startCapture, countdown, isLoading }
 }

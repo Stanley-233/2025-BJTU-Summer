@@ -21,6 +21,7 @@ import {ref, onMounted, onBeforeUnmount, nextTick, inject} from 'vue'
 import { DefaultApi, Configuration } from '../api/generated'
 import { blobToBase64 } from '../util/base64'
 import CryptoJS from "crypto-js";
+import {getUserInfo} from "@/viewmodels/VerifyInfoViewModel.js";
 
 const showGlobalBubble = inject('showGlobalBubble')
 const videoRef = ref(null)
@@ -56,7 +57,17 @@ async function onUpload() {
       basePath: 'http://127.0.0.1:8000',
       accessToken: sessionStorage.getItem('token') ? () => sessionStorage.getItem('token') : undefined,
     }))
-    await api.updateFaceDataUpdateFacePut({ image: base64 })
+    const userInfo = await getUserInfo()
+    if (userInfo == null) {
+      showGlobalBubble ? showGlobalBubble('人脸注册失败，请重试') : alert('人脸注册失败，请重试')
+      return
+    }
+    if( userInfo.face_data !== '') {
+      await api.updateFaceDataUpdateFacePut({image: base64})
+    }
+    else {
+      await api.postFaceDataPostFacePost({image: base64})
+    }
     showGlobalBubble ? showGlobalBubble('人脸注册成功') : alert('人脸注册成功')
   } catch (error) {
     console.error(error)

@@ -26,7 +26,11 @@ import type { HTTPValidationError } from '../model';
 // @ts-ignore
 import type { ImageModel } from '../model';
 // @ts-ignore
+import type { MailCodeLoginRequest } from '../model';
+// @ts-ignore
 import type { MailLoginRequest } from '../model';
+// @ts-ignore
+import type { SecurityEvent } from '../model';
 // @ts-ignore
 import type { User } from '../model';
 // @ts-ignore
@@ -37,12 +41,68 @@ import type { UserEmail } from '../model';
 import type { UserLoginRequest } from '../model';
 // @ts-ignore
 import type { UserRegisterRequest } from '../model';
+// @ts-ignore
+import type { UserType } from '../model';
+// @ts-ignore
+import type { UserWithEmail } from '../model';
+// @ts-ignore
+import type { VideoDetectRequest } from '../model';
+// @ts-ignore
+import type { VideoDetectResponse } from '../model';
 /**
  * DefaultApi - axios parameter creator
  * @export
  */
 export const DefaultApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
+        /**
+         * 修改用户权限  参数说明： - username: 要修改权限的用户 ID - new_user_type: 新的用户类型，必须是 UserType 枚举中的值  示例请求： PUT /user_change_permission?username=mzf&new_user_type=SYSADMIN
+         * @summary 修改用户权限
+         * @param {string} username 
+         * @param {UserType} newUserType 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        changeUserPermissionUserChangePermissionPut: async (username: string, newUserType: UserType, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'username' is not null or undefined
+            assertParamExists('changeUserPermissionUserChangePermissionPut', 'username', username)
+            // verify required parameter 'newUserType' is not null or undefined
+            assertParamExists('changeUserPermissionUserChangePermissionPut', 'newUserType', newUserType)
+            const localVarPath = `/user_change_permission`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (username !== undefined) {
+                localVarQueryParameter['username'] = username;
+            }
+
+            if (newUserType !== undefined) {
+                localVarQueryParameter['new_user_type'] = newUserType;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
         /**
          * Base64 人脸识别匹配，识别成功后返回用户登录Token
          * @summary 人脸识别获取Token
@@ -73,6 +133,60 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(userCheckFaceRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - log_username: 查询关联用户名 - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR
+         * @summary 获取日志条数
+         * @param {string | null} [logType] 事件类型过滤
+         * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+         * @param {string | null} [logUsername] 查询关联用户名
+         * @param {number | null} [level] 日志级别过滤，0&#x3D;INFO, 1&#x3D;WARNING, 2&#x3D;ERROR
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getLogCountLogCountsGet: async (logType?: string | null, logRange?: string | null, logUsername?: string | null, level?: number | null, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/log_counts`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (logType !== undefined) {
+                localVarQueryParameter['log_type'] = logType;
+            }
+
+            if (logRange !== undefined) {
+                localVarQueryParameter['log_range'] = logRange;
+            }
+
+            if (logUsername !== undefined) {
+                localVarQueryParameter['log_username'] = logUsername;
+            }
+
+            if (level !== undefined) {
+                localVarQueryParameter['level'] = level;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -121,6 +235,115 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          */
         getUserInfoGetUserInfoGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/get_user_info/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 获取用户关联的日志事件  参数说明： - username: 用户 ID  示例请求： GET /users/get_logs?username=mzf
+         * @summary 获取用户关联日志事件
+         * @param {string} username 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUserLogsUsersGetLogsGet: async (username: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'username' is not null or undefined
+            assertParamExists('getUserLogsUsersGetLogsGet', 'username', username)
+            const localVarPath = `/users/get_logs`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (username !== undefined) {
+                localVarQueryParameter['username'] = username;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary 获取用户列表（含邮箱）
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUsersWithEmailUsersGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/users/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary 政府管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        govWarningEventStreamAlarmGovWarningStreamGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/alarm/gov_warning/stream`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -294,6 +517,111 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * 获取日志类型列表  参数说明： - log_id：日志 ID，用于查询特定日志的详细信息  示例请求： /logs_detail?log_id=123e4567-e89b-12d3-a456-426614174000
+         * @summary 获取日志类型列表
+         * @param {string} logId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        queryLogDetailLogDetailGet: async (logId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'logId' is not null or undefined
+            assertParamExists('queryLogDetailLogDetailGet', 'logId', logId)
+            const localVarPath = `/log_detail`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (logId !== undefined) {
+                localVarQueryParameter['log_id'] = logId;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 根据查询条件返回日志记录，需要认证权限  参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - limit：限制返回结果数量，默认为 10 - offset：指定从哪个位置开始返回结果 - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR - log_username: 查询关联用户名  示例请求： /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
+         * @summary 查询日志记录
+         * @param {string | null} [logType] 事件类型过滤
+         * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+         * @param {number} [limit] 查询返回条数，默认返回 10 条
+         * @param {number} [offset] 起始条数，默认从第 0 条记录开始
+         * @param {number | null} [level] 日志级别过滤
+         * @param {string | null} [logUsername] 查询关联用户名
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        queryLogsLogsGet: async (logType?: string | null, logRange?: string | null, limit?: number, offset?: number, level?: number | null, logUsername?: string | null, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/logs`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (logType !== undefined) {
+                localVarQueryParameter['log_type'] = logType;
+            }
+
+            if (logRange !== undefined) {
+                localVarQueryParameter['log_range'] = logRange;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (offset !== undefined) {
+                localVarQueryParameter['offset'] = offset;
+            }
+
+            if (level !== undefined) {
+                localVarQueryParameter['level'] = level;
+            }
+
+            if (logUsername !== undefined) {
+                localVarQueryParameter['log_username'] = logUsername;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * 用户注册，返回注册成功消息
          * @summary 用户注册
          * @param {UserRegisterRequest} userRegisterRequest 
@@ -365,12 +693,76 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @summary 道路养护管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        roadWarningEventStreamAlarmRoadWarningStreamGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/alarm/road_warning/stream`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Root
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         rootGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 测试添加日志记录的接口
+         * @summary 添加日志记录
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        testAddLogsLogsTestGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/logs/test`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -477,13 +869,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * 通过邮箱登录，检查验证码
          * @summary 通过邮箱验证码登录
-         * @param {MailLoginRequest} mailLoginRequest 
+         * @param {MailCodeLoginRequest} mailCodeLoginRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        verifyLoginEmailCodeLoginMailCodePost: async (mailLoginRequest: MailLoginRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'mailLoginRequest' is not null or undefined
-            assertParamExists('verifyLoginEmailCodeLoginMailCodePost', 'mailLoginRequest', mailLoginRequest)
+        verifyLoginEmailCodeLoginMailCodePost: async (mailCodeLoginRequest: MailCodeLoginRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'mailCodeLoginRequest' is not null or undefined
+            assertParamExists('verifyLoginEmailCodeLoginMailCodePost', 'mailCodeLoginRequest', mailCodeLoginRequest)
             const localVarPath = `/login/mail_code/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -503,7 +895,81 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(mailLoginRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(mailCodeLoginRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 从上传的短视频中道路病害
+         * @summary 视频流道路病害检测
+         * @param {VideoDetectRequest} videoDetectRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        videoDetectVideoDetectPost: async (videoDetectRequest: VideoDetectRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'videoDetectRequest' is not null or undefined
+            assertParamExists('videoDetectVideoDetectPost', 'videoDetectRequest', videoDetectRequest)
+            const localVarPath = `/video_detect/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(videoDetectRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary 系统管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        warningEventStreamAlarmSysWarningStreamGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/alarm/sys_warning/stream`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -521,6 +987,20 @@ export const DefaultApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = DefaultApiAxiosParamCreator(configuration)
     return {
         /**
+         * 修改用户权限  参数说明： - username: 要修改权限的用户 ID - new_user_type: 新的用户类型，必须是 UserType 枚举中的值  示例请求： PUT /user_change_permission?username=mzf&new_user_type=SYSADMIN
+         * @summary 修改用户权限
+         * @param {string} username 
+         * @param {UserType} newUserType 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async changeUserPermissionUserChangePermissionPut(username: string, newUserType: UserType, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.changeUserPermissionUserChangePermissionPut(username, newUserType, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.changeUserPermissionUserChangePermissionPut']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Base64 人脸识别匹配，识别成功后返回用户登录Token
          * @summary 人脸识别获取Token
          * @param {UserCheckFaceRequest} userCheckFaceRequest 
@@ -531,6 +1011,22 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.checkFaceDataCheckFacePost(userCheckFaceRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.checkFaceDataCheckFacePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - log_username: 查询关联用户名 - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR
+         * @summary 获取日志条数
+         * @param {string | null} [logType] 事件类型过滤
+         * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+         * @param {string | null} [logUsername] 查询关联用户名
+         * @param {number | null} [level] 日志级别过滤，0&#x3D;INFO, 1&#x3D;WARNING, 2&#x3D;ERROR
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getLogCountLogCountsGet(logType?: string | null, logRange?: string | null, logUsername?: string | null, level?: number | null, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getLogCountLogCountsGet(logType, logRange, logUsername, level, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getLogCountLogCountsGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -555,6 +1051,43 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getUserInfoGetUserInfoGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.getUserInfoGetUserInfoGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 获取用户关联的日志事件  参数说明： - username: 用户 ID  示例请求： GET /users/get_logs?username=mzf
+         * @summary 获取用户关联日志事件
+         * @param {string} username 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getUserLogsUsersGetLogsGet(username: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<SecurityEvent>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getUserLogsUsersGetLogsGet(username, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getUserLogsUsersGetLogsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary 获取用户列表（含邮箱）
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getUsersWithEmailUsersGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<UserWithEmail>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getUsersWithEmailUsersGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getUsersWithEmailUsersGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary 政府管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async govWarningEventStreamAlarmGovWarningStreamGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.govWarningEventStreamAlarmGovWarningStreamGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.govWarningEventStreamAlarmGovWarningStreamGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -609,6 +1142,37 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * 获取日志类型列表  参数说明： - log_id：日志 ID，用于查询特定日志的详细信息  示例请求： /logs_detail?log_id=123e4567-e89b-12d3-a456-426614174000
+         * @summary 获取日志类型列表
+         * @param {string} logId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async queryLogDetailLogDetailGet(logId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.queryLogDetailLogDetailGet(logId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.queryLogDetailLogDetailGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 根据查询条件返回日志记录，需要认证权限  参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - limit：限制返回结果数量，默认为 10 - offset：指定从哪个位置开始返回结果 - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR - log_username: 查询关联用户名  示例请求： /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
+         * @summary 查询日志记录
+         * @param {string | null} [logType] 事件类型过滤
+         * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+         * @param {number} [limit] 查询返回条数，默认返回 10 条
+         * @param {number} [offset] 起始条数，默认从第 0 条记录开始
+         * @param {number | null} [level] 日志级别过滤
+         * @param {string | null} [logUsername] 查询关联用户名
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async queryLogsLogsGet(logType?: string | null, logRange?: string | null, limit?: number, offset?: number, level?: number | null, logUsername?: string | null, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.queryLogsLogsGet(logType, logRange, limit, offset, level, logUsername, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.queryLogsLogsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * 用户注册，返回注册成功消息
          * @summary 用户注册
          * @param {UserRegisterRequest} userRegisterRequest 
@@ -635,6 +1199,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary 道路养护管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async roadWarningEventStreamAlarmRoadWarningStreamGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.roadWarningEventStreamAlarmRoadWarningStreamGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.roadWarningEventStreamAlarmRoadWarningStreamGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Root
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -643,6 +1219,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.rootGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.rootGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 测试添加日志记录的接口
+         * @summary 添加日志记录
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async testAddLogsLogsTestGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.testAddLogsLogsTestGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.testAddLogsLogsTestGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -674,14 +1262,39 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         /**
          * 通过邮箱登录，检查验证码
          * @summary 通过邮箱验证码登录
-         * @param {MailLoginRequest} mailLoginRequest 
+         * @param {MailCodeLoginRequest} mailCodeLoginRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest: MailLoginRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest, options);
+        async verifyLoginEmailCodeLoginMailCodePost(mailCodeLoginRequest: MailCodeLoginRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.verifyLoginEmailCodeLoginMailCodePost(mailCodeLoginRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.verifyLoginEmailCodeLoginMailCodePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 从上传的短视频中道路病害
+         * @summary 视频流道路病害检测
+         * @param {VideoDetectRequest} videoDetectRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async videoDetectVideoDetectPost(videoDetectRequest: VideoDetectRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<VideoDetectResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.videoDetectVideoDetectPost(videoDetectRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.videoDetectVideoDetectPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary 系统管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async warningEventStreamAlarmSysWarningStreamGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.warningEventStreamAlarmSysWarningStreamGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.warningEventStreamAlarmSysWarningStreamGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
@@ -695,6 +1308,17 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
     const localVarFp = DefaultApiFp(configuration)
     return {
         /**
+         * 修改用户权限  参数说明： - username: 要修改权限的用户 ID - new_user_type: 新的用户类型，必须是 UserType 枚举中的值  示例请求： PUT /user_change_permission?username=mzf&new_user_type=SYSADMIN
+         * @summary 修改用户权限
+         * @param {string} username 
+         * @param {UserType} newUserType 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        changeUserPermissionUserChangePermissionPut(username: string, newUserType: UserType, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.changeUserPermissionUserChangePermissionPut(username, newUserType, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Base64 人脸识别匹配，识别成功后返回用户登录Token
          * @summary 人脸识别获取Token
          * @param {UserCheckFaceRequest} userCheckFaceRequest 
@@ -703,6 +1327,19 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         checkFaceDataCheckFacePost(userCheckFaceRequest: UserCheckFaceRequest, options?: RawAxiosRequestConfig): AxiosPromise<any> {
             return localVarFp.checkFaceDataCheckFacePost(userCheckFaceRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - log_username: 查询关联用户名 - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR
+         * @summary 获取日志条数
+         * @param {string | null} [logType] 事件类型过滤
+         * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+         * @param {string | null} [logUsername] 查询关联用户名
+         * @param {number | null} [level] 日志级别过滤，0&#x3D;INFO, 1&#x3D;WARNING, 2&#x3D;ERROR
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getLogCountLogCountsGet(logType?: string | null, logRange?: string | null, logUsername?: string | null, level?: number | null, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.getLogCountLogCountsGet(logType, logRange, logUsername, level, options).then((request) => request(axios, basePath));
         },
         /**
          * 获取用户邮箱信息
@@ -721,6 +1358,34 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         getUserInfoGetUserInfoGet(options?: RawAxiosRequestConfig): AxiosPromise<User> {
             return localVarFp.getUserInfoGetUserInfoGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 获取用户关联的日志事件  参数说明： - username: 用户 ID  示例请求： GET /users/get_logs?username=mzf
+         * @summary 获取用户关联日志事件
+         * @param {string} username 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUserLogsUsersGetLogsGet(username: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<SecurityEvent>> {
+            return localVarFp.getUserLogsUsersGetLogsGet(username, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary 获取用户列表（含邮箱）
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUsersWithEmailUsersGet(options?: RawAxiosRequestConfig): AxiosPromise<Array<UserWithEmail>> {
+            return localVarFp.getUsersWithEmailUsersGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary 政府管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        govWarningEventStreamAlarmGovWarningStreamGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.govWarningEventStreamAlarmGovWarningStreamGet(options).then((request) => request(axios, basePath));
         },
         /**
          * 获取用户是否已验证邮箱
@@ -762,6 +1427,31 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.postFaceDataPostFacePost(imageModel, options).then((request) => request(axios, basePath));
         },
         /**
+         * 获取日志类型列表  参数说明： - log_id：日志 ID，用于查询特定日志的详细信息  示例请求： /logs_detail?log_id=123e4567-e89b-12d3-a456-426614174000
+         * @summary 获取日志类型列表
+         * @param {string} logId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        queryLogDetailLogDetailGet(logId: string, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.queryLogDetailLogDetailGet(logId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 根据查询条件返回日志记录，需要认证权限  参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - limit：限制返回结果数量，默认为 10 - offset：指定从哪个位置开始返回结果 - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR - log_username: 查询关联用户名  示例请求： /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
+         * @summary 查询日志记录
+         * @param {string | null} [logType] 事件类型过滤
+         * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+         * @param {number} [limit] 查询返回条数，默认返回 10 条
+         * @param {number} [offset] 起始条数，默认从第 0 条记录开始
+         * @param {number | null} [level] 日志级别过滤
+         * @param {string | null} [logUsername] 查询关联用户名
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        queryLogsLogsGet(logType?: string | null, logRange?: string | null, limit?: number, offset?: number, level?: number | null, logUsername?: string | null, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.queryLogsLogsGet(logType, logRange, limit, offset, level, logUsername, options).then((request) => request(axios, basePath));
+        },
+        /**
          * 用户注册，返回注册成功消息
          * @summary 用户注册
          * @param {UserRegisterRequest} userRegisterRequest 
@@ -782,12 +1472,30 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @summary 道路养护管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        roadWarningEventStreamAlarmRoadWarningStreamGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.roadWarningEventStreamAlarmRoadWarningStreamGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Root
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         rootGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
             return localVarFp.rootGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 测试添加日志记录的接口
+         * @summary 添加日志记录
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        testAddLogsLogsTestGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.testAddLogsLogsTestGet(options).then((request) => request(axios, basePath));
         },
         /**
          * 更新用户脸部数据
@@ -812,12 +1520,31 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         /**
          * 通过邮箱登录，检查验证码
          * @summary 通过邮箱验证码登录
-         * @param {MailLoginRequest} mailLoginRequest 
+         * @param {MailCodeLoginRequest} mailCodeLoginRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest: MailLoginRequest, options?: RawAxiosRequestConfig): AxiosPromise<any> {
-            return localVarFp.verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest, options).then((request) => request(axios, basePath));
+        verifyLoginEmailCodeLoginMailCodePost(mailCodeLoginRequest: MailCodeLoginRequest, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.verifyLoginEmailCodeLoginMailCodePost(mailCodeLoginRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 从上传的短视频中道路病害
+         * @summary 视频流道路病害检测
+         * @param {VideoDetectRequest} videoDetectRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        videoDetectVideoDetectPost(videoDetectRequest: VideoDetectRequest, options?: RawAxiosRequestConfig): AxiosPromise<VideoDetectResponse> {
+            return localVarFp.videoDetectVideoDetectPost(videoDetectRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary 系统管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        warningEventStreamAlarmSysWarningStreamGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.warningEventStreamAlarmSysWarningStreamGet(options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -830,6 +1557,19 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
  */
 export class DefaultApi extends BaseAPI {
     /**
+     * 修改用户权限  参数说明： - username: 要修改权限的用户 ID - new_user_type: 新的用户类型，必须是 UserType 枚举中的值  示例请求： PUT /user_change_permission?username=mzf&new_user_type=SYSADMIN
+     * @summary 修改用户权限
+     * @param {string} username 
+     * @param {UserType} newUserType 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public changeUserPermissionUserChangePermissionPut(username: string, newUserType: UserType, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).changeUserPermissionUserChangePermissionPut(username, newUserType, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Base64 人脸识别匹配，识别成功后返回用户登录Token
      * @summary 人脸识别获取Token
      * @param {UserCheckFaceRequest} userCheckFaceRequest 
@@ -839,6 +1579,21 @@ export class DefaultApi extends BaseAPI {
      */
     public checkFaceDataCheckFacePost(userCheckFaceRequest: UserCheckFaceRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).checkFaceDataCheckFacePost(userCheckFaceRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - log_username: 查询关联用户名 - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR
+     * @summary 获取日志条数
+     * @param {string | null} [logType] 事件类型过滤
+     * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+     * @param {string | null} [logUsername] 查询关联用户名
+     * @param {number | null} [level] 日志级别过滤，0&#x3D;INFO, 1&#x3D;WARNING, 2&#x3D;ERROR
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public getLogCountLogCountsGet(logType?: string | null, logRange?: string | null, logUsername?: string | null, level?: number | null, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).getLogCountLogCountsGet(logType, logRange, logUsername, level, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -861,6 +1616,40 @@ export class DefaultApi extends BaseAPI {
      */
     public getUserInfoGetUserInfoGet(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).getUserInfoGetUserInfoGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 获取用户关联的日志事件  参数说明： - username: 用户 ID  示例请求： GET /users/get_logs?username=mzf
+     * @summary 获取用户关联日志事件
+     * @param {string} username 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public getUserLogsUsersGetLogsGet(username: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).getUserLogsUsersGetLogsGet(username, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary 获取用户列表（含邮箱）
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public getUsersWithEmailUsersGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).getUsersWithEmailUsersGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary 政府管理员告警推送
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public govWarningEventStreamAlarmGovWarningStreamGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).govWarningEventStreamAlarmGovWarningStreamGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -911,6 +1700,35 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
+     * 获取日志类型列表  参数说明： - log_id：日志 ID，用于查询特定日志的详细信息  示例请求： /logs_detail?log_id=123e4567-e89b-12d3-a456-426614174000
+     * @summary 获取日志类型列表
+     * @param {string} logId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public queryLogDetailLogDetailGet(logId: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).queryLogDetailLogDetailGet(logId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 根据查询条件返回日志记录，需要认证权限  参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - limit：限制返回结果数量，默认为 10 - offset：指定从哪个位置开始返回结果 - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR - log_username: 查询关联用户名  示例请求： /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
+     * @summary 查询日志记录
+     * @param {string | null} [logType] 事件类型过滤
+     * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+     * @param {number} [limit] 查询返回条数，默认返回 10 条
+     * @param {number} [offset] 起始条数，默认从第 0 条记录开始
+     * @param {number | null} [level] 日志级别过滤
+     * @param {string | null} [logUsername] 查询关联用户名
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public queryLogsLogsGet(logType?: string | null, logRange?: string | null, limit?: number, offset?: number, level?: number | null, logUsername?: string | null, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).queryLogsLogsGet(logType, logRange, limit, offset, level, logUsername, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * 用户注册，返回注册成功消息
      * @summary 用户注册
      * @param {UserRegisterRequest} userRegisterRequest 
@@ -935,6 +1753,17 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @summary 道路养护管理员告警推送
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public roadWarningEventStreamAlarmRoadWarningStreamGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).roadWarningEventStreamAlarmRoadWarningStreamGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Root
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -942,6 +1771,17 @@ export class DefaultApi extends BaseAPI {
      */
     public rootGet(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).rootGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 测试添加日志记录的接口
+     * @summary 添加日志记录
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public testAddLogsLogsTestGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).testAddLogsLogsTestGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -971,13 +1811,36 @@ export class DefaultApi extends BaseAPI {
     /**
      * 通过邮箱登录，检查验证码
      * @summary 通过邮箱验证码登录
-     * @param {MailLoginRequest} mailLoginRequest 
+     * @param {MailCodeLoginRequest} mailCodeLoginRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest: MailLoginRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).verifyLoginEmailCodeLoginMailCodePost(mailLoginRequest, options).then((request) => request(this.axios, this.basePath));
+    public verifyLoginEmailCodeLoginMailCodePost(mailCodeLoginRequest: MailCodeLoginRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).verifyLoginEmailCodeLoginMailCodePost(mailCodeLoginRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 从上传的短视频中道路病害
+     * @summary 视频流道路病害检测
+     * @param {VideoDetectRequest} videoDetectRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public videoDetectVideoDetectPost(videoDetectRequest: VideoDetectRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).videoDetectVideoDetectPost(videoDetectRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary 系统管理员告警推送
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public warningEventStreamAlarmSysWarningStreamGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).warningEventStreamAlarmSysWarningStreamGet(options).then((request) => request(this.axios, this.basePath));
     }
 }
 

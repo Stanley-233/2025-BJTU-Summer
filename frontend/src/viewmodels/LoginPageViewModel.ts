@@ -1,7 +1,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 // 声明浏览器全局函数
-declare function alert(message?: string): void
 declare const sessionStorage: any
 // 引入生成的 API
 import { DefaultApi, Configuration, UserLoginRequest } from '../api/generated'
@@ -20,6 +19,7 @@ export default function useLoginPageViewModel(onError?: (msg: string) => void) {
       if (token) {
         sessionStorage.setItem('token', token)
         await router.push('/')
+        window.location.reload()
       } else {
         onError?.('登录失败：未获取到令牌')
       }

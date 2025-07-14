@@ -4,50 +4,60 @@
       <div :class="['tab-item', activeTab === 'user' ? 'active' : '']" @click="activeTab = 'user'">用户信息</div>
       <div :class="['tab-item', activeTab === 'log' ? 'active' : '']" @click="activeTab = 'log'">日志记录</div>
       <div :class="['tab-item', activeTab === 'upload' ? 'active' : '']" @click="activeTab = 'upload'">人脸上传</div>
+      <div v-if="rawUserType === 'sysadmin'" :class="['tab-item', activeTab === 'manage' ? 'active' : '']" @click="activeTab = 'manage'">用户管理</div>
     </aside>
     <main class="console-main">
       <div class="tab-title">
         <h2 v-if="activeTab === 'user'">用户信息</h2>
         <h2 v-else-if="activeTab === 'log'">日志记录</h2>
         <h2 v-else-if="activeTab === 'upload'">人脸上传</h2>
+        <h2 v-else-if="activeTab === 'manage'">用户管理</h2>
         <div class="tab-title-underline"></div>
       </div>
-      <template v-if="activeTab === 'user'">
-        <div class="user-info-section">
-          <div class="user-info-row">
-            <span class="user-info-label">用户名：</span>
-            <span class="user-info-value">{{ userInfo.username || 'unknown' }}</span>
+      <transition name="fade" mode="out-in">
+        <div v-if="activeTab === 'user'" key="user">
+          <div class="user-info-section">
+            <div class="user-info-row">
+              <span class="user-info-label">用户名：</span>
+              <span class="user-info-value">{{ userInfo.username || 'unknown' }}</span>
+            </div>
+            <div class="user-info-row">
+              <span class="user-info-label">身份：</span>
+              <span class="user-info-value">{{ userInfo.user_type || 'unknown' }}</span>
+            </div>
+            <div class="user-info-row">
+              <span class="user-info-label">最近登录IP：</span>
+              <span class="user-info-value">{{ userInfo.last_ip || 'unknown' }}</span>
+            </div>
           </div>
-          <div class="user-info-row">
-            <span class="user-info-label">身份：</span>
-            <span class="user-info-value">{{ userInfo.user_type || 'unknown'}}</span>
+          <div class="user-info-row user-info-row-editable">
+            <span class="user-info-label">注册邮箱: </span>
+            <span class="user-info-value">{{ email }}</span>
+            <button class="user-info-btn" @click="onVerifyEmail" :disabled="isVerified || cooldown > 0" :class="{ 'disabled-btn': isVerified || cooldown > 0 }">{{ isVerified ? '已验证' : (cooldown > 0 ? `请稍候(${cooldown})` : '验证邮箱') }}</button>
           </div>
+          <!-- 新增登出按钮 -->
           <div class="user-info-row">
-            <span class="user-info-label">最近登录IP：</span>
-            <span class="user-info-value">{{ userInfo.last_ip || 'unknown' }}</span>
+            <button class="user-info-btn logout-btn" @click="onLogout">登出</button>
+          </div>
+          <div v-if="showVerificationInput" class="verification-section">
+            <input v-model="verificationCode" class="verification-input" placeholder="请输入验证码" />
+            <button class="verification-btn" @click="onConfirmVerification">确认</button>
           </div>
         </div>
-        <div class="user-info-row user-info-row-editable">
-          <span class="user-info-label">注册邮箱: </span>
-          <span class="user-info-value">
-            <span>{{ email }}</span>
-          </span>
-          <button class="user-info-btn" @click="onVerifyEmail" :disabled="isVerified"
-                  :class="{ 'disabled-btn': isVerified }">
-            {{ isVerified ? '已验证' : '验证邮箱' }}
-          </button>
+        <div v-else-if="activeTab === 'log'" key="log">
+          <div class="log-content-auto-bg">
+            <div class="log-table-scroll-area log-table-bottom-gap" style="margin-bottom:32px;">
+              <LogTable/>
+            </div>
+          </div>
         </div>
-        <div v-if="showVerificationInput" class="verification-section">
-          <input v-model="verificationCode" class="verification-input" placeholder="请输入验证码" />
-          <button class="verification-btn" @click="onConfirmVerification">确认</button>
+        <div v-else-if="activeTab === 'upload'" key="upload">
+          <FaceUpload/>
         </div>
-      </template>
-      <template v-else-if="activeTab === 'log'">
-        <LogTable/>
-      </template>
-      <template v-else>
-        <FaceUpload/>
-      </template>
+        <div v-else-if="activeTab === 'manage'" key="manage">
+          <UserManagement/>
+        </div>
+      </transition>
     </main>
     <BubbleMessage ref="bubbleRef"/>
   </div>
@@ -59,13 +69,20 @@ import BubbleMessage from '../components/BubbleMessage.vue'
 import {codeCheck, getUserEmail, getUserInfo, verifyEmail} from '../viewmodels/VerifyInfoViewModel'
 import LogTable from '../components/LogTable.vue'
 import FaceUpload from '../components/FaceUpload.vue'
+import UserManagement from '../components/UserManagement.vue'
+import { useRouter } from 'vue-router'
 
 const activeTab = ref('user')
+const rawUserType = ref('')
 
 const email = ref("")
 const isVerified = ref(false)
 const showVerificationInput = ref(false);
 const verificationCode = ref("");
+
+// 冷却相关变量
+const cooldown = ref(0); // 剩余冷却秒数
+let cooldownTimer = null;
 
 const bubbleRef = ref(null)
 const showGlobalBubble = inject('showGlobalBubble')
@@ -104,9 +121,13 @@ async function fetchUserInfo() {
         case 'gov_admin':
           userInfo.value.user_type = '政府管理员'
           break;
+        case 'road_maintainer':
+          userInfo.value.user_type = '道路维护人员'
+          break;
         default:
           userInfo.value.user_type = 'error'
       }
+      rawUserType.value = data.user_type
     }
   } catch (e) {
     showGlobalBubble('获取用户信息失败')
@@ -118,18 +139,31 @@ onMounted(() => {
 })
 
 async function onVerifyEmail() {
+  if (cooldown.value > 0) {
+    showGlobalBubble && showGlobalBubble(`请勿频繁发送验证码，请在${cooldown.value}秒后重试`)
+    return;
+  }
   await verifyEmail((msg) => {
     showGlobalBubble(msg)
     if (!isVerified.value) {
       showVerificationInput.value = true;
+      // 启动冷却
+      cooldown.value = 60;
+      if (cooldownTimer) clearInterval(cooldownTimer);
+      cooldownTimer = setInterval(() => {
+        if (cooldown.value > 0) {
+          cooldown.value--;
+        } else {
+          clearInterval(cooldownTimer);
+          cooldownTimer = null;
+        }
+      }, 1000);
     }
   })
 }
 
 async function onConfirmVerification() {
-  const state = await codeCheck(verificationCode.value, (msg) => {
-    showGlobalBubble(msg)
-  });
+  const state = await codeCheck(verificationCode.value, showGlobalBubble);
   if(state === 1){
     showVerificationInput.value = false;
   }else if(state === 0){
@@ -138,6 +172,18 @@ async function onConfirmVerification() {
   }else if(state === 2){
     verificationCode.value = '';
   }
+}
+
+const router = useRouter();
+
+function onLogout() {
+  // 清除本地登录状态（如token、用户信息等）
+  localStorage.clear();
+  sessionStorage.clear();
+  // 跳转到登录页并刷新，方式与登录保持一致
+  router.replace({ name: 'LoginSelectionPage' }).then(() => {
+    window.location.reload();
+  });
 }
 </script>
 
@@ -153,15 +199,12 @@ async function onConfirmVerification() {
 .side-tabs {
   width: 140px;
   background: #f7f7fa;
-  border-right: 1px solid #ececec;
+  border-right: 2px solid #ede7f6;
+  box-shadow: 2px 0 8px rgba(79, 55, 138, 0.04);
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 100%;
   padding-top: 0;
-  /* 增加右侧分割线���投影 */
-  box-shadow: 2px 0 8px rgba(79, 55, 138, 0.04);
-  border-right: 2px solid #ede7f6;
+  min-height: 100%;
 }
 
 .tab-item {
@@ -172,6 +215,19 @@ async function onConfirmVerification() {
   cursor: pointer;
   border-left: 4px solid transparent;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
+  margin: 4px 0;
+}
+
+.tab-item.active {
+  background: #ede7f6;
+  color: #4F378A;
+  border-left: 4px solid #4F378A;
+  font-weight: 600;
+}
+
+.tab-item:hover {
+  background: #e0e0e0;
+  color: #4F378A;
 }
 
 .console-main {
@@ -190,6 +246,12 @@ async function onConfirmVerification() {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  overflow: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.console-main::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-title {
@@ -267,6 +329,18 @@ async function onConfirmVerification() {
   cursor: not-allowed;
 }
 
+.user-info-btn.logout-btn {
+  background: #ffebee;
+  color: #d32f2f;
+  margin-left: 0;
+  margin-top: 8px;
+  font-weight: 600;
+}
+.user-info-btn.logout-btn:hover {
+  background: #ffcdd2;
+  color: #b71c1c;
+}
+
 .log-table th, .log-table td {
   padding: 12px 10px;
   border-bottom: 1px solid #ede7f6;
@@ -285,29 +359,74 @@ async function onConfirmVerification() {
 }
 
 .verification-section {
-  margin-top: 10px;
+  margin-top: 18px;
   display: flex;
   align-items: center;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(79, 55, 138, 0.06);
+  padding: 16px 24px;
+  width: fit-content;
 }
 
 .verification-input {
   flex: 1;
-  padding: 5px;
-  margin-right: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  min-width: 180px;
+  padding: 8px 14px;
+  margin-right: 16px;
+  border: 1.5px solid #ede7f6;
+  border-radius: 6px;
+  background: #f7f7fa;
+  font-size: 1em;
+  color: #4F378A;
+  transition: border 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.verification-input:focus {
+  border: 1.5px solid #4F378A;
+  box-shadow: 0 0 0 2px #ede7f6;
+  background: #fff;
 }
 
 .verification-btn {
-  padding: 5px 10px;
-  background-color: #007bff;
-  color: white;
+  padding: 8px 22px;
+  background-color: #4F378A;
+  color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
+  font-size: 1em;
+  font-weight: 500;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(79, 55, 138, 0.08);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.verification-btn:hover {
+  background-color: #37205e;
+  box-shadow: 0 4px 16px rgba(79, 55, 138, 0.13);
 }
 
-.verification-btn:hover {
-  background-color: #0056b3;
+/* fade transition for tab switch */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.1s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+/* 保证日志表格与底部有间距，不出现滚动条 */
+.log-table-scroll-area {
+  width: 100%;
+}
+.log-table-bottom-gap {
+  margin-bottom: 0;
+}
+.log-content-auto-bg {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(79, 55, 138, 0.06);
+  padding: 24px 32px 8px 32px;
+  margin-bottom: 8px;
+  display: inline-block;
+  min-width: 60%;
 }
 </style>

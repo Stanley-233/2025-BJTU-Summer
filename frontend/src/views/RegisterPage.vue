@@ -32,13 +32,15 @@ const { username, email, password, confirm, onRegister } = useRegisterPageViewMo
   (msg) => showGlobalBubble && showGlobalBubble(msg),
   (msg) => showGlobalBubble && showGlobalBubble(msg)
 )
+
+// 删除 onEmailLoginClick 事件处理
 </script>
 
 <style scoped>
 .auth-container {
   width: 420px;
   max-width: 90vw;
-  padding: 40px 32px;
+  padding: 12px 32px 60px 32px;
   background: #fff;
   box-shadow: 0px 4px 24px 0px rgba(79, 55, 138, 0.10), 0px 1.5px 6px 0px rgba(0,0,0,0.08);
   border-radius: 20px;
@@ -81,9 +83,23 @@ const { username, email, password, confirm, onRegister } = useRegisterPageViewMo
   border-radius: 6px;
   font-size: 18px;
   cursor: pointer;
+  margin-top: 32px;
 }
 .btn:hover {
   background-color: #3a296f;
+}
+.email-login-link {
+  color: #4F378A;
+  text-align: left;
+  margin-bottom: 8px;
+  margin-top: -8px;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 15px;
+  transition: color 0.2s;
+}
+.email-login-link:hover {
+  color: #3a296f;
 }
 @media (max-width: 600px) {
   .auth-container { margin: calc(100vh - 72px) 10px; padding: 20px; }

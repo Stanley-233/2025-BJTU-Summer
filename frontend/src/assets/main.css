@@ -55,11 +55,123 @@ input:focus, textarea:focus {
   border-color: #6750a4;
 }
 
+/* Material卡片样式 */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(103,80,164,0.10), 0 1.5px 4px rgba(0,0,0,0.06);
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: box-shadow 0.2s;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(103,80,164,0.18), 0 3px 8px rgba(0,0,0,0.10);
+}
+
+/* Material按钮悬浮动画 */
+button {
+  box-shadow: 0 1.5px 4px rgba(103,80,164,0.10);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+button:active {
+  background: #4f378b;
+  transform: scale(0.97);
+}
+
+/* 输入框Material风格 */
+input, textarea {
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(103,80,164,0.04);
+}
+
+/* Material表单label */
+label {
+  font-size: 15px;
+  color: #6750a4;
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* Material表格样式 */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1.5px 4px rgba(103,80,164,0.08);
+  overflow: hidden;
+}
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+}
+th {
+  background: #f3edf7;
+  color: #4f378a;
+  font-weight: 500;
+}
+tr {
+  border-bottom: 1px solid #eee;
+}
+tr:last-child {
+  border-bottom: none;
+}
+
+/* Material动效 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.4s cubic-bezier(.4,0,.2,1);
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
 /* 响应式适配 */
 @media (max-width: 1200px) {
   .welcome-page, .app-bar, .log-table {
     max-width: 100vw !important;
     width: 100vw !important;
     box-sizing: border-box;
+  }
+}
+
+/* 响应式优化 */
+@media (max-width: 900px) {
+  .main-content, .app-bar nav {
+    max-width: 100vw !important;
+    padding: 0 8px !important;
+  }
+  .card, table {
+    padding: 12px !important;
+    font-size: 15px;
+  }
+  button {
+    padding: 8px 12px;
+    font-size: 15px;
+  }
+}
+@media (max-width: 600px) {
+  .app-bar nav {
+    flex-direction: column;
+    height: auto;
+    padding: 8px 0 !important;
+  }
+  .nav-link {
+    margin: 8px 0 !important;
+    font-size: 17px;
+  }
+  .main-content {
+    padding-top: 64px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .card, table {
+    padding: 8px !important;
+    font-size: 14px;
+  }
+  button {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 8px;
   }
 } 
