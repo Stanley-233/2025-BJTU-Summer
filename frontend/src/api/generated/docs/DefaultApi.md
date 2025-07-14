@@ -83,7 +83,7 @@ No authorization required
 # **getLogCountLogCountsGet**
 > any getLogCountLogCountsGet()
 
-获取日志条数  示例请求： /log_counts
+获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤  示例请求： /log_counts
 
 ### Example
 
@@ -96,11 +96,21 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-const { status, data } = await apiInstance.getLogCountLogCountsGet();
+let logType: string; //事件类型过滤 (optional) (default to undefined)
+let logRange: string; //日志范围过滤，例如：2021-01-01~2021-12-31 (optional) (default to undefined)
+
+const { status, data } = await apiInstance.getLogCountLogCountsGet(
+    logType,
+    logRange
+);
 ```
 
 ### Parameters
-This endpoint does not have any parameters.
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **logType** | [**string**] | 事件类型过滤 | (optional) defaults to undefined|
+| **logRange** | [**string**] | 日志范围过滤，例如：2021-01-01~2021-12-31 | (optional) defaults to undefined|
 
 
 ### Return type
@@ -121,6 +131,7 @@ This endpoint does not have any parameters.
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | Successful Response |  -  |
+|**422** | Validation Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -478,7 +489,7 @@ const { status, data } = await apiInstance.queryLogDetailLogDetailGet(
 # **queryLogsLogsGet**
 > any queryLogsLogsGet()
 
-根据查询条件返回日志记录，需要认证权限  参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤，格式自定义 - limit：限制返回结果数量，默认为 10 - offset：指定从哪个位置开始返回结果 - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR - log_username: 查询关联用户名  示例请求： /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
+根据查询条件返回日志记录，需要认证权限  参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - limit：限制返回结果数量，默认为 10 - offset：指定从哪个位置开始返回结果 - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR - log_username: 查询关联用户名  示例请求： /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
 
 ### Example
 

@@ -94,7 +94,7 @@ def register(request: UserRegisterRequest, session: Session = Depends(get_sessio
   session.commit()
   session.refresh(new_user)
   token = create_token(new_user)
-  add_general_event(session, EventType.GENERAL, f"用户 {new_user.username} 注册成功", link_user=user, log_level=LogLevel.INFO)
+  add_general_event(session, f"用户 {new_user.username} 注册成功", link_user=user, log_level=LogLevel.INFO)
   return {
     "message": "注册成功",
     "token": token

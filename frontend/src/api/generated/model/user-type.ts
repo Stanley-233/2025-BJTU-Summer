@@ -23,7 +23,8 @@
 export const UserType = {
     Sysadmin: 'sysadmin',
     Driver: 'driver',
-    GovAdmin: 'gov_admin'
+    GovAdmin: 'gov_admin',
+    RoadMaintainer: 'road_maintainer'
 } as const;
 
 export type UserType = typeof UserType[keyof typeof UserType];
