@@ -13,6 +13,7 @@
       </nav>
     </header>
     <BubbleMessage :model-value="bubbleVisible" :message="bubbleMessage" type="warning" />
+    <WarningEventBubble ref="warningBubble" />
     <main class="main-content">
       <transition name="fade" mode="out-in">
         <router-view />
@@ -24,11 +25,14 @@
 <script setup>
 import { ref, provide, onMounted, watch } from 'vue'
 import BubbleMessage from '@/components/BubbleMessage.vue'
+import WarningEventBubble from '@/components/WarningEventBubble.vue'
 import { DefaultApi, Configuration } from '@/api/generated'
 import { EventSourcePolyfill } from 'event-source-polyfill'
 
 const bubbleVisible = ref(false)
 const bubbleMessage = ref('')
+
+const warningBubble = ref(null)
 
 function showGlobalBubble(msg) {
   bubbleMessage.value = msg
@@ -36,7 +40,13 @@ function showGlobalBubble(msg) {
   setTimeout(() => { bubbleVisible.value = false }, 2000)
 }
 
+// 定义可关闭的安全告警事件显示函数
+function showWarningEvent(event) {
+  warningBubble.value && warningBubble.value.show(event)
+}
+
 provide('showGlobalBubble', showGlobalBubble)
+provide('showWarningEvent', showWarningEvent)
 
 // 判断登录状态
 const isLogin = ref(!!sessionStorage.getItem('token'))
@@ -81,7 +91,7 @@ function startAlarmStream() {
         console.log('SSE message received:', e.data)
         try {
           const alarm = JSON.parse(e.data)
-          showGlobalBubble(`告警: ${alarm.message || JSON.stringify(alarm)}`)
+          showWarningEvent(alarm)
         } catch (err) {
           console.error('Failed to parse SSE data', err)
         }

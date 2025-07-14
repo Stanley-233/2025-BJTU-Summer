@@ -5,9 +5,6 @@ from typing import Optional, List
 
 from sqlmodel import SQLModel, Field, Relationship
 
-from model.user import User
-
-
 class EventType(enum.Enum):
   UNVERIFIED_USER = 0
   FACE_SPOOFING = 1

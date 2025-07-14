@@ -21,10 +21,10 @@ def broadcast_sys_event(event: SecurityEvent):
   支持直接传入 SecurityEvent 实例或 dict。
   """
   payload = {
-    "event_type": event.event_type,
+    "event_type": event.event_type.value,
     "description": event.description,
     "timestamp": event.timestamp,
-    "log_level": event.log_level,
+    "log_level": event.log_level.value,
     "link_username": event.link_username
   }
   data = json.dumps(payload, default=str)
@@ -43,11 +43,8 @@ async def warning_event_stream(user: User = Depends(get_current_user)):
   async def event_generator():
     try:
       while True:
-        msg = await asyncio.wait_for(queue.get(), timeout=30)
+        msg = await queue.get()
         yield f"data: {msg}\n\n"
-    except asyncio.TimeoutError:
-      # 30s 内没有数据，就发个注释行保活
-      yield ": keep-alive\n\n"
     except asyncio.CancelledError:
       pass
     finally:
@@ -60,10 +57,10 @@ def broadcast_gov_event(event: SecurityEvent):
   对外脚本调用此函数向所有 GOV_ADMIN 订阅者广播 WARNING 告警
   """
   payload = {
-    "event_type": event.event_type,
+    "event_type": event.event_type.value,
     "description": event.description,
     "timestamp": event.timestamp,
-    "log_level": event.log_level,
+    "log_level": event.log_level.value,
     "link_username": event.link_username
   }
   data = json.dumps(payload, default=str)
@@ -95,10 +92,10 @@ def broadcast_road_event(event: SecurityEvent):
   对外脚本调用此函数向所有 ROAD_MAINTAINENCER 订阅者广播 WARNING 告警
   """
   payload = {
-    "event_type": event.event_type,
+    "event_type": event.event_type.value,
     "description": event.description,
     "timestamp": event.timestamp,
-    "log_level": event.log_level,
+    "log_level": event.log_level.value,
     "link_username": event.link_username
   }
   data = json.dumps(payload, default=str)
