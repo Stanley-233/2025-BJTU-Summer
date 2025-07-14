@@ -83,7 +83,7 @@ No authorization required
 # **getLogCountLogCountsGet**
 > any getLogCountLogCountsGet()
 
-获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - log_username: 查询关联用户名  示例请求： /log_counts
+获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - log_username: 查询关联用户名 - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR
 
 ### Example
 
@@ -99,11 +99,13 @@ const apiInstance = new DefaultApi(configuration);
 let logType: string; //事件类型过滤 (optional) (default to undefined)
 let logRange: string; //日志范围过滤，例如：2021-01-01~2021-12-31 (optional) (default to undefined)
 let logUsername: string; //查询关联用户名 (optional) (default to undefined)
+let level: number; //日志级别过滤，0=INFO, 1=WARNING, 2=ERROR (optional) (default to undefined)
 
 const { status, data } = await apiInstance.getLogCountLogCountsGet(
     logType,
     logRange,
-    logUsername
+    logUsername,
+    level
 );
 ```
 
@@ -114,6 +116,7 @@ const { status, data } = await apiInstance.getLogCountLogCountsGet(
 | **logType** | [**string**] | 事件类型过滤 | (optional) defaults to undefined|
 | **logRange** | [**string**] | 日志范围过滤，例如：2021-01-01~2021-12-31 | (optional) defaults to undefined|
 | **logUsername** | [**string**] | 查询关联用户名 | (optional) defaults to undefined|
+| **level** | [**number**] | 日志级别过滤，0&#x3D;INFO, 1&#x3D;WARNING, 2&#x3D;ERROR | (optional) defaults to undefined|
 
 
 ### Return type

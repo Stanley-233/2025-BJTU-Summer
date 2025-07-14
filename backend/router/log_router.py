@@ -143,6 +143,7 @@ def query_log_detail(
 def get_log_count(log_type: Optional[str] = Query(None, description="事件类型过滤"),
                   log_range: Optional[str] = Query(None, description="日志范围过滤，例如：2021-01-01~2021-12-31"),
                   log_username: Optional[str] = Query(None, description="查询关联用户名"),
+                  level: Optional[int] = Query(None, description="日志级别过滤，0=INFO, 1=WARNING, 2=ERROR"),
                   session: Session = Depends(get_session),
                   user: User = Depends(get_current_user)):
   """
@@ -151,9 +152,7 @@ def get_log_count(log_type: Optional[str] = Query(None, description="事件类�
   - log_type：允许根据日志类型过滤
   - log_range：允许根据日志时间范围过滤
   - log_username: 查询关联用户名
-
-  示例请求：
-  /log_counts
+  - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR
   """
   if user.user_type not in [UserType.SYSADMIN, UserType.GOV_ADMIN, UserType.ROAD_MAINTAINER]:
     raise HTTPException(status_code=403, detail="权限不足，只有管理员可以查询日志条数")
@@ -171,6 +170,13 @@ def get_log_count(log_type: Optional[str] = Query(None, description="事件类�
   # 非SYSADMIN仅允许查询ROAD_SAFETY日志
   if user.user_type != UserType.SYSADMIN:
     stmt = stmt.where(SecurityEvent.event_type == EventType.ROAD_SAFETY)
+
+  if level == "0":
+      stmt = stmt.where(SecurityEvent.log_level == LogLevel.INFO)
+  elif level == "1":
+    stmt = stmt.where(SecurityEvent.log_level == LogLevel.WARNING)
+  elif level == "2":
+    stmt = stmt.where(SecurityEvent.log_level == LogLevel.ERROR)
 
   if log_username:
     stmt.where(SecurityEvent.link_username == log_username)
