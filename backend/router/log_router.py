@@ -193,5 +193,5 @@ def get_log_count(log_type: Optional[str] = Query(None, description="事件类�
       raise HTTPException(status_code=500, detail="时间范围格式错误，应为YYYY-MM-DD~YYYY-MM-DD")
     stmt = stmt.where(SecurityEvent.timestamp.between(start_dt, end_dt))
 
-  log_count = session.exec(stmt).scalar_one()
+  log_count = session.execute(stmt).scalar_one()
   return log_count

@@ -8,9 +8,9 @@
         <input type="datetime-local" v-model="endTime" class="date-input" @change="onEndTimeChange" />
       </label>
       <div class="pagination-bar-inline">
-        <button disabled>上一页</button>
-        <span>第 1 / 1 页</span>
-        <button disabled>下一页</button>
+        <button :disabled="currentPage <= 1" @click="goPrevPage">上一页</button>
+        <span>第 {{ currentPage }} / {{ totalPages }} 页</span>
+        <button :disabled="currentPage >= totalPages" @click="goNextPage">下一页</button>
       </div>
     </div>
     <table class="log-table" :style="{ tableLayout: 'fixed' }">
@@ -51,45 +51,78 @@
         </th>
       </tr>
       </thead>
-      <tbody>
-      <tr v-for="log in logRecords" :key="log.id">
-        <td :style="{ width: columnWidths[0] + 'px' }">{{ typeIconMap[log.event_type] + LogType[log.event_type] }}</td>
-        <td :style="{ width: columnWidths[1] + 'px' }">{{ log.event_type === 3 ? log.link_username : '' }}</td>
-        <td :style="{ width: columnWidths[2] + 'px' }">{{ log.description }}</td>
-        <td :style="{ width: columnWidths[3] + 'px' }">{{ LogLevel[log.log_level] ?? '-' }}</td>
-        <td :style="{ width: columnWidths[4] + 'px' }">{{ formatTimestamp(log.timestamp) }}</td>
-        <td :style="{ width: columnWidths[5] + 'px' }">
-          <button v-if="log.event_type !== 3" @click="viewDetail(log)">查看</button>
-          <button v-else style="opacity:0;pointer-events:none;">占位</button>
-        </td>
-      </tr>
-      </tbody>
+      <transition :name="slideTransitionName" mode="out-in">
+        <tbody :key="currentPage" :style="`--row-count: ${logRecords.length}`">
+          <tr v-for="log in logRecords" :key="log.id">
+            <td :style="{ width: columnWidths[0] + 'px' }">{{ typeIconMap[log.event_type] + LogType[log.event_type] }}</td>
+            <td :style="{ width: columnWidths[1] + 'px' }">{{ log.event_type === 3 ? log.link_username : '' }}</td>
+            <td :style="{ width: columnWidths[2] + 'px' }">{{ log.description }}</td>
+            <td :style="{ width: columnWidths[3] + 'px' }" :class="['log-level-cell', 'log-level-' + log.log_level]">
+              {{ LogLevel[log.log_level] ?? '-' }}
+            </td>
+            <td :style="{ width: columnWidths[4] + 'px' }">{{ formatTimestamp(log.timestamp) }}</td>
+            <td :style="{ width: columnWidths[5] + 'px' }">
+              <button v-if="log.event_type !== 3" class="action-btn" @click="viewDetail(log)">查看</button>
+              <button v-else style="opacity:0;pointer-events:none;">占位</button>
+            </td>
+          </tr>
+        </tbody>
+      </transition>
     </table>
     <!-- 日志详情弹窗 -->
-    <div v-if="showDetailModal && detailLog" class="modal-overlay" @click.self="closeDetailModal">
-      <div class="modal-content">
+    <div v-if="showDetailModal" class="modal-overlay modal-overlay-block" @click.self="isLoadingDetail ? null : closeDetailModal">
+      <div v-if="isLoadingDetail" class="modal-loading-spinner">
+        <div class="spinner"></div>
+        <div class="loading-text">加载中…</div>
+      </div>
+      <div v-else class="modal-content">
         <h3>日志详情</h3>
-        <template v-if="detailLog.log">
-          <p><strong>类型：</strong>{{ typeIconMap[detailLog.log.event_type] }} {{ LogType[detailLog.log.event_type] }}</p>
-          <p><strong>日志ID：</strong>{{ detailLog.log.id }}</p>
-          <p><strong>时间：</strong>{{ formatTimestamp(detailLog.log.timestamp) }}</p>
-          <p><strong>描述：</strong>{{ detailLog.log.description }}</p>
+        <template v-if="detailLog && detailLog.log">
+          <p v-if="detailLog.log.event_type !== undefined"><strong>类型：</strong>{{ typeIconMap[detailLog.log.event_type] }} {{ LogType[detailLog.log.event_type] }}</p>
+          <p v-if="detailLog.log.id"><strong>日志ID：</strong>{{ detailLog.log.id }}</p>
+          <p v-if="detailLog.log.timestamp"><strong>时间：</strong>{{ formatTimestamp(detailLog.log.timestamp) }}</p>
+          <p v-if="detailLog.log.description"><strong>描述：</strong>{{ detailLog.log.description }}</p>
           <div v-if="detailLog.detail">
             <p v-if="detailLog.detail.face_data"><strong>人脸数据：</strong>{{ detailLog.detail.face_data }}</p>
-            <p v-if="detailLog.detail.liveness_score !== undefined"><strong>活体检测分数：</strong>{{ detailLog.detail.liveness_score }}</p>
-            <p v-if="detailLog.detail.spoofing_score !== undefined"><strong>欺诈检测分数：</strong>{{ detailLog.detail.spoofing_score }}</p>
-            <p v-if="detailLog.detail.danger_nums !== undefined"><strong>危险物品数量：</strong>{{ detailLog.detail.danger_nums }}</p>
+            <p v-if="detailLog.detail.liveness_score !== undefined && detailLog.detail.liveness_score !== null && detailLog.detail.liveness_score !== ''"><strong>活体检测分数：</strong>{{ detailLog.detail.liveness_score }}</p>
+            <p v-if="detailLog.detail.spoofing_score !== undefined && detailLog.detail.spoofing_score !== null && detailLog.detail.spoofing_score !== ''"><strong>欺诈检测分数：</strong>{{ detailLog.detail.spoofing_score }}</p>
+            <p v-if="detailLog.detail.danger_nums !== undefined && detailLog.detail.danger_nums !== null && detailLog.detail.danger_nums !== ''"><strong>危险物品数量：</strong>{{ detailLog.detail.danger_nums }}</p>
+            <button v-if="detailLog.detail.predicted_image" class="action-btn" @click="showDangerImage = true">显示图片</button>
           </div>
-          <div v-if="detailLog.dangers && detailLog.dangers.length">
-            <h4>危险详情：</h4>
-            <ul>
-              <li v-for="d in detailLog.dangers" :key="d.danger_id">
-                类型：{{ d.type }}，置信度：{{ d.confidence }}
-              </li>
-            </ul>
+          <div v-if="detailLog.dangers && detailLog.dangers.length" class="danger-detail-card">
+            <h4 class="danger-detail-title">危险详情</h4>
+            <table class="danger-detail-table">
+              <thead>
+                <tr>
+                  <th>类型</th>
+                  <th>置信度</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="d in detailLog.dangers" :key="d.danger_id">
+                  <td>
+                    <span v-if="d.type !== undefined && d.type !== null" class="danger-type">
+                      {{ dangerTypeMap[d.type] ?? d.type }}
+                    </span>
+                  </td>
+                  <td>
+                    <span v-if="d.confidence !== undefined && d.confidence !== null && d.confidence !== ''" class="danger-confidence">
+                      {{ formatConfidence(d.confidence) }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </template>
         <button class="close-btn" @click="closeDetailModal">关闭</button>
+      </div>
+    </div>
+    <!-- 危险图片弹窗 -->
+    <div v-if="showDangerImage && detailLog && detailLog.detail && detailLog.detail.predicted_image" class="danger-image-modal" @click.self="showDangerImage = false">
+      <div class="danger-image-content">
+        <img :src="'data:image/png;base64,' + detailLog.detail.predicted_image" alt="危险图片" />
+        <button class="close-btn" @click="showDangerImage = false">关闭图片</button>
       </div>
     </div>
   </div>
@@ -97,7 +130,7 @@
 
 <script setup>
 import {ref, computed, onMounted, watch, inject} from 'vue'
-import { queryLogs, queryLogDetail } from '../viewmodels/LogViewModel'
+import { queryLogs, queryLogDetail, queryLogCount } from '../viewmodels/LogViewModel'
 
 const showGlobalBubble = inject('showGlobalBubble')
 const LogType = {
@@ -120,6 +153,14 @@ const LogLevel = {
   2: '错误',
 }
 
+const dangerTypeMap = {
+  0: '🚧水平',
+  1: '🚧垂直',
+  2: '🚧裂隙',
+  3: '🚧坑洼',
+  4: '🚧补丁'
+}
+
 const logRecords = ref([])
 
 function setLogs(list) {
@@ -128,7 +169,9 @@ function setLogs(list) {
 
 // 下拉筛选相关
 const showTypeDropdown = ref(false)
+const showLevelDropdown = ref(false)
 const selectedType = ref(null)
+const selectedLevel = ref(null)
 const startTime = ref("")
 const endTime = ref("")
 
@@ -148,45 +191,34 @@ function toggleTypeDropdown() {
 function selectType(type) {
   selectedType.value = type
   showTypeDropdown.value = false
-  // 这里只关闭下拉，不做筛选
+  // 立即刷新并重定向到第一页
+  slideTransitionName.value = 'slide-left';
+  currentPage.value = 1;
+  loadLogs();
 }
 
-// 分页相关
-// const pageSize = 10
-// const currentPage = ref(1)
-// const totalPages = computed(() => Math.ceil(logRecords.value.length / pageSize))
-// const pagedLogs = computed(() => {
-//   let filtered = logRecords.value
-//   if (selectedType.value !== null) {
-//     filtered = filtered.filter(l => l.event_type == selectedType.value)
-//   }
-//   if (selectedLevel.value !== null) {
-//     filtered = filtered.filter(l => String(l.log_level) === String(selectedLevel.value))
-//   }
-//   const start = (currentPage.value - 1) * pageSize
-//   return filtered.slice(start, start + pageSize)
-// })
-//
-// function goToPage(page) {
-//   if (page >= 1 && page <= totalPages.value) {
-//     currentPage.value = page
-//   }
-// }
 
 const showDetailModal = ref(false)
 const detailLog = ref(null)
+const isLoadingDetail = ref(false)
+const showDangerImage = ref(false)
 
 // 点击查看详情时获取详细数据
 async function viewDetail(log) {
+  showDetailModal.value = true;
+  isLoadingDetail.value = true;
+  detailLog.value = null;
   try {
-    const detail = await queryLogDetail(log.id)
+    const detail = await queryLogDetail(log.id);
     if (detail) {
-      detailLog.value = detail
-      showDetailModal.value = true
+      detailLog.value = detail;
     }
   } catch (e) {
-    console.error(e)
-    alert('获取日志详情失败')
+    console.error(e);
+    alert('获取日志详情失败');
+    showDetailModal.value = false;
+  } finally {
+    isLoadingDetail.value = false;
   }
 }
 function closeDetailModal() {
@@ -201,27 +233,84 @@ function formatTimestamp(ts) {
   return str.replace('T', ' ')
 }
 
+function formatConfidence(val) {
+  const num = Number(val);
+  if (isNaN(num)) return val;
+  return (num * 100).toFixed(2) + '%';
+}
+
+const pageSize = 10
+const totalLogs = ref(1);
+const totalPages = ref(1);
+const currentPage = ref(1);
+
+const slideTransitionName = ref('slide-left');
+let lastPage = 1;
+
+function goPrevPage() {
+  if (currentPage.value > 1) {
+    slideTransitionName.value = 'slide-right';
+    currentPage.value--;
+    loadLogs();
+  }
+}
+function goNextPage() {
+  if (currentPage.value < totalPages.value) {
+    slideTransitionName.value = 'slide-left';
+    currentPage.value++;
+    loadLogs();
+  }
+}
 // 监听筛选条件变化，自动加载日志
 async function loadLogs() {
-  // 格式化时间范围
-  let logRange = null
-  if (startTime.value && endTime.value) {
-    logRange = `${startTime.value.replace('T', ' ').slice(0, 16)}~${endTime.value.replace('T', ' ').slice(0, 16)}`
+  try {
+    // 格式化时间范围
+    let logRange = null
+    if (startTime.value && endTime.value) {
+      logRange = `${startTime.value.replace('T', ' ').slice(0, 16)}~${endTime.value.replace('T', ' ').slice(0, 16)}`
+    }
+    totalLogs.value = await queryLogCount(selectedType.value, logRange, selectedLevel.value, showGlobalBubble)
+    totalPages.value = Math.max(1, Math.ceil(totalLogs.value / pageSize))
+    if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
+    if (currentPage.value < 1) currentPage.value = 1
+    const logs = await queryLogs(selectedType.value, logRange, pageSize, (currentPage.value - 1) * pageSize, selectedLevel.value, showGlobalBubble)
+    setLogs(logs || [])
+  } catch (e) {
+    console.error('加载日志失败', e)
+    setLogs([])
   }
-  // 调用前弹窗显示参数
-  alert(`查询参数：\ntype: ${selectedType.value}\nlogRange: ${logRange}`)
-  const logs = await queryLogs(selectedType.value, logRange, undefined, undefined, selectedLevel.value, showGlobalBubble)
-  setLogs(logs || [])
 }
 
 onMounted(() => {
   loadLogs()
 })
 
-watch([selectedType, startTime, endTime], () => {
-  loadLogs()
-})
+watch(
+  () => ({
+    type: selectedType.value,
+    level: selectedLevel.value,
+    start: startTime.value,
+    end: endTime.value
+  }),
+  () => {
+    // 筛选条件变化时，重置为第一页，动画为左滑
+    slideTransitionName.value = 'slide-left';
+    currentPage.value = 1;
+    loadLogs();
+  }
+)
 
+// 通用监听：下拉框由开变关时刷新
+watch(showTypeDropdown, (val, oldVal) => {
+  // 类型下拉关闭时无需手动刷新，已由 selectType 处理
+})
+watch(showLevelDropdown, (val, oldVal) => {
+  if (oldVal && !val) {
+    slideTransitionName.value = 'slide-left';
+    currentPage.value = 1;
+    loadLogs();
+  }
+})
 // column resize state
 const columnWidths = ref([120, 80, 240, 100, 160, 60])
 let resizingIndex = null
@@ -272,25 +361,36 @@ function stopResize() {
   resizingIndex = null
 }
 
-const showLevelDropdown = ref(false)
-const selectedLevel = ref(null)
-
 function toggleLevelDropdown() {
   showLevelDropdown.value = !showLevelDropdown.value
 }
 function selectLevel(level) {
-  selectedLevel.value = level
+  selectedLevel.value = level === null ? null : Number(level)
   showLevelDropdown.value = false
+  // 立即刷新并重定向到第一页
+  slideTransitionName.value = 'slide-left';
+  currentPage.value = 1;
+  loadLogs();
 }
 
 function handleClickOutside(event) {
+  let needRefresh = false;
   if (
     !event.target.closest('.clickable-type-th') &&
     !event.target.closest('.type-dropdown') &&
     !event.target.closest('.clickable-level-th')
   ) {
-    showTypeDropdown.value = false
-    showLevelDropdown.value = false
+    if (showTypeDropdown.value) {
+      showTypeDropdown.value = false;
+      // 类型下拉关闭无需手动刷新，已由selectType处理
+    }
+    if (showLevelDropdown.value) {
+      showLevelDropdown.value = false;
+      // 危险等级下拉关闭时，重置为第一页并刷新
+      slideTransitionName.value = 'slide-left';
+      currentPage.value = 1;
+      loadLogs();
+    }
   }
 }
 if (typeof window !== 'undefined') {
@@ -443,20 +543,27 @@ if (typeof window !== 'undefined') {
   white-space: nowrap;
 }
 .pagination-bar-inline button {
-  padding: 2px 8px;
-  border: 1px solid #ede7f6;
-  border-radius: 4px;
-  background: #f7f7fa;
-  color: #4F378A;
-  font-size: 0.95em;
+  background: #a97ef8;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  padding: 1px 10px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s;
   height: 28px;
+  box-shadow: 0 2px 8px rgba(58,90,215,0.08);
+}
+.pagination-bar-inline button:hover:not(:disabled) {
+  background: #964ff1;
+  color: #fff;
 }
 .pagination-bar-inline button:disabled {
   background: #ede7f6;
   color: #aaa;
   cursor: not-allowed;
+  box-shadow: none;
 }
 .pagination-bar-inline span {
   color: #4F378A;
@@ -476,5 +583,193 @@ if (typeof window !== 'undefined') {
 }
 .resize-handle:hover {
   background: rgba(0,0,0,0.1);
+}
+.danger-detail-card {
+  background: #f7f7fa;
+  border: 1.5px solid #ede7f6;
+  border-radius: 4px;
+  padding: 2px 8px 6px 8px;
+  margin-top: 2px;
+  box-shadow: 0 1px 4px rgba(79,55,138,0.03);
+}
+.danger-detail-title {
+  color: #b71c1c;
+  font-size: 1.08em;
+  margin-top: 2px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.danger-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+}
+.danger-detail-table th, .danger-detail-table td {
+  border-bottom: 1px solid #ede7f6;
+  padding: 2px 6px;
+  text-align: left;
+  font-size: 0.92em;
+  line-height: 1.3;
+}
+.danger-detail-table th {
+  color: #4F378A;
+  font-weight: 600;
+  background: #ede7f6;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+.danger-detail-table tr:last-child td {
+  border-bottom: none;
+}
+.danger-type {
+  font-weight: 500;
+  color: #d84315;
+}
+.danger-confidence {
+  color: #1565c0;
+  font-weight: 500;
+}
+/* 日志等级颜色 */
+.log-level-cell {
+  font-weight: 600;
+}
+.log-level-cell.log-level-0 { color: #33abf6 !important; }
+.log-level-cell.log-level-1 { color: #FF9800 !important; }
+.log-level-cell.log-level-2 { color: #e61714 !important; }
+.action-btn {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  background: #4F378A;
+  color: #fff;
+  padding: 2px 14px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  height: 32px;
+  box-shadow: 0 2px 8px rgba(79,55,138,0.08);
+}
+.action-btn:hover {
+  background: #6c4bb6;
+  color: #fff;
+}
+.fade-table-enter-active, .fade-table-leave-active {
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fade-table-enter-from, .fade-table-leave-to {
+  opacity: 0;
+}
+.fade-table-enter-to, .fade-table-leave-from {
+  opacity: 1;
+}
+.slide-left-enter-active, .slide-left-leave-active,
+.slide-right-enter-active, .slide-right-leave-active {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(40px);
+}
+.slide-left-enter-to {
+  opacity: 1;
+  transform: translateX(0);
+}
+.slide-left-leave-from {
+  opacity: 1;
+  transform: translateX(0);
+}
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+.slide-right-enter-to {
+  opacity: 1;
+  transform: translateX(0);
+}
+.slide-right-leave-from {
+  opacity: 1;
+  transform: translateX(0);
+}
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(40px);
+}
+.modal-overlay-block {
+  pointer-events: auto;
+}
+.modal-loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1100;
+}
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #ede7f6;
+  border-top: 5px solid #4F378A;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.loading-text {
+  color: #4F378A;
+  font-size: 1.1em;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+.danger-image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.danger-image-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 18px 18px 12px 18px;
+  box-shadow: 0 4px 24px rgba(79,55,138,0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.danger-image-content img {
+  max-width: 60vw;
+  max-height: 60vh;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(79,55,138,0.08);
+}
+.log-table {
+  min-height: 320px; /* 10行*32px，可根据实际调整 */
+}
+.log-table tbody {
+  position: relative;
+}
+.log-table tbody::after {
+  content: '';
+  display: block;
+  height: calc(320px - (var(--row-count, 0) * 32px));
+  min-height: 0;
+  background: #fff;
 }
 </style>

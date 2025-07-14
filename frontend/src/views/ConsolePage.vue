@@ -35,6 +35,10 @@
             <span class="user-info-value">{{ email }}</span>
             <button class="user-info-btn" @click="onVerifyEmail" :disabled="isVerified || cooldown > 0" :class="{ 'disabled-btn': isVerified || cooldown > 0 }">{{ isVerified ? '已验证' : (cooldown > 0 ? `请稍候(${cooldown})` : '验证邮箱') }}</button>
           </div>
+          <!-- 新增登出按钮 -->
+          <div class="user-info-row">
+            <button class="user-info-btn logout-btn" @click="onLogout">登出</button>
+          </div>
           <div v-if="showVerificationInput" class="verification-section">
             <input v-model="verificationCode" class="verification-input" placeholder="请输入验证码" />
             <button class="verification-btn" @click="onConfirmVerification">确认</button>
@@ -66,6 +70,7 @@ import {codeCheck, getUserEmail, getUserInfo, verifyEmail} from '../viewmodels/V
 import LogTable from '../components/LogTable.vue'
 import FaceUpload from '../components/FaceUpload.vue'
 import UserManagement from '../components/UserManagement.vue'
+import { useRouter } from 'vue-router'
 
 const activeTab = ref('user')
 const rawUserType = ref('')
@@ -167,6 +172,18 @@ async function onConfirmVerification() {
   }else if(state === 2){
     verificationCode.value = '';
   }
+}
+
+const router = useRouter();
+
+function onLogout() {
+  // 清除本地登录状态（如token、用户信息等）
+  localStorage.clear();
+  sessionStorage.clear();
+  // 跳转到登录页并刷新，方式与登录保持一致
+  router.replace({ name: 'LoginSelectionPage' }).then(() => {
+    window.location.reload();
+  });
 }
 </script>
 
@@ -310,6 +327,18 @@ async function onConfirmVerification() {
   background: #d9d9d9;
   color: #8c8c8c;
   cursor: not-allowed;
+}
+
+.user-info-btn.logout-btn {
+  background: #ffebee;
+  color: #d32f2f;
+  margin-left: 0;
+  margin-top: 8px;
+  font-weight: 600;
+}
+.user-info-btn.logout-btn:hover {
+  background: #ffcdd2;
+  color: #b71c1c;
 }
 
 .log-table th, .log-table td {

@@ -53,7 +53,7 @@ export async function queryLogCount(logType?: string | null, logRange?: string |
   }));
   try {
     const response = await api.getLogCountLogCountsGet(logType, logRange, null, level);
-    return response.data.count;
+    return response.data;
   } catch (err: any) {
     onError?.('获取日志数量失败');
     return null;
