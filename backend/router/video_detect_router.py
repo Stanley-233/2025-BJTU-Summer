@@ -11,6 +11,7 @@ from ultralytics import YOLO
 
 from model.security_event import SecurityEvent, EventType, RoadDetail, RoadDangerType, RoadDanger, LogLevel
 from model.user import User
+from router.alarm_router import broadcast_sys_event, broadcast_gov_event, broadcast_road_event
 from util.engine import get_session
 from util.image import extract_last_frame_from_base64_video
 from util.security import get_current_user
@@ -83,6 +84,9 @@ def video_detect(request: VideoDetectRequest, session: Session = Depends(get_ses
     session.commit()
     session.add_all(dangers_db)
     session.commit()
+    broadcast_sys_event(event)
+    broadcast_gov_event(event)
+    broadcast_road_event(event)
     return VideoDetectResponse(
       predicted_image=predicted_image_base64,
       danger_nums=danger_count,

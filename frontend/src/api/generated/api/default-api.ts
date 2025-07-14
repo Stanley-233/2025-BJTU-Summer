@@ -208,6 +208,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * 
+         * @summary 政府管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        govWarningEventStreamAlarmGovWarningStreamGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/alarm/gov_warning/stream`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * 获取用户是否已验证邮箱
          * @summary 获取用户是否已验证邮箱
          * @param {*} [options] Override http request option.
@@ -530,6 +564,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @summary 道路养护管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        roadWarningEventStreamAlarmRoadWarningStreamGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/alarm/road_warning/stream`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Root
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -745,6 +813,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
                 options: localVarRequestOptions,
             };
         },
+        /**
+         * 
+         * @summary 系统管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        warningEventStreamAlarmSysWarningStreamGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/alarm/sys_warning/stream`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
     }
 };
 
@@ -806,6 +908,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getUserInfoGetUserInfoGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.getUserInfoGetUserInfoGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary 政府管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async govWarningEventStreamAlarmGovWarningStreamGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.govWarningEventStreamAlarmGovWarningStreamGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.govWarningEventStreamAlarmGovWarningStreamGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -917,6 +1031,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary 道路养护管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async roadWarningEventStreamAlarmRoadWarningStreamGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.roadWarningEventStreamAlarmRoadWarningStreamGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.roadWarningEventStreamAlarmRoadWarningStreamGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Root
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -991,6 +1117,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.videoDetectVideoDetectPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
+        /**
+         * 
+         * @summary 系统管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async warningEventStreamAlarmSysWarningStreamGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.warningEventStreamAlarmSysWarningStreamGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.warningEventStreamAlarmSysWarningStreamGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
     }
 };
 
@@ -1041,6 +1179,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         getUserInfoGetUserInfoGet(options?: RawAxiosRequestConfig): AxiosPromise<User> {
             return localVarFp.getUserInfoGetUserInfoGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary 政府管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        govWarningEventStreamAlarmGovWarningStreamGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.govWarningEventStreamAlarmGovWarningStreamGet(options).then((request) => request(axios, basePath));
         },
         /**
          * 获取用户是否已验证邮箱
@@ -1127,6 +1274,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @summary 道路养护管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        roadWarningEventStreamAlarmRoadWarningStreamGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.roadWarningEventStreamAlarmRoadWarningStreamGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Root
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1182,6 +1338,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         videoDetectVideoDetectPost(videoDetectRequest: VideoDetectRequest, options?: RawAxiosRequestConfig): AxiosPromise<VideoDetectResponse> {
             return localVarFp.videoDetectVideoDetectPost(videoDetectRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary 系统管理员告警推送
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        warningEventStreamAlarmSysWarningStreamGet(options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.warningEventStreamAlarmSysWarningStreamGet(options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -1240,6 +1405,17 @@ export class DefaultApi extends BaseAPI {
      */
     public getUserInfoGetUserInfoGet(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).getUserInfoGetUserInfoGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary 政府管理员告警推送
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public govWarningEventStreamAlarmGovWarningStreamGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).govWarningEventStreamAlarmGovWarningStreamGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1343,6 +1519,17 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @summary 道路养护管理员告警推送
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public roadWarningEventStreamAlarmRoadWarningStreamGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).roadWarningEventStreamAlarmRoadWarningStreamGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Root
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1409,6 +1596,17 @@ export class DefaultApi extends BaseAPI {
      */
     public videoDetectVideoDetectPost(videoDetectRequest: VideoDetectRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).videoDetectVideoDetectPost(videoDetectRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary 系统管理员告警推送
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public warningEventStreamAlarmSysWarningStreamGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).warningEventStreamAlarmSysWarningStreamGet(options).then((request) => request(this.axios, this.basePath));
     }
 }
 

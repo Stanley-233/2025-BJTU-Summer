@@ -8,6 +8,7 @@ All URIs are relative to *http://localhost*
 |[**getLogCountLogCountsGet**](#getlogcountlogcountsget) | **GET** /log_counts | 获取日志条数|
 |[**getUserEmailGetUserEmailGet**](#getuseremailgetuseremailget) | **GET** /get_user_email/ | 获取用户邮箱信息|
 |[**getUserInfoGetUserInfoGet**](#getuserinfogetuserinfoget) | **GET** /get_user_info/ | 获取用户信息|
+|[**govWarningEventStreamAlarmGovWarningStreamGet**](#govwarningeventstreamalarmgovwarningstreamget) | **GET** /alarm/gov_warning/stream | 政府管理员告警推送|
 |[**isMailVerifiedIsMailVerifiedGet**](#ismailverifiedismailverifiedget) | **GET** /is_mail_verified/ | 获取用户是否已验证邮箱|
 |[**loginLoginPost**](#loginloginpost) | **POST** /login | 用户登录|
 |[**loginWithEmailLoginMailPost**](#loginwithemailloginmailpost) | **POST** /login/mail/ | 通过邮箱登录|
@@ -16,12 +17,14 @@ All URIs are relative to *http://localhost*
 |[**queryLogsLogsGet**](#querylogslogsget) | **GET** /logs | 查询日志记录|
 |[**registerRegisterPost**](#registerregisterpost) | **POST** /register | 用户注册|
 |[**requestEmailVerificationVerifyEmailPut**](#requestemailverificationverifyemailput) | **PUT** /verify_email/ | 请求邮箱认证|
+|[**roadWarningEventStreamAlarmRoadWarningStreamGet**](#roadwarningeventstreamalarmroadwarningstreamget) | **GET** /alarm/road_warning/stream | 道路养护管理员告警推送|
 |[**rootGet**](#rootget) | **GET** / | Root|
 |[**testAddLogsLogsTestGet**](#testaddlogslogstestget) | **GET** /logs/test | 添加日志记录|
 |[**updateFaceDataUpdateFacePut**](#updatefacedataupdatefaceput) | **PUT** /update_face/ | 更新用户脸部数据|
 |[**verifyEmailCodeVerifyEmailCodePost**](#verifyemailcodeverifyemailcodepost) | **POST** /verify_email_code/ | 邮箱认证验证码|
 |[**verifyLoginEmailCodeLoginMailCodePost**](#verifyloginemailcodeloginmailcodepost) | **POST** /login/mail_code/ | 通过邮箱验证码登录|
 |[**videoDetectVideoDetectPost**](#videodetectvideodetectpost) | **POST** /video_detect/ | 视频流道路病害检测|
+|[**warningEventStreamAlarmSysWarningStreamGet**](#warningeventstreamalarmsyswarningstreamget) | **GET** /alarm/sys_warning/stream | 系统管理员告警推送|
 
 # **checkFaceDataCheckFacePost**
 > any checkFaceDataCheckFacePost(userCheckFaceRequest)
@@ -211,6 +214,49 @@ This endpoint does not have any parameters.
 ### Return type
 
 **User**
+
+### Authorization
+
+[HTTPBearer](../README.md#HTTPBearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Successful Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **govWarningEventStreamAlarmGovWarningStreamGet**
+> any govWarningEventStreamAlarmGovWarningStreamGet()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.govWarningEventStreamAlarmGovWarningStreamGet();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**any**
 
 ### Authorization
 
@@ -659,6 +705,49 @@ This endpoint does not have any parameters.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **roadWarningEventStreamAlarmRoadWarningStreamGet**
+> any roadWarningEventStreamAlarmRoadWarningStreamGet()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.roadWarningEventStreamAlarmRoadWarningStreamGet();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**any**
+
+### Authorization
+
+[HTTPBearer](../README.md#HTTPBearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Successful Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **rootGet**
 > any rootGet()
 
@@ -965,6 +1054,49 @@ const { status, data } = await apiInstance.videoDetectVideoDetectPost(
 |-------------|-------------|------------------|
 |**200** | Successful Response |  -  |
 |**422** | Validation Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **warningEventStreamAlarmSysWarningStreamGet**
+> any warningEventStreamAlarmSysWarningStreamGet()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.warningEventStreamAlarmSysWarningStreamGet();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**any**
+
+### Authorization
+
+[HTTPBearer](../README.md#HTTPBearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Successful Response |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
