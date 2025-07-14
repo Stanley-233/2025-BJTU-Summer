@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from util.engine import init_db
 
-import router.auth, router.mail_router, router.log_router
+import router.auth, router.mail_router, router.log_router, router.video_detect_router, router.taxi_data_router
 
 app = FastAPI(
   title="滴嘟出行",
@@ -21,11 +21,17 @@ app.add_middleware(
 app.include_router(router.auth.auth_router)
 app.include_router(router.mail_router.mail_router)
 app.include_router(router.log_router.log_router)
+app.include_router(router.video_detect_router.video_detect_router)
+app.include_router(router.taxi_data_router.taxi_data_router)  # 新增出租车数据路由
 
 @app.get("/")
 async def root():
   return {"message": "Hello World"}
 
+@app.get("/hello/{name}")
+async def say_hello(name: str):
+  return {"message": f"Hello {name}"}
+
 if __name__ == "__main__":
   init_db()
-  uvicorn.run(app, host="127.0.0.1", port=8000)
+  uvicorn.run(app, host="0.0.0.0", port=8000)
