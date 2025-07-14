@@ -7,6 +7,11 @@
       <label class="date-label">结束时间：
         <input type="datetime-local" v-model="endTime" class="date-input" @change="onEndTimeChange" />
       </label>
+      <div class="pagination-bar-inline">
+        <button disabled>上一页</button>
+        <span>第 1 / 1 页</span>
+        <button disabled>下一页</button>
+      </div>
     </div>
     <table class="log-table" :style="{ tableLayout: 'fixed' }">
       <thead>
@@ -15,37 +20,51 @@
           类型
           <span class="dropdown-arrow">▼</span>
           <div v-if="showTypeDropdown" class="type-dropdown">
+            <div class="type-option" @click.stop="selectType(null)">全部</div>
             <div class="type-option" v-for="(icon, type) in typeIconMap" :key="type" @click.stop="selectType(type)">
               {{ icon }} {{ LogType[type] }}
             </div>
           </div>
           <div class="resize-handle" @mousedown.prevent="initResize($event, 0)"></div>
         </th>
-        <th :style="{ width: columnWidths[1] + 'px' }">日志内容
+        <th :style="{ width: columnWidths[1] + 'px' }">操作用户
           <div class="resize-handle" @mousedown.prevent="initResize($event, 1)"></div>
         </th>
-        <th :style="{ width: columnWidths[2] + 'px' }">创建时间
+        <th :style="{ width: columnWidths[2] + 'px' }">日志内容
           <div class="resize-handle" @mousedown.prevent="initResize($event, 2)"></div>
         </th>
-        <th :style="{ width: columnWidths[3] + 'px' }">详情
+        <th :style="{ width: columnWidths[3] + 'px' }" class="clickable-level-th" @click="toggleLevelDropdown" ref="levelTh">
+          事件等级
+          <span class="dropdown-arrow">▼</span>
+          <div v-if="showLevelDropdown" class="type-dropdown">
+            <div class="type-option" @click.stop="selectLevel(null)">全部</div>
+            <div class="type-option" v-for="(label, level) in LogLevel" :key="level" @click.stop="selectLevel(level)">
+              {{ label }}
+            </div>
+          </div>
+          <div class="resize-handle" @mousedown.prevent="initResize($event, 3)"></div>
+        </th>
+        <th :style="{ width: columnWidths[4] + 'px' }">创建时间
+          <div class="resize-handle" @mousedown.prevent="initResize($event, 4)"></div>
+        </th>
+        <th :style="{ width: columnWidths[5] + 'px' }">详情
         </th>
       </tr>
       </thead>
       <tbody>
-      <tr v-for="log in pagedLogs" :key="log.id">
+      <tr v-for="log in logRecords" :key="log.id">
         <td :style="{ width: columnWidths[0] + 'px' }">{{ typeIconMap[log.event_type] + LogType[log.event_type] }}</td>
-        <td :style="{ width: columnWidths[1] + 'px' }">{{ log.description }}</td>
-        <td :style="{ width: columnWidths[2] + 'px' }">{{ formatTimestamp(log.timestamp) }}</td>
-        <td :style="{ width: columnWidths[3] + 'px' }"><button @click="viewDetail(log)">查看</button></td>
+        <td :style="{ width: columnWidths[1] + 'px' }">{{ log.event_type === 3 ? log.link_username : '' }}</td>
+        <td :style="{ width: columnWidths[2] + 'px' }">{{ log.description }}</td>
+        <td :style="{ width: columnWidths[3] + 'px' }">{{ LogLevel[log.log_level] ?? '-' }}</td>
+        <td :style="{ width: columnWidths[4] + 'px' }">{{ formatTimestamp(log.timestamp) }}</td>
+        <td :style="{ width: columnWidths[5] + 'px' }">
+          <button v-if="log.event_type !== 3" @click="viewDetail(log)">查看</button>
+          <button v-else style="opacity:0;pointer-events:none;">占位</button>
+        </td>
       </tr>
       </tbody>
     </table>
-    <!-- 翻页栏 -->
-    <div class="pagination-bar" v-if="totalPages > 1">
-      <button :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">上一页</button>
-      <span>第 {{ currentPage }} / {{ totalPages }} 页</span>
-      <button :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">下一页</button>
-    </div>
     <!-- 日志详情弹窗 -->
     <div v-if="showDetailModal && detailLog" class="modal-overlay" @click.self="closeDetailModal">
       <div class="modal-content">
@@ -77,19 +96,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import {ref, computed, onMounted, watch, inject} from 'vue'
 import { queryLogs, queryLogDetail } from '../viewmodels/LogViewModel'
 
+const showGlobalBubble = inject('showGlobalBubble')
 const LogType = {
   0: '非法用户',
   1: '人脸欺诈',
   2: '道路安全',
+  3: '操作事件', // 新增
 }
 
 const typeIconMap = {
   0: '🔒',
   1: '😡',
   2: '🚧',
+  3: '📝', // 新增
+}
+
+const LogLevel = {
+  0: '信息',
+  1: '警告',
+  2: '错误',
 }
 
 const logRecords = ref([])
@@ -122,29 +150,28 @@ function selectType(type) {
   showTypeDropdown.value = false
   // 这里只关闭下拉，不做筛选
 }
-function handleClickOutside(event) {
-  if (!event.target.closest('.clickable-type-th')) {
-    showTypeDropdown.value = false
-  }
-}
-if (typeof window !== 'undefined') {
-  window.addEventListener('click', handleClickOutside)
-}
 
 // 分页相关
-const pageSize = 10
-const currentPage = ref(1)
-const totalPages = computed(() => Math.ceil(logRecords.value.length / pageSize))
-const pagedLogs = computed(() => {
-  const start = (currentPage.value - 1) * pageSize
-  return logRecords.value.slice(start, start + pageSize)
-})
-
-function goToPage(page) {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-  }
-}
+// const pageSize = 10
+// const currentPage = ref(1)
+// const totalPages = computed(() => Math.ceil(logRecords.value.length / pageSize))
+// const pagedLogs = computed(() => {
+//   let filtered = logRecords.value
+//   if (selectedType.value !== null) {
+//     filtered = filtered.filter(l => l.event_type == selectedType.value)
+//   }
+//   if (selectedLevel.value !== null) {
+//     filtered = filtered.filter(l => String(l.log_level) === String(selectedLevel.value))
+//   }
+//   const start = (currentPage.value - 1) * pageSize
+//   return filtered.slice(start, start + pageSize)
+// })
+//
+// function goToPage(page) {
+//   if (page >= 1 && page <= totalPages.value) {
+//     currentPage.value = page
+//   }
+// }
 
 const showDetailModal = ref(false)
 const detailLog = ref(null)
@@ -182,8 +209,8 @@ async function loadLogs() {
     logRange = `${startTime.value.replace('T', ' ').slice(0, 16)}~${endTime.value.replace('T', ' ').slice(0, 16)}`
   }
   // 调用前弹窗显示参数
-  alert(`查询参数：\ntype: ${selectedType.value}\nlogRange: ${logRange}\nlimit: ${pageSize}\noffset: ${(currentPage.value - 1) * pageSize}`)
-  const logs = await queryLogs(selectedType.value, logRange, pageSize, (currentPage.value - 1) * pageSize)
+  alert(`查询参数：\ntype: ${selectedType.value}\nlogRange: ${logRange}`)
+  const logs = await queryLogs(selectedType.value, logRange, undefined, undefined, selectedLevel.value, showGlobalBubble)
   setLogs(logs || [])
 }
 
@@ -191,12 +218,12 @@ onMounted(() => {
   loadLogs()
 })
 
-watch([selectedType, startTime, endTime, currentPage], () => {
+watch([selectedType, startTime, endTime], () => {
   loadLogs()
 })
 
 // column resize state
-const columnWidths = ref([80, 200, 160, 100])
+const columnWidths = ref([120, 80, 240, 100, 160, 60])
 let resizingIndex = null
 let startX = 0
 let startWidth = 0
@@ -244,12 +271,37 @@ function stopResize() {
   window.removeEventListener('mouseup', stopResize)
   resizingIndex = null
 }
+
+const showLevelDropdown = ref(false)
+const selectedLevel = ref(null)
+
+function toggleLevelDropdown() {
+  showLevelDropdown.value = !showLevelDropdown.value
+}
+function selectLevel(level) {
+  selectedLevel.value = level
+  showLevelDropdown.value = false
+}
+
+function handleClickOutside(event) {
+  if (
+    !event.target.closest('.clickable-type-th') &&
+    !event.target.closest('.type-dropdown') &&
+    !event.target.closest('.clickable-level-th')
+  ) {
+    showTypeDropdown.value = false
+    showLevelDropdown.value = false
+  }
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('click', handleClickOutside)
+}
 </script>
 
 <style scoped>
 .log-table-wrapper {
   width: 100%;
-  overflow-x: auto;
+  box-sizing: border-box;
 }
 .log-table {
   width: 100%;
@@ -258,7 +310,8 @@ function stopResize() {
   box-shadow: 0 2px 8px rgba(79,55,138,0.04);
   border-radius: 6px;
   font-size: 0.9em; /* reduced font size */
-  margin-bottom: 24px;
+  margin-bottom: 8px; /* 原来是24px，改小 */
+  min-height: 120px; /* 新增，防止下拉被裁剪 */
 }
 .log-table th, .log-table td {
   padding: 8px 10px; /* reduced row height */
@@ -296,7 +349,7 @@ function stopResize() {
   border: 1.5px solid #ede7f6;
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(79,55,138,0.08);
-  z-index: 10;
+  z-index: 100; /* 提高层级，防止被遮挡 */
   min-width: 90px;
   margin-top: 2px;
   padding: 4px 0;
@@ -318,24 +371,29 @@ function stopResize() {
 .log-table-controls {
   display: flex;
   align-items: center;
-  gap: 24px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 4px;
+  justify-content: flex-start;
+  position: relative;
 }
 .date-label {
   color: #4F378A;
-  font-size: 1em;
+  font-size: 0.95em;
   font-weight: 500;
+  white-space: nowrap;
+  margin-right: 4px;
 }
 .date-input {
-  margin-left: 8px;
-  padding: 4px 10px;
-  border: 1.5px solid #ede7f6;
-  border-radius: 6px;
+  margin-left: 4px;
+  padding: 2px 6px;
+  border: 1px solid #ede7f6;
+  border-radius: 4px;
   background: #f7f7fa;
-  font-size: 1em;
+  font-size: 0.93em;
   color: #4F378A;
   outline: none;
   transition: border 0.2s;
+  height: 28px;
 }
 .date-input:focus {
   border: 1.5px solid #4F378A;
@@ -376,29 +434,31 @@ function stopResize() {
 .close-btn:hover {
   background: #6c4bb6;
 }
-.pagination-bar {
+.pagination-bar-inline {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 18px;
-  margin: 18px 0 0 0;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 0.97em;
+  white-space: nowrap;
 }
-.pagination-bar button {
-  padding: 4px 16px;
-  border: 1.5px solid #ede7f6;
-  border-radius: 6px;
+.pagination-bar-inline button {
+  padding: 2px 8px;
+  border: 1px solid #ede7f6;
+  border-radius: 4px;
   background: #f7f7fa;
   color: #4F378A;
-  font-size: 1em;
+  font-size: 0.95em;
   cursor: pointer;
   transition: background 0.2s;
+  height: 28px;
 }
-.pagination-bar button:disabled {
+.pagination-bar-inline button:disabled {
   background: #ede7f6;
   color: #aaa;
   cursor: not-allowed;
 }
-.pagination-bar span {
+.pagination-bar-inline span {
   color: #4F378A;
   font-size: 1em;
 }
