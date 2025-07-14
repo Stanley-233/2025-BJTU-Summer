@@ -8,6 +8,7 @@ from PIL.Image import Image
 from model.security_event import SecurityEvent, EventType, SpoofingDetail, RoadDetail, RoadDanger, RoadDangerType, \
   LogLevel
 from model.user import User
+from router.alarm_router import broadcast_sys_event, broadcast_road_event, broadcast_gov_event
 
 
 def add_unverified_user_event(session: Session,
@@ -21,6 +22,7 @@ def add_unverified_user_event(session: Session,
   session.add(event)
   session.add(detail)
   session.commit()
+  broadcast_sys_event(event)
   return event
 
 def add_face_spoofing_event(session: Session,
@@ -36,6 +38,7 @@ def add_face_spoofing_event(session: Session,
   session.add(event)
   session.add(detail)
   session.commit()
+  broadcast_sys_event(event)
   return event
 
 
@@ -62,6 +65,9 @@ def add_road_safety_event(session: Session,
     rd = RoadDanger(id=event.id, type=danger_type, confidence=confidence)
     session.add(rd)
   session.commit()
+  broadcast_sys_event(event)
+  broadcast_road_event(event)
+  broadcast_gov_event(event)
   return event
 
 def add_general_event(session: Session,
