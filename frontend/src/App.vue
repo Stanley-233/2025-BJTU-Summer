@@ -22,8 +22,10 @@
 </template>
 
 <script setup>
-import { ref, provide } from 'vue'
+import { ref, provide, onMounted, watch } from 'vue'
 import BubbleMessage from '@/components/BubbleMessage.vue'
+import { DefaultApi, Configuration } from '@/api/generated'
+import { EventSourcePolyfill } from 'event-source-polyfill'
 
 const bubbleVisible = ref(false)
 const bubbleMessage = ref('')
@@ -41,6 +43,60 @@ const isLogin = ref(!!sessionStorage.getItem('token'))
 window.addEventListener('storage', () => {
   isLogin.value = !!sessionStorage.getItem('token')
 })
+
+// 初始化 API 客户端，自动使用 sessionStorage 中的 token 进行 Bearer 认证
+const api = new DefaultApi(new Configuration({
+  basePath: 'http://127.0.0.1:8000',
+  accessToken: () => sessionStorage.getItem('token')
+}))
+let alarmSource = null
+
+function startAlarmStream() {
+  console.log('startAlarmStream called, isLogin:', isLogin.value)
+  const token = sessionStorage.getItem('token')
+  if (!token) {
+    console.warn('No auth token found, abort SSE subscription')
+    return
+  }
+  // 获取用户角色并订阅对应 SSE
+  api.getUserInfoGetUserInfoGet()
+    .then(res => {
+      console.log('Fetched user info:', res.data)
+      const role = res.data.user_type
+      let path = ''
+      if (role === 'sysadmin') path = '/alarm/sys_warning/stream'
+      else if (role === 'gov_admin') path = '/alarm/gov_warning/stream'
+      else if (role === 'road_maintainer') path = '/alarm/road_warning/stream'
+      else {
+        console.warn('User not authorized for SSE, role:', role)
+        return
+      }
+      const url = `http://127.0.0.1:8000${path}`
+      console.log('Subscribing to SSE URL:', url)
+      // TODO: Remove alert in production
+      alert("测试订阅告警流: " + url)
+      alarmSource = new EventSourcePolyfill(url, { headers: { Authorization: `Bearer ${token}` }, heartbeatTimeout: Number.MAX_SAFE_INTEGER })
+      alarmSource.onopen = () => { console.log('SSE connection opened') }
+      alarmSource.onmessage = e => {
+        console.log('SSE message received:', e.data)
+        try {
+          const alarm = JSON.parse(e.data)
+          showGlobalBubble(`告警: ${alarm.message || JSON.stringify(alarm)}`)
+        } catch (err) {
+          console.error('Failed to parse SSE data', err)
+        }
+      }
+      alarmSource.onerror = err => {
+        console.error('SSE error', err)
+        // do not close on timeout, keep retrying
+      }
+    })
+    .catch(err => { console.error('Failed to fetch user info for SSE', err) })
+}
+
+// 在组件挂载后及登录状态变化时启动订阅
+onMounted(() => { if (isLogin.value) startAlarmStream() })
+watch(isLogin, val => { if (val) startAlarmStream() })
 </script>
 
 <style scoped>

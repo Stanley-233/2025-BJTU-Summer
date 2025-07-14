@@ -43,8 +43,11 @@ async def warning_event_stream(user: User = Depends(get_current_user)):
   async def event_generator():
     try:
       while True:
-        msg = await queue.get()
+        msg = await asyncio.wait_for(queue.get(), timeout=30)
         yield f"data: {msg}\n\n"
+    except asyncio.TimeoutError:
+      # 30s 内没有数据，就发个注释行保活
+      yield ": keep-alive\n\n"
     except asyncio.CancelledError:
       pass
     finally:
