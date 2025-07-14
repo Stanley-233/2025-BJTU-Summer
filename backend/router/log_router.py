@@ -6,6 +6,7 @@ from fastapi import APIRouter, Query, Depends, HTTPException
 from typing import Optional
 
 from sqlmodel import Session, select
+from sqlalchemy import select, func, Integer, Table, Column, MetaData
 
 from model.security_event import SecurityEvent, RoadDangerType, EventType, SpoofingDetail, RoadDetail, RoadDanger, \
   LogLevel
@@ -35,7 +36,7 @@ def query_logs(
     log_range: Optional[str] = Query(None, description="日志范围过滤，例如：2021-01-01~2021-12-31"),
     limit: int = Query(10, description="查询返回条数，默认返回 10 条"),
     offset: int = Query(0, description="起始条数，默认从第 0 条记录开始"),
-    level: int = Query(None, description="日志级别过滤"),
+    level: Optional[int] = Query(None, description="日志级别过滤"),
     log_username: Optional[str] = Query(None, description="查询关联用户名"),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
@@ -129,3 +130,19 @@ def query_log_detail(
       "dangers": dangers
     }
   return HTTPException(status_code=404, detail="未找到日志详情")
+
+@log_router.get("/log_counts", summary="获取日志条数")
+def get_log_count(session: Session = Depends(get_session), user: User = Depends(get_current_user)):
+  """
+  获取日志条数
+
+  示例请求：
+  /log_counts
+  """
+  if user.user_type not in [UserType.SYSADMIN, UserType.GOV_ADMIN]:
+    raise HTTPException(status_code=403, detail="权限不足，只有管理员可以查询日志条数")
+
+  stmt = select(func.count()).select_from(SecurityEvent)
+  log_count = session.exec(stmt).scalar_one()
+
+  return log_count

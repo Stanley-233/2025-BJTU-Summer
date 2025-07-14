@@ -6,7 +6,9 @@ from fastapi import Depends, HTTPException, APIRouter
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from model.security_event import LogLevel
 from util.engine import get_session
+from util.log import add_general_event
 from util.security import create_token, get_current_user
 from util.mail import send_email
 from model.user import User, UserEmail
@@ -64,8 +66,9 @@ def request_email_verification(user: User = Depends(get_current_user), session: 
   try:
     send_email(user.email.email_address, "邮箱认证验证码", f"用户{user.username}，您的验证码是：{code}，有效期为10分钟。")
   except RuntimeError as e:
+    add_general_event(session, f"用户 {user.username} 请求验证邮箱失败, {e}", link_user=user, log_level=LogLevel.WARNING)
     raise HTTPException(status_code=500, detail=str(e))
-
+  add_general_event(session, f"用户 {user.username} 请求验证邮箱", link_user=user, log_level=LogLevel.INFO)
   return {"message": "验证码已发送"}
 
 
@@ -137,9 +140,11 @@ def verify_email_code(code: str, user: User = Depends(get_current_user), session
     raise HTTPException(status_code=201, detail="未请求验证码")
 
   if datetime.now() > user.email.email_verification_expiry:
+    add_general_event(session, f"用户 {user.username} 验证码已过期", link_user=user, log_level=LogLevel.WARNING)
     raise HTTPException(status_code=202, detail="验证码已过期")
 
   if user.email.email_verification_code != code:
+    add_general_event(session, f"用户 {user.username} 验证码已过期", link_user=user, log_level=LogLevel.WARNING)
     raise HTTPException(status_code=203, detail="验证码错误")
 
   # 验证成功，更新用户状态
@@ -148,7 +153,7 @@ def verify_email_code(code: str, user: User = Depends(get_current_user), session
   user.email.email_verification_expiry = None
   session.add(user)
   session.commit()
-
+  add_general_event(session, f"用户 {user.username} 请求验证邮箱", link_user=user, log_level=LogLevel.INFO)
   return {"message": "邮箱验证成功"}
 
 @mail_router.get("/is_mail_verified/", summary="获取用户是否已验证邮箱", responses={
@@ -242,6 +247,7 @@ def login_with_email(request: MailLoginRequest, session: Session = Depends(get_s
   if not user:
     raise HTTPException(status_code=404, detail="User not found")
   if not user.email.email_verified:
+    add_general_event(session, f"用户 {user.username} 邮箱未认证", link_user=user, log_level=LogLevel.WARNING)
     raise HTTPException(status_code=401, detail="邮箱未验证")
   # 生成随机验证码
   code = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
@@ -257,7 +263,7 @@ def login_with_email(request: MailLoginRequest, session: Session = Depends(get_s
     send_email(user.email.email_address, "邮箱登录验证码 - 滴嘟打车", f"用户{user.username}，您的登录验证码是：{code}，有效期为10分钟。")
   except RuntimeError as e:
     raise HTTPException(status_code=500, detail=str(e))
-
+  add_general_event(session, f"用户 {user.username} 请求邮箱登录", link_user=user, log_level=LogLevel.INFO)
   return {"message": "邮件成功发送"}
 
 
@@ -336,8 +342,10 @@ def verify_login_email_code(request: MailCodeLoginRequest, session: Session = De
   if not user.email or not user.email.email_verification_code or not user.email.email_verification_expiry:
     raise HTTPException(status_code=201, detail="未请求验证码")
   if datetime.now() > user.email.email_verification_expiry:
+    add_general_event(session, f"用户 {user.username} 验证码已过期", link_user=user, log_level=LogLevel.WARNING)
     raise HTTPException(status_code=202, detail="验证码已过期")
   if user.email.email_verification_code != request.code:
+    add_general_event(session, f"用户 {user.username} 验证码错误", link_user=user, log_level=LogLevel.WARNING)
     raise HTTPException(status_code=203, detail="验证码错误")
 
   user.email.email_verification_code = None
@@ -347,7 +355,7 @@ def verify_login_email_code(request: MailCodeLoginRequest, session: Session = De
   session.commit()
 
   token = create_token(user)
-
+  add_general_event(session, f"用户 {user.username} 邮箱登录成功", link_user=user, log_level=LogLevel.INFO)
   return {
     "message": "邮箱验证成功",
     "token": token,

@@ -94,7 +94,7 @@ def register(request: UserRegisterRequest, session: Session = Depends(get_sessio
   session.commit()
   session.refresh(new_user)
   token = create_token(new_user)
-  add_general_event(session,   EventType.GENERAL, f"用户 {new_user.username} 注册成功", link_user=user, log_level=LogLevel.INFO)
+  add_general_event(session, EventType.GENERAL, f"用户 {new_user.username} 注册成功", link_user=user, log_level=LogLevel.INFO)
   return {
     "message": "注册成功",
     "token": token
@@ -154,7 +154,7 @@ def login(request: UserLoginRequest, req: Request, session: Session = Depends(ge
     raise HTTPException(status_code=404, detail="User not found")
 
   if user.password != encrypt_password(request.password):
-    add_general_event(session, f"用户 {request.username} 尝试登陆密码错误", log_level=LogLevel.WARNING)
+    add_general_event(session, f"用户 {request.username} 尝试登陆密码错误", link_user=user, log_level=LogLevel.WARNING)
     raise HTTPException(status_code=403, detail="Incorrect password")
 
   token = create_token(user)
@@ -217,7 +217,7 @@ def post_face_data(face_data: ImageModel, session: Session = Depends(get_session
 
   if result.get("error_code") != 0:
     error_msg = result.get("error_msg", "未知错误")
-    add_general_event(session, f"用户 {user.username} 人脸注册失败，", link_user=user, log_level=LogLevel.INFO)
+    add_general_event(session, f"人脸注册失败, {result.get("error_code")}, {result.get("error_msg")}", link_user=user, log_level=LogLevel.INFO)
     raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
 
 
@@ -275,6 +275,7 @@ def update_face_data(face_data: ImageModel, session: Session = Depends(get_sessi
 
   if result.get("error_code") != 0:
     error_msg = result.get("error_msg", "未知错误")
+    add_general_event(session, f"人脸更新失败, {result.get("error_code")}, {result.get("error_msg")}", link_user=user, log_level=LogLevel.INFO)
     raise HTTPException(status_code=500, detail=f"百度云错误: {error_msg}")
 
   user.face_data = image
@@ -400,7 +401,7 @@ def check_face_data(request: UserCheckFaceRequest, req: Request, session: Sessio
     session.commit()
   except Exception:
     pass
-
+  add_general_event(session, f"用户 {user.username} 人脸认证登录成功", link_user=user, log_level=LogLevel.INFO)
   return {
     "message": "人脸数据匹配",
     "token": token,

@@ -5,6 +5,7 @@ All URIs are relative to *http://localhost*
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
 |[**checkFaceDataCheckFacePost**](#checkfacedatacheckfacepost) | **POST** /check_face/ | 人脸识别获取Token|
+|[**getLogCountLogCountsGet**](#getlogcountlogcountsget) | **GET** /log_counts | 获取日志条数|
 |[**getUserEmailGetUserEmailGet**](#getuseremailgetuseremailget) | **GET** /get_user_email/ | 获取用户邮箱信息|
 |[**getUserInfoGetUserInfoGet**](#getuserinfogetuserinfoget) | **GET** /get_user_info/ | 获取用户信息|
 |[**isMailVerifiedIsMailVerifiedGet**](#ismailverifiedismailverifiedget) | **GET** /is_mail_verified/ | 获取用户是否已验证邮箱|
@@ -76,6 +77,50 @@ No authorization required
 |**402** | 活体检测失败 |  -  |
 |**406** | 活体检测失败，有两人同时出现 |  -  |
 |**422** | Validation Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getLogCountLogCountsGet**
+> any getLogCountLogCountsGet()
+
+获取日志条数  示例请求： /log_counts
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.getLogCountLogCountsGet();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**any**
+
+### Authorization
+
+[HTTPBearer](../README.md#HTTPBearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Successful Response |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -433,7 +478,7 @@ const { status, data } = await apiInstance.queryLogDetailLogDetailGet(
 # **queryLogsLogsGet**
 > any queryLogsLogsGet()
 
-根据查询条件返回日志记录，需要认证权限  参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤，格式自定义 - limit：限制返回结果数量，默认为 10 - offset：指定从哪个位置开始返回结果  示例请求： /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
+根据查询条件返回日志记录，需要认证权限  参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤，格式自定义 - limit：限制返回结果数量，默认为 10 - offset：指定从哪个位置开始返回结果 - level: 日志级别过滤，0=INFO, 1=WARNING, 2=ERROR - log_username: 查询关联用户名  示例请求： /logs?log_type=ERROR&log_range=2025-07-01~2025-07-31&limit=20&offset=0
 
 ### Example
 
@@ -450,12 +495,16 @@ let logType: string; //事件类型过滤 (optional) (default to undefined)
 let logRange: string; //日志范围过滤，例如：2021-01-01~2021-12-31 (optional) (default to undefined)
 let limit: number; //查询返回条数，默认返回 10 条 (optional) (default to 10)
 let offset: number; //起始条数，默认从第 0 条记录开始 (optional) (default to 0)
+let level: number; //日志级别过滤 (optional) (default to undefined)
+let logUsername: string; //查询关联用户名 (optional) (default to undefined)
 
 const { status, data } = await apiInstance.queryLogsLogsGet(
     logType,
     logRange,
     limit,
-    offset
+    offset,
+    level,
+    logUsername
 );
 ```
 
@@ -467,6 +516,8 @@ const { status, data } = await apiInstance.queryLogsLogsGet(
 | **logRange** | [**string**] | 日志范围过滤，例如：2021-01-01~2021-12-31 | (optional) defaults to undefined|
 | **limit** | [**number**] | 查询返回条数，默认返回 10 条 | (optional) defaults to 10|
 | **offset** | [**number**] | 起始条数，默认从第 0 条记录开始 | (optional) defaults to 0|
+| **level** | [**number**] | 日志级别过滤 | (optional) defaults to undefined|
+| **logUsername** | [**string**] | 查询关联用户名 | (optional) defaults to undefined|
 
 
 ### Return type
@@ -884,7 +935,7 @@ const { status, data } = await apiInstance.videoDetectVideoDetectPost(
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 

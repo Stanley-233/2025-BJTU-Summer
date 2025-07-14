@@ -43,11 +43,13 @@ def add_road_safety_event(session: Session,
                           description: str,
                           danger_nums: int,
                           dangers: list[tuple[RoadDangerType, float]],
-                          predicted_image: Image):
+                          predicted_image: Image,
+                          link_user: Optional[User] = None):
   event = SecurityEvent(event_type=EventType.ROAD_SAFETY,
                         description=description,
                         timestamp=datetime.now(),
-                        log_level=LogLevel.WARNING)
+                        log_level=LogLevel.WARNING,
+                        link_user=link_user)
   # 将图片转换为 JPEG 格式的字节数据
   img_bytes = predicted_image.tobytes("jpeg", "RGB")
   # 将字节数据转成 Base64 字符串
@@ -69,7 +71,7 @@ def add_general_event(session: Session,
   event = SecurityEvent(event_type=EventType.GENERAL,
                         description=description,
                         log_level=log_level,
-                        link_user=link_user,
+                        link_username= link_user.username if link_user else None,
                         timestamp=datetime.now())
   session.add(event)
   session.commit()
