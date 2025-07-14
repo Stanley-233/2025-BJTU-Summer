@@ -1,5 +1,5 @@
 <template>
-  <div class="log-table-wrapper">
+  <div class="log-table-wrapper" :style="{ '--row-count': logRecords.length }">
     <div class="log-table-controls">
       <label class="date-label">开始时间：
         <input type="datetime-local" v-model="startTime" class="date-input" @change="onStartTimeChange" />
@@ -52,7 +52,7 @@
       </tr>
       </thead>
       <transition :name="slideTransitionName" mode="out-in">
-        <tbody :key="currentPage" :style="`--row-count: ${logRecords.length}`">
+        <tbody :key="currentPage">
           <tr v-for="log in logRecords" :key="log.id">
             <td :style="{ width: columnWidths[0] + 'px' }">{{ typeIconMap[log.event_type] + LogType[log.event_type] }}</td>
             <td :style="{ width: columnWidths[1] + 'px' }">{{ log.event_type === 3 ? log.link_username : '' }}</td>
@@ -83,11 +83,12 @@
           <p v-if="detailLog.log.timestamp"><strong>时间：</strong>{{ formatTimestamp(detailLog.log.timestamp) }}</p>
           <p v-if="detailLog.log.description"><strong>描述：</strong>{{ detailLog.log.description }}</p>
           <div v-if="detailLog.detail">
-            <p v-if="detailLog.detail.face_data"><strong>人脸数据：</strong>{{ detailLog.detail.face_data }}</p>
+            <!-- 删除原有face_data字符串显示 -->
+            <button v-if="detailLog.detail.face_data" class="action-btn" @click="showFaceVideo = true">显示人脸视频</button>
             <p v-if="detailLog.detail.liveness_score !== undefined && detailLog.detail.liveness_score !== null && detailLog.detail.liveness_score !== ''"><strong>活体检测分数：</strong>{{ detailLog.detail.liveness_score }}</p>
             <p v-if="detailLog.detail.spoofing_score !== undefined && detailLog.detail.spoofing_score !== null && detailLog.detail.spoofing_score !== ''"><strong>欺诈检测分数：</strong>{{ detailLog.detail.spoofing_score }}</p>
             <p v-if="detailLog.detail.danger_nums !== undefined && detailLog.detail.danger_nums !== null && detailLog.detail.danger_nums !== ''"><strong>危险物品数量：</strong>{{ detailLog.detail.danger_nums }}</p>
-            <button v-if="detailLog.detail.predicted_image" class="action-btn" @click="showDangerImage = true">显示图片</button>
+            <button v-if="detailLog.detail.predicted_image" class="action-btn" @click="showDangerImage = true">显示危险视频</button>
           </div>
           <div v-if="detailLog.dangers && detailLog.dangers.length" class="danger-detail-card">
             <h4 class="danger-detail-title">危险详情</h4>
@@ -118,11 +119,23 @@
         <button class="close-btn" @click="closeDetailModal">关闭</button>
       </div>
     </div>
-    <!-- 危险图片弹窗 -->
+    <!-- 危险视频弹窗（原危险图片弹窗） -->
     <div v-if="showDangerImage && detailLog && detailLog.detail && detailLog.detail.predicted_image" class="danger-image-modal" @click.self="showDangerImage = false">
       <div class="danger-image-content">
-        <img :src="'data:image/png;base64,' + detailLog.detail.predicted_image" alt="危险图片" />
-        <button class="close-btn" @click="showDangerImage = false">关闭图片</button>
+        <video controls :src="'data:video/mp4;base64,' + detailLog.detail.predicted_image" style="max-width:60vw;max-height:60vh;border-radius:6px;margin-bottom:12px;box-shadow:0 2px 8px rgba(79,55,138,0.08);"></video>
+        <button class="close-btn" @click="showDangerImage = false">关闭视频</button>
+      </div>
+    </div>
+    <!-- 人脸视频弹窗 -->
+    <div v-if="showFaceVideo && detailLog && detailLog.detail && detailLog.detail.face_data" class="danger-image-modal" @click.self="showFaceVideo = false">
+      <div class="danger-image-content">
+        <template v-if="decryptedFaceVideo">
+          <video controls :src="'data:video/mp4;base64,' + decryptedFaceVideo" style="max-width:60vw;max-height:60vh;border-radius:6px;margin-bottom:12px;box-shadow:0 2px 8px rgba(79,55,138,0.08);"></video>
+        </template>
+        <template v-else>
+          <div style="color:#e61714;font-weight:500;">人脸视频解密失败</div>
+        </template>
+        <button class="close-btn" @click="showFaceVideo = false">关闭视频</button>
       </div>
     </div>
   </div>
@@ -131,6 +144,7 @@
 <script setup>
 import {ref, computed, onMounted, watch, inject} from 'vue'
 import { queryLogs, queryLogDetail, queryLogCount } from '../viewmodels/LogViewModel'
+import CryptoJS from "crypto-js";
 
 const showGlobalBubble = inject('showGlobalBubble')
 const LogType = {
@@ -154,9 +168,9 @@ const LogLevel = {
 }
 
 const dangerTypeMap = {
-  0: '🚧纵向',
-  1: '🚧横向',
-  2: '🚧网状',
+  0: '🚧水平',
+  1: '🚧垂直',
+  2: '🚧裂隙',
   3: '🚧坑洼',
   4: '🚧补丁'
 }
@@ -202,12 +216,21 @@ const showDetailModal = ref(false)
 const detailLog = ref(null)
 const isLoadingDetail = ref(false)
 const showDangerImage = ref(false)
+const showFaceVideo = ref(false)
 
+// 缓存解密后的人脸视频base64
+const decryptedFaceVideo = computed(() => {
+  if (detailLog.value && detailLog.value.detail && detailLog.value.detail.face_data) {
+    return decryptFaceData(detailLog.value.detail.face_data)
+  }
+  return null
+})
 // 点击查看详情时获取详细数据
 async function viewDetail(log) {
   showDetailModal.value = true;
   isLoadingDetail.value = true;
   detailLog.value = null;
+  showFaceVideo.value = false;
   try {
     const detail = await queryLogDetail(log.id);
     if (detail) {
@@ -223,6 +246,7 @@ async function viewDetail(log) {
 }
 function closeDetailModal() {
   showDetailModal.value = false
+  showFaceVideo.value = false
 }
 
 // 格式化时间到秒
@@ -237,6 +261,21 @@ function formatConfidence(val) {
   const num = Number(val);
   if (isNaN(num)) return val;
   return (num * 100).toFixed(2) + '%';
+}
+
+// AES解密函数
+function decryptFaceData(encrypted) {
+  try {
+    const bytes = CryptoJS.AES.decrypt(encrypted, 'BrPz0VgQzNmhw1KmHfEyUFu1DHnq0schBijdSm0P_K0=')
+    let decrypted = bytes.toString()
+    if (decrypted.startsWith('"') && decrypted.endsWith('"')) {
+      decrypted = decrypted.slice(1, -1);
+    }
+    alert(decrypted === encrypted)
+    return decrypted;
+  } catch (e) {
+    return null;
+  }
 }
 
 const pageSize = 10
