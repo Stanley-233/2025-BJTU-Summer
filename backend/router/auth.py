@@ -353,23 +353,23 @@ def check_face_data(request: UserCheckFaceRequest, req: Request, session: Sessio
 
   if liveness_result.get("error_code") != 0:
     if liveness_result.get("error_code") == 216909:
-      add_face_spoofing_event(session, "活体检测失败: 两人同时出现", face_video)
+      add_face_spoofing_event(session, "活体检测失败: 两人同时出现", request.face_data)
       raise HTTPException(status_code=406, detail="活体检测失败，有两人同时出现")
-    add_face_spoofing_event(session, "活体检测失败: 两人同时出现", face_video)
+    add_face_spoofing_event(session, "活体检测失败: 两人同时出现", request.face_data)
     raise HTTPException(status_code=406, detail=f"活体检测失败：{liveness_result.get('error_msg', '未知错误')}")
 
   best_img = liveness_result.get("result").get("best_image")
 
   if best_img is None:
-    add_face_spoofing_event(session, "活体检测失败: 未检测到人像", face_video)
+    add_face_spoofing_event(session, "活体检测失败: 未检测到人像", request.face_data)
     raise HTTPException(status_code=402, detail="活体检测失败，未检测到人像")
   if best_img.get("liveness_score") < 0.3:
-    add_face_spoofing_event(session, "活体检测失败: 未检测到人像", face_video,
+    add_face_spoofing_event(session, "活体检测失败: 未检测到人像", request.face_data,
                             liveness_score=best_img.get("liveness_score"),
                             spoofing_score=best_img.get("spoofing_score"))
     raise HTTPException(status_code=402, detail="活体检测失败，活体分数过低")
   if best_img.get("spoofing") > 0.00048:
-    add_face_spoofing_event(session, "活体检测失败: 可能为合成图", face_video,
+    add_face_spoofing_event(session, "活体检测失败: 可能为合成图", request.face_data,
                             liveness_score=best_img.get("liveness_score"),
                             spoofing_score=best_img.get("spoofing_score"))
     raise HTTPException(status_code=402, detail="活体检测失败，为合成图")
@@ -380,7 +380,7 @@ def check_face_data(request: UserCheckFaceRequest, req: Request, session: Sessio
   })
 
   if search_response.get("error_code") == 222207:
-    add_unverified_user_event(session, "非认证用户，用户不存在或人脸数据未注册", face_video)
+    add_unverified_user_event(session, "非认证用户，用户不存在或人脸数据未注册", request.face_data)
     raise HTTPException(status_code=404, detail="非认证用户，用户不存在或人脸数据不存在")
 
   # 获取搜索结果中的用户信息
@@ -389,7 +389,7 @@ def check_face_data(request: UserCheckFaceRequest, req: Request, session: Sessio
   user = session.get(User, username)
 
   if not user:
-    add_unverified_user_event(session, "非认证用户，用户不存在或人脸数据未注册", face_video)
+    add_unverified_user_event(session, "非认证用户，用户不存在或人脸数据未注册", request.face_data)
     raise HTTPException(status_code=404, detail="非认证用户，用户不存在或人脸数据不存在")
 
   # 生成 Token
