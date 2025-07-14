@@ -84,7 +84,7 @@ function startAlarmStream() {
       const url = `http://127.0.0.1:8000${path}`
       console.log('Subscribing to SSE URL:', url)
       // TODO: Remove alert in production
-      alert("测试订阅告警流: " + url)
+      // alert("测试订阅告警流: " + url)
       alarmSource = new EventSourcePolyfill(url, { headers: { Authorization: `Bearer ${token}` }, heartbeatTimeout: Number.MAX_SAFE_INTEGER })
       alarmSource.onopen = () => { console.log('SSE connection opened') }
       alarmSource.onmessage = e => {

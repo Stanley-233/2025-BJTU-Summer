@@ -2,25 +2,54 @@ import uuid
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from model.security_event import SecurityEvent
-from model.user import User, UserType
+from model.user import User, UserType, UserEmail
 from util.engine import get_session
 from util.security import get_current_user
 
 user_router = APIRouter()
 
-@user_router.get("/users/", summary="获取用户列表", response_model=List[User])
-def get_users(session: Session = Depends(get_session), user: User = Depends(get_current_user)):
-    """
-    获取所有用户
-    """
-    if user.user_type != UserType.SYSADMIN:
+class UserWithEmail(BaseModel):
+    username: str
+    user_type: UserType
+    email_address: str
+    email_verified: bool
+
+@user_router.get(
+    "/users/",
+    summary="获取用户列表（含邮箱）",
+    response_model=List[UserWithEmail]
+)
+def get_users_with_email(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.user_type != UserType.SYSADMIN:
         raise HTTPException(status_code=403, detail="权限不足，只有系统管理员可以获取用户列表")
 
-    users = session.exec(select(User)).all()
-    return users
+    stmt = (
+        select(User, UserEmail)
+        .join(UserEmail, User.username == UserEmail.username, isouter=True)
+    )
+    results = session.exec(stmt).all()
+
+    users_map: dict[str, UserWithEmail] = {}
+    for user, email_rec in results:
+        if user.username not in users_map:
+            users_map[user.username] = UserWithEmail(
+                username=user.username,
+                user_type=user.user_type,
+                email_address=email_rec.email_address if email_rec else "",
+                email_verified=email_rec.email_verified if email_rec else False
+            )
+        if email_rec and email_rec.email_address:
+            users_map[user.username].email_address = email_rec.email_address
+            users_map[user.username].email_verified = email_rec.email_verified
+
+    return list(users_map.values())
 
 @user_router.put("/user_change_permission", summary="修改用户权限")
 def change_user_permission(

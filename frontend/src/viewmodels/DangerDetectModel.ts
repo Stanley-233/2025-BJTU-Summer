@@ -38,6 +38,3 @@ export async function requestVideoDangerDetect(
     }
 }
 
-/**
- * TODO: 你可以继续添加其他相关接口函数，如图片检测、日志查询等
- */

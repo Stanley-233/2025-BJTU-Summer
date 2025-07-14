@@ -4,10 +4,13 @@ All URIs are relative to *http://localhost*
 
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
+|[**changeUserPermissionUserChangePermissionPut**](#changeuserpermissionuserchangepermissionput) | **PUT** /user_change_permission | 修改用户权限|
 |[**checkFaceDataCheckFacePost**](#checkfacedatacheckfacepost) | **POST** /check_face/ | 人脸识别获取Token|
 |[**getLogCountLogCountsGet**](#getlogcountlogcountsget) | **GET** /log_counts | 获取日志条数|
 |[**getUserEmailGetUserEmailGet**](#getuseremailgetuseremailget) | **GET** /get_user_email/ | 获取用户邮箱信息|
 |[**getUserInfoGetUserInfoGet**](#getuserinfogetuserinfoget) | **GET** /get_user_info/ | 获取用户信息|
+|[**getUserLogsUsersGetLogsGet**](#getuserlogsusersgetlogsget) | **GET** /users/get_logs | 获取用户关联日志事件|
+|[**getUsersWithEmailUsersGet**](#getuserswithemailusersget) | **GET** /users/ | 获取用户列表（含邮箱）|
 |[**govWarningEventStreamAlarmGovWarningStreamGet**](#govwarningeventstreamalarmgovwarningstreamget) | **GET** /alarm/gov_warning/stream | 政府管理员告警推送|
 |[**isMailVerifiedIsMailVerifiedGet**](#ismailverifiedismailverifiedget) | **GET** /is_mail_verified/ | 获取用户是否已验证邮箱|
 |[**loginLoginPost**](#loginloginpost) | **POST** /login | 用户登录|
@@ -25,6 +28,61 @@ All URIs are relative to *http://localhost*
 |[**verifyLoginEmailCodeLoginMailCodePost**](#verifyloginemailcodeloginmailcodepost) | **POST** /login/mail_code/ | 通过邮箱验证码登录|
 |[**videoDetectVideoDetectPost**](#videodetectvideodetectpost) | **POST** /video_detect/ | 视频流道路病害检测|
 |[**warningEventStreamAlarmSysWarningStreamGet**](#warningeventstreamalarmsyswarningstreamget) | **GET** /alarm/sys_warning/stream | 系统管理员告警推送|
+
+# **changeUserPermissionUserChangePermissionPut**
+> any changeUserPermissionUserChangePermissionPut()
+
+修改用户权限  参数说明： - username: 要修改权限的用户 ID - new_user_type: 新的用户类型，必须是 UserType 枚举中的值  示例请求： PUT /user_change_permission?username=mzf&new_user_type=SYSADMIN
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let username: string; // (default to undefined)
+let newUserType: UserType; // (default to undefined)
+
+const { status, data } = await apiInstance.changeUserPermissionUserChangePermissionPut(
+    username,
+    newUserType
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **username** | [**string**] |  | defaults to undefined|
+| **newUserType** | **UserType** |  | defaults to undefined|
+
+
+### Return type
+
+**any**
+
+### Authorization
+
+[HTTPBearer](../README.md#HTTPBearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Successful Response |  -  |
+|**422** | Validation Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **checkFaceDataCheckFacePost**
 > any checkFaceDataCheckFacePost(userCheckFaceRequest)
@@ -214,6 +272,101 @@ This endpoint does not have any parameters.
 ### Return type
 
 **User**
+
+### Authorization
+
+[HTTPBearer](../README.md#HTTPBearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Successful Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getUserLogsUsersGetLogsGet**
+> Array<SecurityEvent> getUserLogsUsersGetLogsGet()
+
+获取用户关联的日志事件  参数说明： - username: 用户 ID  示例请求： GET /users/get_logs?username=mzf
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let username: string; // (default to undefined)
+
+const { status, data } = await apiInstance.getUserLogsUsersGetLogsGet(
+    username
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **username** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+**Array<SecurityEvent>**
+
+### Authorization
+
+[HTTPBearer](../README.md#HTTPBearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Successful Response |  -  |
+|**422** | Validation Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getUsersWithEmailUsersGet**
+> Array<UserWithEmail> getUsersWithEmailUsersGet()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.getUsersWithEmailUsersGet();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**Array<UserWithEmail>**
 
 ### Authorization
 

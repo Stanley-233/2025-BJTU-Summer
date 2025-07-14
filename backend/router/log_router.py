@@ -60,6 +60,7 @@ def query_logs(
     raise HTTPException(status_code=403, detail="权限不足，只有管理员可以查询日志")
 
   stmt = select(SecurityEvent)
+
   if log_type == "0":
     stmt = stmt.where(SecurityEvent.event_type == EventType.UNVERIFIED_USER)
   elif log_type == "1":
@@ -68,6 +69,7 @@ def query_logs(
     stmt = stmt.where(SecurityEvent.event_type == EventType.ROAD_SAFETY)
   elif log_type == "3":
     stmt = stmt.where(SecurityEvent.event_type == EventType.GENERAL)
+
   if user.user_type not in [UserType.SYSADMIN]:
     stmt = stmt.where(SecurityEvent.event_type == EventType.ROAD_SAFETY)
 

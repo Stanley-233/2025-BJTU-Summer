@@ -30,6 +30,8 @@ import type { MailCodeLoginRequest } from '../model';
 // @ts-ignore
 import type { MailLoginRequest } from '../model';
 // @ts-ignore
+import type { SecurityEvent } from '../model';
+// @ts-ignore
 import type { User } from '../model';
 // @ts-ignore
 import type { UserCheckFaceRequest } from '../model';
@@ -40,6 +42,10 @@ import type { UserLoginRequest } from '../model';
 // @ts-ignore
 import type { UserRegisterRequest } from '../model';
 // @ts-ignore
+import type { UserType } from '../model';
+// @ts-ignore
+import type { UserWithEmail } from '../model';
+// @ts-ignore
 import type { VideoDetectRequest } from '../model';
 // @ts-ignore
 import type { VideoDetectResponse } from '../model';
@@ -49,6 +55,54 @@ import type { VideoDetectResponse } from '../model';
  */
 export const DefaultApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
+        /**
+         * 修改用户权限  参数说明： - username: 要修改权限的用户 ID - new_user_type: 新的用户类型，必须是 UserType 枚举中的值  示例请求： PUT /user_change_permission?username=mzf&new_user_type=SYSADMIN
+         * @summary 修改用户权限
+         * @param {string} username 
+         * @param {UserType} newUserType 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        changeUserPermissionUserChangePermissionPut: async (username: string, newUserType: UserType, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'username' is not null or undefined
+            assertParamExists('changeUserPermissionUserChangePermissionPut', 'username', username)
+            // verify required parameter 'newUserType' is not null or undefined
+            assertParamExists('changeUserPermissionUserChangePermissionPut', 'newUserType', newUserType)
+            const localVarPath = `/user_change_permission`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (username !== undefined) {
+                localVarQueryParameter['username'] = username;
+            }
+
+            if (newUserType !== undefined) {
+                localVarQueryParameter['new_user_type'] = newUserType;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
         /**
          * Base64 人脸识别匹配，识别成功后返回用户登录Token
          * @summary 人脸识别获取Token
@@ -181,6 +235,81 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          */
         getUserInfoGetUserInfoGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/get_user_info/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 获取用户关联的日志事件  参数说明： - username: 用户 ID  示例请求： GET /users/get_logs?username=mzf
+         * @summary 获取用户关联日志事件
+         * @param {string} username 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUserLogsUsersGetLogsGet: async (username: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'username' is not null or undefined
+            assertParamExists('getUserLogsUsersGetLogsGet', 'username', username)
+            const localVarPath = `/users/get_logs`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication HTTPBearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (username !== undefined) {
+                localVarQueryParameter['username'] = username;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary 获取用户列表（含邮箱）
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUsersWithEmailUsersGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/users/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -858,6 +987,20 @@ export const DefaultApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = DefaultApiAxiosParamCreator(configuration)
     return {
         /**
+         * 修改用户权限  参数说明： - username: 要修改权限的用户 ID - new_user_type: 新的用户类型，必须是 UserType 枚举中的值  示例请求： PUT /user_change_permission?username=mzf&new_user_type=SYSADMIN
+         * @summary 修改用户权限
+         * @param {string} username 
+         * @param {UserType} newUserType 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async changeUserPermissionUserChangePermissionPut(username: string, newUserType: UserType, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.changeUserPermissionUserChangePermissionPut(username, newUserType, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.changeUserPermissionUserChangePermissionPut']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Base64 人脸识别匹配，识别成功后返回用户登录Token
          * @summary 人脸识别获取Token
          * @param {UserCheckFaceRequest} userCheckFaceRequest 
@@ -908,6 +1051,31 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getUserInfoGetUserInfoGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.getUserInfoGetUserInfoGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 获取用户关联的日志事件  参数说明： - username: 用户 ID  示例请求： GET /users/get_logs?username=mzf
+         * @summary 获取用户关联日志事件
+         * @param {string} username 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getUserLogsUsersGetLogsGet(username: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<SecurityEvent>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getUserLogsUsersGetLogsGet(username, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getUserLogsUsersGetLogsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary 获取用户列表（含邮箱）
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getUsersWithEmailUsersGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<UserWithEmail>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getUsersWithEmailUsersGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getUsersWithEmailUsersGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -1140,6 +1308,17 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
     const localVarFp = DefaultApiFp(configuration)
     return {
         /**
+         * 修改用户权限  参数说明： - username: 要修改权限的用户 ID - new_user_type: 新的用户类型，必须是 UserType 枚举中的值  示例请求： PUT /user_change_permission?username=mzf&new_user_type=SYSADMIN
+         * @summary 修改用户权限
+         * @param {string} username 
+         * @param {UserType} newUserType 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        changeUserPermissionUserChangePermissionPut(username: string, newUserType: UserType, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.changeUserPermissionUserChangePermissionPut(username, newUserType, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Base64 人脸识别匹配，识别成功后返回用户登录Token
          * @summary 人脸识别获取Token
          * @param {UserCheckFaceRequest} userCheckFaceRequest 
@@ -1179,6 +1358,25 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         getUserInfoGetUserInfoGet(options?: RawAxiosRequestConfig): AxiosPromise<User> {
             return localVarFp.getUserInfoGetUserInfoGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 获取用户关联的日志事件  参数说明： - username: 用户 ID  示例请求： GET /users/get_logs?username=mzf
+         * @summary 获取用户关联日志事件
+         * @param {string} username 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUserLogsUsersGetLogsGet(username: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<SecurityEvent>> {
+            return localVarFp.getUserLogsUsersGetLogsGet(username, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary 获取用户列表（含邮箱）
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUsersWithEmailUsersGet(options?: RawAxiosRequestConfig): AxiosPromise<Array<UserWithEmail>> {
+            return localVarFp.getUsersWithEmailUsersGet(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1359,6 +1557,19 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
  */
 export class DefaultApi extends BaseAPI {
     /**
+     * 修改用户权限  参数说明： - username: 要修改权限的用户 ID - new_user_type: 新的用户类型，必须是 UserType 枚举中的值  示例请求： PUT /user_change_permission?username=mzf&new_user_type=SYSADMIN
+     * @summary 修改用户权限
+     * @param {string} username 
+     * @param {UserType} newUserType 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public changeUserPermissionUserChangePermissionPut(username: string, newUserType: UserType, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).changeUserPermissionUserChangePermissionPut(username, newUserType, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Base64 人脸识别匹配，识别成功后返回用户登录Token
      * @summary 人脸识别获取Token
      * @param {UserCheckFaceRequest} userCheckFaceRequest 
@@ -1405,6 +1616,29 @@ export class DefaultApi extends BaseAPI {
      */
     public getUserInfoGetUserInfoGet(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).getUserInfoGetUserInfoGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 获取用户关联的日志事件  参数说明： - username: 用户 ID  示例请求： GET /users/get_logs?username=mzf
+     * @summary 获取用户关联日志事件
+     * @param {string} username 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public getUserLogsUsersGetLogsGet(username: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).getUserLogsUsersGetLogsGet(username, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary 获取用户列表（含邮箱）
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public getUsersWithEmailUsersGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).getUsersWithEmailUsersGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

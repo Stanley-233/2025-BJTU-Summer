@@ -4,12 +4,14 @@
       <div :class="['tab-item', activeTab === 'user' ? 'active' : '']" @click="activeTab = 'user'">用户信息</div>
       <div :class="['tab-item', activeTab === 'log' ? 'active' : '']" @click="activeTab = 'log'">日志记录</div>
       <div :class="['tab-item', activeTab === 'upload' ? 'active' : '']" @click="activeTab = 'upload'">人脸上传</div>
+      <div v-if="rawUserType === 'sysadmin'" :class="['tab-item', activeTab === 'manage' ? 'active' : '']" @click="activeTab = 'manage'">用户管理</div>
     </aside>
     <main class="console-main">
       <div class="tab-title">
         <h2 v-if="activeTab === 'user'">用户信息</h2>
         <h2 v-else-if="activeTab === 'log'">日志记录</h2>
         <h2 v-else-if="activeTab === 'upload'">人脸上传</h2>
+        <h2 v-else-if="activeTab === 'manage'">用户管理</h2>
         <div class="tab-title-underline"></div>
       </div>
       <transition name="fade" mode="out-in">
@@ -45,8 +47,11 @@
             </div>
           </div>
         </div>
-        <div v-else key="upload">
+        <div v-else-if="activeTab === 'upload'" key="upload">
           <FaceUpload/>
+        </div>
+        <div v-else-if="activeTab === 'manage'" key="manage">
+          <UserManagement/>
         </div>
       </transition>
     </main>
@@ -60,8 +65,10 @@ import BubbleMessage from '../components/BubbleMessage.vue'
 import {codeCheck, getUserEmail, getUserInfo, verifyEmail} from '../viewmodels/VerifyInfoViewModel'
 import LogTable from '../components/LogTable.vue'
 import FaceUpload from '../components/FaceUpload.vue'
+import UserManagement from '../components/UserManagement.vue'
 
 const activeTab = ref('user')
+const rawUserType = ref('')
 
 const email = ref("")
 const isVerified = ref(false)
@@ -115,6 +122,7 @@ async function fetchUserInfo() {
         default:
           userInfo.value.user_type = 'error'
       }
+      rawUserType.value = data.user_type
     }
   } catch (e) {
     showGlobalBubble('获取用户信息失败')
