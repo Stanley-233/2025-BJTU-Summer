@@ -142,6 +142,7 @@ def query_log_detail(
 @log_router.get("/log_counts", summary="获取日志条数")
 def get_log_count(log_type: Optional[str] = Query(None, description="事件类型过滤"),
                   log_range: Optional[str] = Query(None, description="日志范围过滤，例如：2021-01-01~2021-12-31"),
+                  log_username: Optional[str] = Query(None, description="查询关联用户名"),
                   session: Session = Depends(get_session),
                   user: User = Depends(get_current_user)):
   """
@@ -149,6 +150,7 @@ def get_log_count(log_type: Optional[str] = Query(None, description="事件类�
   - 参数说明：
   - log_type：允许根据日志类型过滤
   - log_range：允许根据日志时间范围过滤
+  - log_username: 查询关联用户名
 
   示例请求：
   /log_counts
@@ -169,6 +171,10 @@ def get_log_count(log_type: Optional[str] = Query(None, description="事件类�
   # 非SYSADMIN仅允许查询ROAD_SAFETY日志
   if user.user_type != UserType.SYSADMIN:
     stmt = stmt.where(SecurityEvent.event_type == EventType.ROAD_SAFETY)
+
+  if log_username:
+    stmt.where(SecurityEvent.link_username == log_username)
+
   # 根据时间范围过滤
   if log_range:
     try:

@@ -86,14 +86,15 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * 获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤  示例请求： /log_counts
+         * 获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - log_username: 查询关联用户名  示例请求： /log_counts
          * @summary 获取日志条数
          * @param {string | null} [logType] 事件类型过滤
          * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+         * @param {string | null} [logUsername] 查询关联用户名
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getLogCountLogCountsGet: async (logType?: string | null, logRange?: string | null, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        getLogCountLogCountsGet: async (logType?: string | null, logRange?: string | null, logUsername?: string | null, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/log_counts`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -116,6 +117,10 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
 
             if (logRange !== undefined) {
                 localVarQueryParameter['log_range'] = logRange;
+            }
+
+            if (logUsername !== undefined) {
+                localVarQueryParameter['log_username'] = logUsername;
             }
 
 
@@ -759,15 +764,16 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * 获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤  示例请求： /log_counts
+         * 获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - log_username: 查询关联用户名  示例请求： /log_counts
          * @summary 获取日志条数
          * @param {string | null} [logType] 事件类型过滤
          * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+         * @param {string | null} [logUsername] 查询关联用户名
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getLogCountLogCountsGet(logType?: string | null, logRange?: string | null, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getLogCountLogCountsGet(logType, logRange, options);
+        async getLogCountLogCountsGet(logType?: string | null, logRange?: string | null, logUsername?: string | null, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getLogCountLogCountsGet(logType, logRange, logUsername, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.getLogCountLogCountsGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -1000,15 +1006,16 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.checkFaceDataCheckFacePost(userCheckFaceRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * 获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤  示例请求： /log_counts
+         * 获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - log_username: 查询关联用户名  示例请求： /log_counts
          * @summary 获取日志条数
          * @param {string | null} [logType] 事件类型过滤
          * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+         * @param {string | null} [logUsername] 查询关联用户名
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getLogCountLogCountsGet(logType?: string | null, logRange?: string | null, options?: RawAxiosRequestConfig): AxiosPromise<any> {
-            return localVarFp.getLogCountLogCountsGet(logType, logRange, options).then((request) => request(axios, basePath));
+        getLogCountLogCountsGet(logType?: string | null, logRange?: string | null, logUsername?: string | null, options?: RawAxiosRequestConfig): AxiosPromise<any> {
+            return localVarFp.getLogCountLogCountsGet(logType, logRange, logUsername, options).then((request) => request(axios, basePath));
         },
         /**
          * 获取用户邮箱信息
@@ -1192,16 +1199,17 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
-     * 获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤  示例请求： /log_counts
+     * 获取日志条数 - 参数说明： - log_type：允许根据日志类型过滤 - log_range：允许根据日志时间范围过滤 - log_username: 查询关联用户名  示例请求： /log_counts
      * @summary 获取日志条数
      * @param {string | null} [logType] 事件类型过滤
      * @param {string | null} [logRange] 日志范围过滤，例如：2021-01-01~2021-12-31
+     * @param {string | null} [logUsername] 查询关联用户名
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public getLogCountLogCountsGet(logType?: string | null, logRange?: string | null, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).getLogCountLogCountsGet(logType, logRange, options).then((request) => request(this.axios, this.basePath));
+    public getLogCountLogCountsGet(logType?: string | null, logRange?: string | null, logUsername?: string | null, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).getLogCountLogCountsGet(logType, logRange, logUsername, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
