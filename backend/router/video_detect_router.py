@@ -128,7 +128,9 @@ def video_detect(request: VideoDetectRequest, session: Session = Depends(get_ses
     danger_count = len(dangers_db)
     event.description = f"通过视频识别到 {danger_count} 种道路病害"
 
-    detail = RoadDetail(id=event.id, predicted_image=predicted_video_base64, danger_nums=danger_count)
+    detail = RoadDetail(id=event.id,
+                        predicted_image=predicted_video_base64,
+                        danger_nums=danger_count)
     session.add(detail)
     session.commit()
     session.add_all(dangers_db)
