@@ -1,10 +1,10 @@
 # 文件: frontend/Dockerfile
 # 构建阶段
-FROM node:18-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
-COPY frontend/package*.json ./
+COPY ./package*.json ./
 RUN npm install
-COPY frontend/ ./
+COPY ./ ./
 RUN npm run build
 # 运行阶段
 FROM nginx:alpine
