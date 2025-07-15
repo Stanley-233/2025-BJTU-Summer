@@ -6,150 +6,244 @@
         <h2>济南出租车数据分析</h2>
       </div>
       
-      <!-- 时间范围查询面板 -->
-      <div class="sidebar-panel">
-        <div class="panel-title">时间范围查询</div>
-        <div class="time-inputs">
-          <div class="time-input-group">
-            <label>起始时间:</label>
-            <input 
-              type="datetime-local" 
-              v-model="startUtcTime" 
-              @change="onUtcTimeChange"
-              class="time-input"
-            />
-          </div>
-          <div class="time-input-group">
-            <label>结束时间:</label>
-            <input 
-              type="datetime-local" 
-              v-model="endUtcTime" 
-              @change="onUtcTimeChange"
-              class="time-input"
-            />
-          </div>
-        </div>
-        <div class="time-controls">
-          <button @click="applyUtcTimeFilter" :disabled="isLoading" class="apply-btn">
-            {{ isLoading ? '加载中...' : '查询热力图' }}
-          </button>
-          <button @click="clearUtcTimeFilter" class="clear-btn">清除过滤</button>
-        </div>
-        <div class="preset-buttons">
-          <button @click="setPresetUtcTime('today')" class="preset-btn">0912全天</button>
-          <button @click="setPresetUtcTime('morning')" class="preset-btn">早高峰(7-9点)</button>
-          <button @click="setPresetUtcTime('evening')" class="preset-btn">晚高峰(17-19点)</button>
-          <button @click="setPresetUtcTime('last_hour')" class="preset-btn">22-23点</button>
-        </div>
-        <div class="utc-stats" v-if="utcTimeStats">
-          <div class="stat-item">
-            <span>时间范围: {{ utcTimeStats.time_range }}</span>
-          </div>
-          <div class="stat-item">
-            <span>总行程数: {{ utcTimeStats.total_trips }}</span>
-          </div>
-          <div class="stat-item">
-            <span>车辆数: {{ utcTimeStats.unique_vehicles }}</span>
-          </div>
-          <div class="stat-item">
-            <span>平均距离: {{ utcTimeStats.avg_distance }}km</span>
-          </div>
-          <div class="stat-item">
-            <span>平均时长: {{ utcTimeStats.avg_duration }}分钟</span>
-          </div>
-        </div>
+      <!-- 导航标签页 -->
+      <div class="nav-tabs">
+        <button 
+          v-for="tab in tabs" 
+          :key="tab.key"
+          :class="['nav-tab', { active: activeTab === tab.key }]"
+          @click="switchTab(tab.key)"
+        >
+          <i :class="tab.icon"></i>
+          {{ tab.label }}
+        </button>
       </div>
       
-      <!-- 车辆轨迹查询面板 -->
-      <div class="sidebar-panel">
-        <div class="panel-title">车辆轨迹查询</div>
-        <div class="track-inputs">
-          <div class="input-group">
-            <label>车牌号:</label>
-            <input 
-              type="text" 
-              v-model="vehicleId" 
-              placeholder="请输入车牌号"
-              class="vehicle-input"
-            />
+      <!-- 动态内容区域 -->
+      <div class="tab-content">
+        <!-- 热力图分析页面 -->
+        <div v-if="activeTab === 'heatmap'" class="tab-panel">
+          <div class="sidebar-panel">
+            <div class="panel-title">热力图控制</div>
+            <div class="control-item">
+              <button @click="toggleHeatmap" class="control-btn">{{ showHeatmap ? '隐藏热力图' : '显示热力图' }}</button>
+            </div>
+            <div class="control-item">
+              <button @click="loadDefaultHeatmap" class="control-btn">重新加载热力图</button>
+            </div>
           </div>
-          <div class="time-input-group">
-            <label>起始时间:</label>
-            <input 
-              type="datetime-local" 
-              v-model="trackStartTime" 
-              class="time-input"
-            />
+          
+          <div class="sidebar-panel">
+            <div class="panel-title">地图控制</div>
+            <div class="control-item">
+              <button @click="fitToData" class="control-btn">适应数据范围</button>
+            </div>
+            <div class="control-item">
+              <button @click="resetMap" class="control-btn">重置地图</button>
+            </div>
           </div>
-          <div class="time-input-group">
-            <label>结束时间:</label>
-            <input 
-              type="datetime-local" 
-              v-model="trackEndTime" 
-              class="time-input"
-            />
-          </div>
-        </div>
-        <div class="track-controls">
-          <button @click="queryVehicleTrack" :disabled="isTrackLoading" class="apply-btn">
-            {{ isTrackLoading ? '查询中...' : '查询轨迹' }}
-          </button>
-          <button @click="clearVehicleTrack" class="clear-btn">清除轨迹</button>
-        </div>
-        <div class="track-stats" v-if="trackStats">
-          <div class="stat-item">
-            <span>轨迹点数: {{ trackStats.point_count }}</span>
-          </div>
-          <div class="stat-item">
-            <span>总距离: {{ trackStats.total_distance }}km</span>
-          </div>
-          <div class="stat-item">
-            <span>总时长: {{ trackStats.total_duration }}分钟</span>
+          
+          <!-- 数据状态面板 -->
+          <div class="sidebar-panel">
+            <div class="panel-title">数据状态</div>
+            <div class="stat-item">
+              <span>状态：{{ dataStatus }}</span>
+            </div>
+            <div class="stat-item">
+              <span>数据点总数：{{ totalDataPoints }}</span>
+            </div>
+            <div class="stat-item">
+              <span>最大密度：{{ maxDensity }}</span>
+            </div>
+            <div class="stat-item">
+              <span>坐标范围：{{ coordinateRange }}</span>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <!-- 控制面板 -->
-      <div class="sidebar-panel">
-        <div class="panel-title">控制面板</div>
-        <div class="control-item">
-          <span>热力图强度：</span>
-          <input type="range" min="10" max="100" v-model="heatmapIntensity" @change="updateHeatmap" />
-          <span>{{ heatmapIntensity }}%</span>
+        
+        <!-- 时间范围分析页面 -->
+        <div v-if="activeTab === 'timerange'" class="tab-panel">
+          <div class="sidebar-panel">
+            <div class="panel-title">时间范围查询</div>
+            <div class="time-inputs">
+              <div class="time-input-group">
+                <label>起始时间:</label>
+                <input 
+                  type="datetime-local" 
+                  v-model="startUtcTime" 
+                  @change="onUtcTimeChange"
+                  class="time-input"
+                />
+              </div>
+              <div class="time-input-group">
+                <label>结束时间:</label>
+                <input 
+                  type="datetime-local" 
+                  v-model="endUtcTime" 
+                  @change="onUtcTimeChange"
+                  class="time-input"
+                />
+              </div>
+            </div>
+            <div class="time-controls">
+              <button @click="applyUtcTimeFilter" :disabled="isLoading" class="apply-btn">
+                {{ isLoading ? '加载中...' : '查询热力图' }}
+              </button>
+              <button @click="clearUtcTimeFilter" class="clear-btn">清除过滤</button>
+            </div>
+            <div class="preset-buttons">
+              <button @click="setPresetUtcTime('today')" class="preset-btn">0912全天</button>
+              <button @click="setPresetUtcTime('morning')" class="preset-btn">早高峰(7-9点)</button>
+              <button @click="setPresetUtcTime('evening')" class="preset-btn">晚高峰(17-19点)</button>
+              <button @click="setPresetUtcTime('last_hour')" class="preset-btn">22-23点</button>
+            </div>
+          </div>
+          
+          <!-- 时间统计面板 -->
+          <div class="sidebar-panel" v-if="utcTimeStats">
+            <div class="panel-title">时间统计</div>
+            <div class="utc-stats">
+              <div class="stat-item">
+                <span>时间范围: {{ utcTimeStats.time_range }}</span>
+              </div>
+              <div class="stat-item">
+                <span>总行程数: {{ utcTimeStats.total_trips }}</span>
+              </div>
+              <div class="stat-item">
+                <span>车辆数: {{ utcTimeStats.unique_vehicles }}</span>
+              </div>
+              <div class="stat-item">
+                <span>平均距离: {{ utcTimeStats.avg_distance }}km</span>
+              </div>
+              <div class="stat-item">
+                <span>平均时长: {{ utcTimeStats.avg_duration }}分钟</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 数据状态面板 -->
+          <div class="sidebar-panel">
+            <div class="panel-title">数据状态</div>
+            <div class="stat-item">
+              <span>状态：{{ dataStatus }}</span>
+            </div>
+            <div class="stat-item">
+              <span>当前显示：{{ utcTimeStats ? '时间过滤数据' : '默认热力图' }}</span>
+            </div>
+          </div>
         </div>
-        <div class="control-item">
-          <span>热力图半径：</span>
-          <input type="range" min="5" max="50" v-model="heatmapRadius" @change="updateHeatmap" />
-          <span>{{ heatmapRadius }}px</span>
+        
+        <!-- 车辆轨迹分析页面 -->
+        <div v-if="activeTab === 'trajectory'" class="tab-panel">
+          <div class="sidebar-panel">
+            <div class="panel-title">车辆轨迹查询</div>
+            <div class="track-inputs">
+              <div class="input-group">
+                <label>车牌号:</label>
+                <input 
+                  type="text" 
+                  v-model="vehicleId" 
+                  placeholder="请输入车牌号"
+                  class="vehicle-input"
+                />
+              </div>
+              <div class="time-input-group">
+                <label>起始时间:</label>
+                <input 
+                  type="datetime-local" 
+                  v-model="trackStartTime" 
+                  class="time-input"
+                />
+              </div>
+              <div class="time-input-group">
+                <label>结束时间:</label>
+                <input 
+                  type="datetime-local" 
+                  v-model="trackEndTime" 
+                  class="time-input"
+                />
+              </div>
+            </div>
+            <div class="track-controls">
+              <button @click="queryVehicleTrack" :disabled="isTrackLoading" class="apply-btn">
+                {{ isTrackLoading ? '查询中...' : '查询轨迹' }}
+              </button>
+              <button @click="clearVehicleTrack" class="clear-btn">清除轨迹</button>
+            </div>
+          </div>
+          
+          <!-- 轨迹统计面板 -->
+          <div class="sidebar-panel" v-if="trackStats">
+            <div class="panel-title">轨迹统计</div>
+            <div class="track-stats">
+              <div class="stat-item">
+                <span>轨迹点数: {{ trackStats.point_count }}</span>
+              </div>
+              <div class="stat-item">
+                <span>总距离: {{ trackStats.total_distance }}km</span>
+              </div>
+              <div class="stat-item">
+                <span>总时长: {{ trackStats.total_duration }}分钟</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 数据状态面板 -->
+          <div class="sidebar-panel">
+            <div class="panel-title">数据状态</div>
+            <div class="stat-item">
+              <span>查询状态：{{ isTrackLoading ? '查询中...' : '就绪' }}</span>
+            </div>
+            <div class="stat-item">
+              <span>当前车辆：{{ vehicleId || '未选择' }}</span>
+            </div>
+            <div class="stat-item">
+              <span>轨迹显示：{{ trackStats ? '已显示' : '无轨迹' }}</span>
+            </div>
+          </div>
         </div>
-        <div class="control-item">
-          <button @click="toggleHeatmap" class="control-btn">{{ showHeatmap ? '隐藏热力图' : '显示热力图' }}</button>
-        </div>
-        <div class="control-item">
-          <button @click="fitToData" class="control-btn">适应数据范围</button>
-        </div>
-        <div class="control-item">
-          <button @click="resetMap" class="control-btn">重置地图</button>
-        </div>
-        <div class="control-item">
-          <span>数据状态：{{ dataStatus }}</span>
-        </div>
-      </div>
-      
-      <!-- 数据统计面板 -->
-      <div class="sidebar-panel">
-        <div class="panel-title">数据统计</div>
-        <div class="stat-item">
-          <span>聚类数量：{{ clusterCount }}</span>
-        </div>
-        <div class="stat-item">
-          <span>数据点总数：{{ totalDataPoints }}</span>
-        </div>
-        <div class="stat-item">
-          <span>最大密度：{{ maxDensity }}</span>
-        </div>
-        <div class="stat-item">
-          <span>坐标范围：{{ coordinateRange }}</span>
+        
+        <!-- 数据统计页面 -->
+        <div v-if="activeTab === 'statistics'" class="tab-panel">
+          <div class="sidebar-panel">
+            <div class="panel-title">数据概览</div>
+            <div class="stat-item">
+              <span>聚类数量：{{ clusterCount }}</span>
+            </div>
+            <div class="stat-item">
+              <span>数据点总数：{{ totalDataPoints }}</span>
+            </div>
+            <div class="stat-item">
+              <span>最大密度：{{ maxDensity }}</span>
+            </div>
+            <div class="stat-item">
+              <span>坐标范围：{{ coordinateRange }}</span>
+            </div>
+          </div>
+          
+          <div class="sidebar-panel">
+            <div class="panel-title">数据操作</div>
+            <div class="control-item">
+              <button @click="checkDataDistribution" class="control-btn">检查数据分布</button>
+            </div>
+            <div class="control-item">
+              <button @click="loadDefaultHeatmap" class="control-btn">重新加载数据</button>
+            </div>
+          </div>
+          
+          <!-- 系统状态面板 -->
+          <div class="sidebar-panel">
+            <div class="panel-title">系统状态</div>
+            <div class="stat-item">
+              <span>数据状态：{{ dataStatus }}</span>
+            </div>
+            <div class="stat-item">
+              <span>加载状态：{{ isLoading ? '加载中' : '就绪' }}</span>
+            </div>
+            <div class="stat-item">
+              <span>热力图：{{ showHeatmap ? '显示中' : '已隐藏' }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </aside>
@@ -173,8 +267,9 @@ let vehicleMarkers = [];
 let vehiclePolyline = null;
 
 // 控制参数
-const heatmapIntensity = ref(60);
-const heatmapRadius = ref(15);
+// 控制参数 - 调整为适合道路级别的数值
+const heatmapIntensity = ref(70);
+const heatmapRadius = ref(10); // 默认10，对应200米半径
 const showHeatmap = ref(true);
 const isLoading = ref(false);
 const isTrackLoading = ref(false);
@@ -203,6 +298,39 @@ const realDataPoints = ref([]);
 // API基础URL
 const API_BASE_URL = 'http://localhost:8000';
 
+// 新增：标签页管理
+const activeTab = ref('heatmap');
+const tabs = ref([
+  { key: 'heatmap', label: '热力图分析', icon: 'fas fa-fire' },
+  { key: 'timerange', label: '时间分析', icon: 'fas fa-clock' },
+  { key: 'trajectory', label: '轨迹分析', icon: 'fas fa-route' },
+  { key: 'statistics', label: '数据统计', icon: 'fas fa-chart-bar' }
+]);
+
+// 切换标签页
+const switchTab = (tabKey) => {
+  activeTab.value = tabKey;
+  
+  // 根据不同标签页执行相应的初始化操作
+  switch(tabKey) {
+    case 'heatmap':
+      if (!showHeatmap.value) {
+        loadDefaultHeatmap();
+      }
+      break;
+    case 'timerange':
+      // 可以在这里初始化时间相关的数据
+      break;
+    case 'trajectory':
+      // 清除之前的轨迹显示
+      clearVehicleTrack();
+      break;
+    case 'statistics':
+      // 可以在这里刷新统计数据
+      break;
+  }
+};
+
 // 初始化地图
 const initMap = async () => {
   // 创建地图实例
@@ -219,7 +347,7 @@ const initMap = async () => {
   map.addControl(new BMapGL.NavigationControl());
   map.addControl(new BMapGL.ScaleControl());
   
-  // 加载并应用自定义地图样式
+  // 自定义地图样式
   try {
     const response = await fetch('/custom_map_config.json');
     const mapStyle = await response.json();
@@ -230,14 +358,12 @@ const initMap = async () => {
     dataStatus.value = '地图样式加载失败，使用默认样式';
   }
   
-  // 初始化热力图
   initHeatmap();
   
-  // 默认显示0912当天的热力图
   loadDefaultHeatmap();
 };
 
-// 初始化热力图 - 使用MapVGL
+// 初始化热力图
 const initHeatmap = () => {
   if (!window.mapvgl) {
     console.error('MapVGL库未加载');
@@ -246,20 +372,21 @@ const initHeatmap = () => {
   }
   
   try {
-    // 创建MapVGL视图
     mapvglView = new mapvgl.View({ map: map });
     
-    // 创建热力图图层
+    // 创建热力图图层 - 调整为道路级别的精细度
     heatmapLayer = new mapvgl.HeatmapLayer({
-      size: heatmapRadius.value * 10,
-      max: 100,
+      size: heatmapRadius.value * 20,  // 大幅减小半径倍数：从*10改为*2
+      max: 200,  // 提高最大值以增强对比度
       height: 0,
       unit: 'm',
       gradient: {
-        0.25: 'rgba(0, 0, 255, 1)',
-        0.55: 'rgba(0, 255, 0, 1)',
-        0.85: 'rgba(255, 255, 0, 1)',
-        1: 'rgba(255, 0, 0, 1)'
+        0.1: 'rgba(0, 0, 255, 0.1)',    // 低密度：淡蓝色
+        0.3: 'rgba(0, 255, 255, 0.4)',  // 中低密度：青色
+        0.5: 'rgba(0, 255, 0, 0.6)',    // 中密度：绿色
+        0.7: 'rgba(255, 255, 0, 0.8)',  // 中高密度：黄色
+        0.9: 'rgba(255, 165, 0, 0.9)',  // 高密度：橙色
+        1: 'rgba(255, 0, 0, 1)'         // 最高密度：红色
       },
       opacity: heatmapIntensity.value / 100
     });
@@ -293,9 +420,9 @@ const updateHeatmapData = () => {
 const updateHeatmap = () => {
   if (!heatmapLayer) return;
   
-  // 更新热力图配置
+  // 更新热力图配置 - 使用更小的半径倍数
   heatmapLayer.setOptions({
-    size: heatmapRadius.value * 10,
+    size: heatmapRadius.value * 2,  // 从*10改为*2
     opacity: heatmapIntensity.value / 100
   });
 };
@@ -313,54 +440,128 @@ const toggleHeatmap = () => {
   }
 };
 
-// 加载默认热力图（基于所有轨迹数据）
+// 加载默认热力图（基于完整轨迹数据）
 const loadDefaultHeatmap = async () => {
   try {
     isLoading.value = true;
-    dataStatus.value = '正在加载轨迹热力图数据...';
+    dataStatus.value = '正在加载完整轨迹热力图数据...';
     
-    // 优化参数：提高采样率和调整网格大小
-    const response = await axios.get(`${API_BASE_URL}/taxi/trajectory-heatmap-data?sample_rate=0.3&grid_size=0.002`);
-    const data = response.data;
+    // 使用新的完整轨迹数据API
+    const response = await axios.get(`${API_BASE_URL}/taxi/heatmap-data-full-trajectory`, {
+      params: {
+        max_points: 15000,
+        grid_size: 0.001,  // 1km左右的网格
+        sample_rate: 0.25  // 采样25%的数据以平衡性能和完整性
+      }
+    });
     
-    realDataPoints.value = data.map(point => ({
-      lng: parseFloat(point.lng),
-      lat: parseFloat(point.lat),
-      count: Math.max(1, Math.min(200, point.count))  // 提高最大值到200
-    }));
-    
-    updateHeatmapData();
-    updateStats(data);
-    
-    dataStatus.value = `轨迹热力图数据加载完成 (${data.length}个网格点)`;
-    
+    if (response.data && response.data.length > 0) {
+      const processedData = response.data.map(point => ({
+        lng: parseFloat(point.lng),
+        lat: parseFloat(point.lat),
+        count: Math.max(1, Math.min(100, point.count))
+      }));
+      
+      realDataPoints.value = processedData;
+      updateHeatmapData();
+      updateStats(response.data);
+      
+      dataStatus.value = `完整轨迹热力图加载完成 (${processedData.length}个点)`;
+      console.log(`完整轨迹热力图加载完成，共 ${processedData.length} 个数据点`);
+    } else {
+      dataStatus.value = '未获取到轨迹热力图数据';
+    }
   } catch (error) {
-    console.error('加载轨迹热力图数据失败:', error);
-    dataStatus.value = '数据加载失败';
+    console.error('轨迹热力图数据加载失败:', error);
+    dataStatus.value = `数据加载失败: ${error.message}`;
+    
+    // 降级到原有的快速API
+    try {
+      console.log('尝试降级到聚类数据API...');
+      const fallbackResponse = await axios.get(`${API_BASE_URL}/taxi/heatmap-data-fast`, {
+        params: { max_points: 8000 }
+      });
+      
+      if (fallbackResponse.data && fallbackResponse.data.length > 0) {
+        const processedData = fallbackResponse.data.map(point => ({
+          lng: parseFloat(point.lng),
+          lat: parseFloat(point.lat),
+          count: Math.max(1, Math.min(100, point.count))
+        }));
+        
+        realDataPoints.value = processedData;
+        updateHeatmapData();
+        updateStats(fallbackResponse.data);
+        
+        dataStatus.value = `热力图数据加载完成 (降级模式: ${processedData.length}个点)`;
+      }
+    } catch (fallbackError) {
+      console.error('降级API也失败:', fallbackError);
+      dataStatus.value = '所有热力图数据源都无法加载';
+      
+      if (error.code === 'ERR_NETWORK') {
+        alert('网络连接失败，请检查后端服务是否启动在 http://localhost:8000');
+      } else if (error.response) {
+        alert(`服务器错误: ${error.response.status} - ${error.response.data?.detail || error.response.statusText}`);
+      } else {
+        alert(`请求失败: ${error.message}`);
+      }
+    }
   } finally {
     isLoading.value = false;
   }
 };
 
-// UTC时间过滤相关函数
+// 添加数据分布检查函数
+const checkDataDistribution = async (data) => {
+  if (data && data.length === 0) return;
+  
+  if (data) {
+    const lats = data.map(p => p.lat);
+    const latMin = Math.min(...lats);
+    const latMax = Math.max(...lats);
+    const latMid = (latMin + latMax) / 2;
+    
+    const northCount = data.filter(p => p.lat > latMid).length;
+    const southCount = data.filter(p => p.lat <= latMid).length;
+    
+    console.log('数据分布检查:');
+    console.log(`纬度范围: ${latMin.toFixed(4)} - ${latMax.toFixed(4)}`);
+    console.log(`北部数据点: ${northCount} (${(northCount/data.length*100).toFixed(1)}%)`);
+    console.log(`南部数据点: ${southCount} (${(southCount/data.length*100).toFixed(1)}%)`);
+    
+    if (northCount < southCount * 0.3) {
+      console.warn('警告：北部数据点明显少于南部，可能存在数据分布不均问题');
+    }
+    return;
+  }
+  
+  try {
+    const response = await axios.get(`${API_BASE_URL}/taxi/data-distribution`);
+    console.log('数据分布:', response.data);
+    alert(`数据分布检查完成，详情请查看控制台`);
+  } catch (error) {
+    console.error('检查数据分布失败:', error);
+    alert('检查数据分布失败');
+  }
+};
+
+// UTC时间过滤相关函数（使用自适应聚合保留稀疏区域）
 const fetchHeatmapDataUtc = async (startUtc, endUtc) => {
   try {
     isLoading.value = true;
     dataStatus.value = '正在加载时间范围数据...';
     
-    let url = `${API_BASE_URL}/taxi/heatmap-data-utc`;
-    const params = new URLSearchParams();
+    // 优先使用自适应聚合API
+    const response = await axios.get(`${API_BASE_URL}/taxi/heatmap-data-adaptive`, {
+      params: {
+        start_utc: startUtc,
+        end_utc: endUtc,
+        max_points: 15000,
+        preserve_sparse: true  // 确保保留稀疏区域数据
+      }
+    });
     
-    if (startUtc && endUtc) {
-      params.append('start_utc', startUtc);
-      params.append('end_utc', endUtc);
-    }
-    
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
-    
-    const response = await axios.get(url);
     const data = response.data;
     
     realDataPoints.value = data.map(point => ({
@@ -372,11 +573,42 @@ const fetchHeatmapDataUtc = async (startUtc, endUtc) => {
     updateHeatmapData();
     updateStats(data);
     
-    dataStatus.value = `时间范围数据加载完成 (${data.length}个点)`;
+    dataStatus.value = `时间范围数据加载完成 (${data.length}个点，已保留稀疏区域)`;
     
   } catch (error) {
-    console.error('获取UTC时间热力图数据失败:', error);
-    dataStatus.value = '时间范围数据加载失败';
+    console.error('自适应API时间过滤失败，尝试原始API:', error);
+    
+    // 降级到原始UTC API
+    try {
+      let url = `${API_BASE_URL}/taxi/heatmap-data-utc`;
+      const params = new URLSearchParams();
+      
+      if (startUtc && endUtc) {
+        params.append('start_utc', startUtc);
+        params.append('end_utc', endUtc);
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await axios.get(url);
+      const data = response.data;
+      
+      realDataPoints.value = data.map(point => ({
+        lng: parseFloat(point.lng),
+        lat: parseFloat(point.lat),
+        count: Math.max(1, Math.min(100, point.count))
+      }));
+      
+      updateHeatmapData();
+      updateStats(data);
+      
+      dataStatus.value = `时间范围数据加载完成 (${data.length}个点，降级模式)`;
+    } catch (fallbackError) {
+      console.error('所有时间过滤API都失败:', fallbackError);
+      dataStatus.value = '时间范围数据加载失败';
+    }
   } finally {
     isLoading.value = false;
   }
@@ -670,6 +902,58 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
+/* 新增：标签页导航样式 */
+.nav-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.nav-tab {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 8px;
+  border: none;
+  background: transparent;
+  color: #333; /* 改为深灰色，增加对比度 */
+  font-size: 13px; /* 稍微增大字体 */
+  font-weight: 500; /* 增加字体粗细 */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-tab:hover {
+  background: #e9ecef;
+  color: #2c3e50; /* 悬停时使用更深的颜色 */
+}
+
+.nav-tab.active {
+  background: white;
+  color: #2c3e50; /* 激活状态使用深色 */
+  border-bottom-color: #4F378A;
+  font-weight: 700; /* 激活状态字体更粗 */
+}
+
+.nav-tab i {
+  font-size: 16px; /* 增大图标尺寸 */
+  margin-bottom: 2px;
+  color: inherit; /* 图标颜色继承文字颜色 */
+}
+
+.tab-content {
+  flex: 1;
+}
+
+.tab-panel {
+  display: block;
+}
+
 .sidebar-panel {
   padding: 20px;
   border-bottom: 1px solid #f0f0f0;
@@ -808,14 +1092,23 @@ onUnmounted(() => {
   border: 1px solid #ddd;
   border-radius: 6px;
   background: white;
+  color: #2c3e50; /* 改为深色文字 */
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500; /* 增加字体粗细 */
   transition: all 0.2s;
   width: 100%;
 }
 
 .control-btn:hover {
   background: #f8f9fa;
+  border-color: #4F378A;
+  color: #4F378A; /* 悬停时使用主题色 */
+}
+
+.control-btn:active {
+  background: #4F378A;
+  color: white; /* 点击时反色显示 */
   border-color: #4F378A;
 }
 
