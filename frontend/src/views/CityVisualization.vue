@@ -23,6 +23,11 @@
           <span class="btn-text">地图信息</span>
           <span class="btn-desc">查看地图基本信息</span>
         </button>
+        <button @click="openPopulation" class="population-btn">
+          <span class="btn-icon">👥</span>
+          <span class="btn-text">人口可视化</span>
+          <span class="btn-desc">查看人口分布</span>
+        </button>
       </div>
     </div>
     
@@ -52,6 +57,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import router from "@/router/index.js";
 
 // 地图实例
 let map = null;
@@ -93,7 +99,12 @@ const initMap = () => {
 // 打开数据分析页面
 const openDataAnalysis = () => {
   // 在新标签页中打开数据分析页面
-  window.open('/data-analysis', '_blank');
+  router.push('/data-analysis');
+};
+
+const openPopulation = () => {
+  // 在新标签页中打开人口可视化页面
+  router.push('/population-visualize');
 };
 
 // 显示地图信息
@@ -180,7 +191,7 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.analysis-btn, .info-btn {
+.analysis-btn, .info-btn, .population-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -202,7 +213,12 @@ onUnmounted(() => {
   color: white;
 }
 
-.analysis-btn:hover, .info-btn:hover {
+.population-btn {
+  background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+  color: white;
+}
+
+.analysis-btn:hover, .info-btn:hover, .population-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0,0,0,0.2);
 }
@@ -247,4 +263,3 @@ onUnmounted(() => {
   color: #333;
 }
 </style>
-
