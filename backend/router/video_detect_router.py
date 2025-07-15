@@ -48,7 +48,7 @@ def video_detect(request: VideoDetectRequest, session: Session = Depends(get_ses
     4: "补丁"
   }
   try:
-    model_path = f'D:\\GitHub\\2025-BJTU-Summer\\backend\\model\\RDD_{request.model_type}_best.pt'
+    model_path = f'D:\\GitHub\\2025-BJTU-Summer\\backend\\resources\\RDD_{request.model_type}_best.pt'
     video_base64 = request.video
     video_data = base64.b64decode(video_base64)
     temp_video_path = 'temp_video.mp4'
