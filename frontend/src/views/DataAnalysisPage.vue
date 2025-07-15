@@ -267,9 +267,9 @@ let vehicleMarkers = [];
 let vehiclePolyline = null;
 
 // 控制参数
-// 控制参数 - 调整为适合道路级别的数值
-const heatmapIntensity = ref(70);
-const heatmapRadius = ref(10); // 默认10，对应200米半径
+// 控制参数 - 调整为区域级别显示
+const heatmapIntensity = ref(60);  // 降低强度
+const heatmapRadius = ref(25);     // 增大半径：从10改为25
 const showHeatmap = ref(true);
 const isLoading = ref(false);
 const isTrackLoading = ref(false);
@@ -347,7 +347,8 @@ const initMap = async () => {
   map.addControl(new BMapGL.NavigationControl());
   map.addControl(new BMapGL.ScaleControl());
   
-  // 自定义地图样式
+  // 自定义地图样式 - 已注释以使用默认样式
+  /*
   try {
     const response = await fetch('/custom_map_config.json');
     const mapStyle = await response.json();
@@ -357,6 +358,7 @@ const initMap = async () => {
     console.error('加载自定义地图样式失败:', error);
     dataStatus.value = '地图样式加载失败，使用默认样式';
   }
+  */
   
   initHeatmap();
   
@@ -374,19 +376,42 @@ const initHeatmap = () => {
   try {
     mapvglView = new mapvgl.View({ map: map });
     
-    // 创建热力图图层 - 调整为道路级别的精细度
+    // 创建热力图图层 - 移除固定的max参数，将在updateHeatmapData中动态设置
     heatmapLayer = new mapvgl.HeatmapLayer({
-      size: heatmapRadius.value * 20,  // 大幅减小半径倍数：从*10改为*2
-      max: 200,  // 提高最大值以增强对比度
+      size: heatmapRadius.value * 80,
+      // max: 500, // 移除固定值，改为动态设置
       height: 0,
       unit: 'm',
       gradient: {
-        0.1: 'rgba(0, 0, 255, 0.1)',    // 低密度：淡蓝色
-        0.3: 'rgba(0, 255, 255, 0.4)',  // 中低密度：青色
-        0.5: 'rgba(0, 255, 0, 0.6)',    // 中密度：绿色
-        0.7: 'rgba(255, 255, 0, 0.8)',  // 中高密度：黄色
-        0.9: 'rgba(255, 165, 0, 0.9)',  // 高密度：橙色
-        1: 'rgba(255, 0, 0, 1)'         // 最高密度：红色
+        // 蓝色区域 (0.0 - 0.4) - 低密度区域，增加透明度
+        0.0: 'rgba(0, 80, 255, 0.5)',      // 从0.2增加到0.5
+        0.1: 'rgba(0, 120, 255, 0.6)',     // 从0.3增加到0.6
+        0.2: 'rgba(0, 160, 255, 0.7)',     // 从0.4增加到0.7
+        0.3: 'rgba(0, 200, 255, 0.75)',    // 从0.5增加到0.75
+        0.4: 'rgba(0, 240, 255, 0.8)',     // 从0.6增加到0.8
+        
+        // 黄色区域 (0.4 - 0.92) - 中密度区域，增加透明度
+        0.45: 'rgba(0, 255, 220, 0.82)',   // 从0.65增加到0.82
+        0.5: 'rgba(0, 255, 180, 0.85)',    // 从0.7增加到0.85
+        0.55: 'rgba(40, 255, 140, 0.87)',  // 从0.72增加到0.87
+        0.6: 'rgba(80, 255, 100, 0.88)',   // 从0.75增加到0.88
+        0.65: 'rgba(120, 255, 60, 0.9)',   // 从0.78增加到0.9
+        0.7: 'rgba(160, 255, 20, 0.92)',   // 从0.8增加到0.92
+        0.75: 'rgba(200, 255, 0, 0.93)',   // 从0.82增加到0.93
+        0.8: 'rgba(240, 255, 0, 0.94)',    // 从0.85增加到0.94
+        0.85: 'rgba(255, 240, 0, 0.95)',   // 从0.87增加到0.95
+        0.88: 'rgba(255, 220, 0, 0.96)',   // 从0.89增加到0.96
+        0.9: 'rgba(255, 200, 0, 0.97)',    // 从0.91增加到0.97
+        0.92: 'rgba(255, 180, 0, 0.98)',   // 从0.93增加到0.98
+        
+        // 橙色过渡区域 (0.92 - 0.98) - 高密度区域，保持原有透明度
+        0.94: 'rgba(255, 140, 0, 0.95)',   // 橙色
+        0.96: 'rgba(255, 100, 0, 0.97)',   
+        0.98: 'rgba(255, 60, 0, 0.985)',   // 橙红色
+        
+        // 红色区域 (0.98 - 1.0) - 极少数最高密度区域，保持原有透明度
+        0.99: 'rgba(255, 30, 0, 0.995)',   // 深红色
+        1.0: 'rgba(255, 0, 0, 1.0)'        // 纯红色（最高密度）
       },
       opacity: heatmapIntensity.value / 100
     });
@@ -402,6 +427,17 @@ const initHeatmap = () => {
 // 更新热力图数据
 const updateHeatmapData = () => {
   if (!heatmapLayer || realDataPoints.value.length === 0) return;
+  
+  // 计算实际数据的最大count值
+  const maxCount = Math.max(...realDataPoints.value.map(point => point.count));
+  const dynamicMax = Math.max(maxCount * 1.2, 10); // 设置为最大值的1.2倍，最小为10
+  
+  console.log(`动态设置热力图max值: ${dynamicMax} (实际最大count: ${maxCount})`);
+  
+  // 更新热力图的max参数
+  heatmapLayer.setOptions({
+    max: dynamicMax
+  });
   
   const data = realDataPoints.value.map(point => ({
     geometry: {
@@ -420,9 +456,9 @@ const updateHeatmapData = () => {
 const updateHeatmap = () => {
   if (!heatmapLayer) return;
   
-  // 更新热力图配置 - 使用更小的半径倍数
+  // 更新热力图配置 - 使用更大的半径倍数
   heatmapLayer.setOptions({
-    size: heatmapRadius.value * 2,  // 从*10改为*2
+    size: heatmapRadius.value * 80,  // 从*50改为*80
     opacity: heatmapIntensity.value / 100
   });
 };
@@ -440,72 +476,157 @@ const toggleHeatmap = () => {
   }
 };
 
-// 加载默认热力图（基于完整轨迹数据）
-const loadDefaultHeatmap = async () => {
-  try {
-    isLoading.value = true;
-    dataStatus.value = '正在加载完整轨迹热力图数据...';
+// 统一的数据处理函数
+const processHeatmapData = (rawData) => {
+  return rawData.map(point => ({
+    lng: parseFloat(point.lng),
+    lat: parseFloat(point.lat),
+    count: Math.max(0.1, point.count)  // 移除Math.min(500, ...)的限制
+  }));
+};
+
+// 新增：平衡高低密度区域的数据处理函数
+const processHeatmapDataWithFiltering = (rawData) => {
+  // 首先进行基本处理
+  const basicProcessed = rawData.map(point => ({
+    lng: parseFloat(point.lng),
+    lat: parseFloat(point.lat),
+    count: Math.max(0.1, point.count)  // 移除Math.min(500, ...)的限制
+  }));
+  
+  // 计算密度统计信息
+  const counts = basicProcessed.map(p => p.count);
+  const avgCount = counts.reduce((sum, c) => sum + c, 0) / counts.length;
+  const sortedCounts = [...counts].sort((a, b) => a - b);
+  const medianCount = sortedCounts[Math.floor(sortedCounts.length / 2)];
+  const q25Count = sortedCounts[Math.floor(sortedCounts.length * 0.25)];
+  const q75Count = sortedCounts[Math.floor(sortedCounts.length * 0.75)];
+  const q90Count = sortedCounts[Math.floor(sortedCounts.length * 0.9)];
+  const q95Count = sortedCounts[Math.floor(sortedCounts.length * 0.95)];
+  const q98Count = sortedCounts[Math.floor(sortedCounts.length * 0.98)];
+  
+  console.log(`密度统计: 平均=${avgCount.toFixed(2)}, Q25=${q25Count.toFixed(2)}, 中位数=${medianCount.toFixed(2)}, Q75=${q75Count.toFixed(2)}, Q90=${q90Count.toFixed(2)}, Q95=${q95Count.toFixed(2)}, Q98=${q98Count.toFixed(2)}`);
+  
+  // 使用更宽松的基础筛选条件
+  const lowDensityThreshold = Math.max(avgCount * 0.03, q25Count * 0.2);  // 进一步降低阈值
+  const allFiltered = basicProcessed.filter(point => point.count >= lowDensityThreshold);
+  
+  // 按密度排序
+  allFiltered.sort((a, b) => b.count - a.count);
+  
+  // 分层选择
+  const ultraHighDensity = allFiltered.filter(p => p.count >= q98Count);
+  const veryHighDensity = allFiltered.filter(p => p.count >= q95Count && p.count < q98Count);
+  const highDensity = allFiltered.filter(p => p.count >= q90Count && p.count < q95Count);
+  const mediumHighDensity = allFiltered.filter(p => p.count >= q75Count && p.count < q90Count);
+  const mediumDensity = allFiltered.filter(p => p.count >= medianCount && p.count < q75Count);
+  const lowMediumDensity = allFiltered.filter(p => p.count >= q25Count && p.count < medianCount);
+  const lowDensity = allFiltered.filter(p => p.count >= lowDensityThreshold && p.count < q25Count);
+  
+  // 调整点数分配
+  const selectedUltraHigh = ultraHighDensity.slice(0, 25);      
+  const selectedVeryHigh = veryHighDensity.slice(0, 35);        
+  const selectedHigh = highDensity.slice(0, 45);                
+  const selectedMediumHigh = mediumHighDensity.slice(0, 70);    
+  const selectedMedium = mediumDensity.slice(0, 140);           
+  const selectedLowMedium = lowMediumDensity.slice(0, 280);     
+  const selectedLow = lowDensity.slice(0, 600);                 
+  
+  // 优化人工低密度点生成，减少网格化效应
+  const artificialLowDensityPoints = [];
+  if (basicProcessed.length > 0) {
+    const lngs = basicProcessed.map(p => p.lng);
+    const lats = basicProcessed.map(p => p.lat);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
     
-    // 使用新的完整轨迹数据API
-    const response = await axios.get(`${API_BASE_URL}/taxi/heatmap-data-full-trajectory`, {
+    // 使用更小的网格步长和更多随机性
+    const gridStep = 0.006; // 减小网格步长
+    const baseCount = Math.min(q25Count * 0.25, 0.6);
+    
+    for (let lng = minLng; lng <= maxLng; lng += gridStep) {
+      for (let lat = minLat; lat <= maxLat; lat += gridStep) {
+        // 增加随机偏移，减少网格化效应
+        const randomOffsetLng = (Math.random() - 0.5) * gridStep * 0.8;
+        const randomOffsetLat = (Math.random() - 0.5) * gridStep * 0.8;
+        
+        // 随机跳过一些点，创建更自然的分布
+        if (Math.random() > 0.7) {
+          artificialLowDensityPoints.push({
+            lng: lng + randomOffsetLng,
+            lat: lat + randomOffsetLat,
+            count: baseCount * (0.2 + Math.random() * 0.6)
+          });
+        }
+      }
+    }
+    
+    // 限制人工点数量
+    artificialLowDensityPoints.splice(500);
+  }
+  
+  const result = [
+    ...selectedUltraHigh, 
+    ...selectedVeryHigh, 
+    ...selectedHigh, 
+    ...selectedMediumHigh,
+    ...selectedMedium,
+    ...selectedLowMedium,
+    ...selectedLow,
+    ...artificialLowDensityPoints
+  ];
+  
+  console.log(`优化连续性热力图结果:`);
+  console.log(`超超高密度(红色)=${selectedUltraHigh.length}, 超高密度=${selectedVeryHigh.length}, 高密度=${selectedHigh.length}`);
+  console.log(`中高密度=${selectedMediumHigh.length}, 中等密度=${selectedMedium.length}, 中低密度=${selectedLowMedium.length}`);
+  console.log(`低密度=${selectedLow.length}, 人工低密度=${artificialLowDensityPoints.length}`);
+  console.log(`总计=${result.length}个点`);
+  
+  return result;
+};
+
+// 加载默认热力图（只使用降级模式的OD数据API）
+const loadDefaultHeatmap = async () => {
+  if (!mapvglView) {
+    dataStatus.value = 'MapVGL库未加载，请检查引入';
+    return;
+  }
+  
+  isLoading.value = true;
+  dataStatus.value = '正在加载热力图数据...';
+  
+  try {
+    console.log('使用聚类数据API...');
+    const response = await axios.get(`${API_BASE_URL}/taxi/heatmap-data-clusters`, {
       params: {
-        max_points: 15000,
-        grid_size: 0.001,  // 1km左右的网格
-        sample_rate: 0.25  // 采样25%的数据以平衡性能和完整性
+        max_points: 1200,     // 增加点数以获得更自然分布
+        grid_size: 0.005      // 减小网格以获得更自然分布
       }
     });
     
     if (response.data && response.data.length > 0) {
-      const processedData = response.data.map(point => ({
-        lng: parseFloat(point.lng),
-        lat: parseFloat(point.lat),
-        count: Math.max(1, Math.min(100, point.count))
-      }));
-      
+      const processedData = processHeatmapDataWithFiltering(response.data);
       realDataPoints.value = processedData;
       updateHeatmapData();
       updateStats(response.data);
       
-      dataStatus.value = `完整轨迹热力图加载完成 (${processedData.length}个点)`;
-      console.log(`完整轨迹热力图加载完成，共 ${processedData.length} 个数据点`);
+      dataStatus.value = `热力图数据加载完成 (聚类模式: ${processedData.length}个点)`;
+      console.log(`聚类模式热力图加载完成，共 ${processedData.length} 个数据点`);
     } else {
-      dataStatus.value = '未获取到轨迹热力图数据';
+      dataStatus.value = '无可用的热力图数据';
     }
   } catch (error) {
-    console.error('轨迹热力图数据加载失败:', error);
-    dataStatus.value = `数据加载失败: ${error.message}`;
+    console.error('聚类数据API失败:', error);
+    dataStatus.value = `热力图API不可用: ${error.message}`;
     
-    // 降级到原有的快速API
-    try {
-      console.log('尝试降级到聚类数据API...');
-      const fallbackResponse = await axios.get(`${API_BASE_URL}/taxi/heatmap-data-fast`, {
-        params: { max_points: 8000 }
-      });
-      
-      if (fallbackResponse.data && fallbackResponse.data.length > 0) {
-        const processedData = fallbackResponse.data.map(point => ({
-          lng: parseFloat(point.lng),
-          lat: parseFloat(point.lat),
-          count: Math.max(1, Math.min(100, point.count))
-        }));
-        
-        realDataPoints.value = processedData;
-        updateHeatmapData();
-        updateStats(fallbackResponse.data);
-        
-        dataStatus.value = `热力图数据加载完成 (降级模式: ${processedData.length}个点)`;
-      }
-    } catch (fallbackError) {
-      console.error('降级API也失败:', fallbackError);
-      dataStatus.value = '所有热力图数据源都无法加载';
-      
-      if (error.code === 'ERR_NETWORK') {
-        alert('网络连接失败，请检查后端服务是否启动在 http://localhost:8000');
-      } else if (error.response) {
-        alert(`服务器错误: ${error.response.status} - ${error.response.data?.detail || error.response.statusText}`);
-      } else {
-        alert(`请求失败: ${error.message}`);
-      }
+    if (error.code === 'ERR_NETWORK') {
+      alert('网络连接失败，请检查后端服务是否启动在 http://localhost:8000');
+    } else if (error.response) {
+      alert(`服务器错误: ${error.response.status} - ${error.response.data?.detail || error.response.statusText}`);
+    } else {
+      alert(`请求失败: ${error.message}`);
     }
   } finally {
     isLoading.value = false;
@@ -564,11 +685,7 @@ const fetchHeatmapDataUtc = async (startUtc, endUtc) => {
     
     const data = response.data;
     
-    realDataPoints.value = data.map(point => ({
-      lng: parseFloat(point.lng),
-      lat: parseFloat(point.lat),
-      count: Math.max(1, Math.min(100, point.count))
-    }));
+    realDataPoints.value = processHeatmapData(data);
     
     updateHeatmapData();
     updateStats(data);
@@ -595,11 +712,7 @@ const fetchHeatmapDataUtc = async (startUtc, endUtc) => {
       const response = await axios.get(url);
       const data = response.data;
       
-      realDataPoints.value = data.map(point => ({
-        lng: parseFloat(point.lng),
-        lat: parseFloat(point.lat),
-        count: Math.max(1, Math.min(100, point.count))
-      }));
+      realDataPoints.value = processHeatmapData(data);
       
       updateHeatmapData();
       updateStats(data);
