@@ -56,11 +56,13 @@ def video_detect(request: VideoDetectRequest, session: Session = Depends(get_ses
       f.write(video_data)
     model = YOLO(model_path)
     model.model.names = new_names  # 设置模型类别名称
-    # 执行预测但不保存默认绘制结果
-    results = model.predict(
-        source=temp_video_path,
-        save=True,
-    )
+    # 执行流式预测以降低内存占用，不保存默认绘制结果
+    results = list(model.predict(
+      device='cpu',
+      source=temp_video_path,
+      save=True,
+      stream=True,
+    ))
     # 自定义绘制中文标签，生成带框视频
     cap = cv2.VideoCapture(temp_video_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -143,4 +145,4 @@ def video_detect(request: VideoDetectRequest, session: Session = Depends(get_ses
       danger_nums=danger_count,
       dangers=dangers_resp)
   except Exception as e:
-      raise HTTPException(status_code=500, detail=str(e))
+    raise HTTPException(status_code=500, detail=str(e))
