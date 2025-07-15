@@ -2,7 +2,7 @@
   <div class="console-layout">
     <aside class="side-tabs">
       <div :class="['tab-item', activeTab === 'user' ? 'active' : '']" @click="activeTab = 'user'">用户信息</div>
-      <div :class="['tab-item', activeTab === 'log' ? 'active' : '']" @click="activeTab = 'log'">日志记录</div>
+      <div v-if="rawUserType === 'sysadmin'" :class="['tab-item', activeTab === 'log' ? 'active' : '']" @click="activeTab = 'log'">日志记录</div>
       <div :class="['tab-item', activeTab === 'upload' ? 'active' : '']" @click="activeTab = 'upload'">人脸上传</div>
       <div v-if="rawUserType === 'sysadmin'" :class="['tab-item', activeTab === 'manage' ? 'active' : '']" @click="activeTab = 'manage'">用户管理</div>
     </aside>

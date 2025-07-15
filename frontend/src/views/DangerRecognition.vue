@@ -72,7 +72,7 @@
 import { ref, inject } from 'vue';
 import { requestVideoDangerDetect } from '../viewmodels/DangerDetectModel';
 
-const models = ['yolov8n', 'yolo11n', '模型C'];
+const models = ['yolov8n', 'yolo11n', 'yolo12n', 'yolo12s'];
 const selectedModel = ref(models[0]);
 const mediaSrc = ref('');
 const dangerList = ref([]);
@@ -279,7 +279,7 @@ function generateResultThumbnail(filePath) {
 
 .image-preview {
   flex: 3;
-  background: #000;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -289,6 +289,8 @@ function generateResultThumbnail(filePath) {
   font-size: 16px;
   min-width: 180px;
   min-height: 180px;
+  max-width: 400px;
+  max-height: 300px;
 }
 
 .image-preview img {
