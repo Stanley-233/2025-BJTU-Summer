@@ -32,7 +32,7 @@ export async function requestVideoDangerDetect(
         } else if (err.response?.status === 404) {
             onError?.('未找到相关信息')
         } else {
-            onError?.('未知错误')
+            onError?.(err.message)
         }
         return null
     }
