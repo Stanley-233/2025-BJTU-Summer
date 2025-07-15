@@ -91,11 +91,7 @@ def query_logs(
     except Exception:
       raise HTTPException(status_code=500, detail="时间范围格式错误，应为YYYY-MM-DD~YYYY-MM-DD")
     stmt = stmt.where(SecurityEvent.timestamp.between(start_dt, end_dt))
-    stmt = (stmt
-      .order_by(desc(SecurityEvent.timestamp))
-      .limit(limit)
-      .offset(offset)
-    )
+  stmt = stmt.limit(limit).offset(offset).order_by(desc(SecurityEvent.timestamp))
   results = session.exec(stmt).all()
   return results
 
