@@ -5,7 +5,7 @@ import PIL.Image
 from fastapi import APIRouter, Query, Depends, HTTPException
 from typing import Optional
 
-from sqlmodel import Session, select
+from sqlmodel import Session, select, desc
 from sqlalchemy import func
 
 from model.security_event import SecurityEvent, RoadDangerType, EventType, SpoofingDetail, RoadDetail, RoadDanger, \
@@ -91,7 +91,11 @@ def query_logs(
     except Exception:
       raise HTTPException(status_code=500, detail="时间范围格式错误，应为YYYY-MM-DD~YYYY-MM-DD")
     stmt = stmt.where(SecurityEvent.timestamp.between(start_dt, end_dt))
-  stmt = stmt.limit(limit).offset(offset)
+    stmt = (stmt
+      .order_by(desc(SecurityEvent.timestamp))
+      .limit(limit)
+      .offset(offset)
+    )
   results = session.exec(stmt).all()
   return results
 

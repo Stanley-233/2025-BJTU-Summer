@@ -43,7 +43,7 @@ def video_detect(request: VideoDetectRequest, session: Session = Depends(get_ses
   new_names = {
     0: "纵向",
     1: "横向",
-    2: "网状",
+    2: "龟裂",
     3: "坑洼",
     4: "补丁"
   }
