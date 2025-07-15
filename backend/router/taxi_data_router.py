@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 import json
 import os
+
+import numpy as np
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any, Optional
