@@ -267,10 +267,7 @@ function formatConfidence(val) {
 function decryptFaceData(encrypted) {
   try {
     const bytes = CryptoJS.AES.decrypt(encrypted, 'BrPz0VgQzNmhw1KmHfEyUFu1DHnq0schBijdSm0P_K0=')
-    let decrypted = bytes.toString()
-    if (decrypted.startsWith('"') && decrypted.endsWith('"')) {
-      decrypted = decrypted.slice(1, -1);
-    }
+    let decrypted = bytes.toString(CryptoJS.enc.Utf8);
     alert(decrypted === encrypted)
     return decrypted;
   } catch (e) {
