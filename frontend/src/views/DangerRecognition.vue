@@ -72,7 +72,7 @@
 import { ref, inject } from 'vue';
 import { requestVideoDangerDetect } from '../viewmodels/DangerDetectModel';
 
-const models = ['YOLOv8n', '模型B', '模型C'];
+const models = ['yolov8n', 'yolo11l', '模型C'];
 const selectedModel = ref(models[0]);
 const mediaSrc = ref('');
 const dangerList = ref([]);
