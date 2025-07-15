@@ -6,8 +6,8 @@
     </aside>
     <main class="console-main">
       <div class="tab-title">
-        <h2 v-if="activeTab === 'jinan'">济南市人口地图</h2>
-        <h2 v-else>山东省人口地图</h2>
+        <h2 v-if="activeTab === 'jinan'">济南市人口地图(2013)</h2>
+        <h2 v-else>山东省人口地图(2013)</h2>
         <div class="tab-title-underline"></div>
       </div>
       <div class="content-wrapper">

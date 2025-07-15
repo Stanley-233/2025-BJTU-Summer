@@ -116,6 +116,8 @@ onUnmounted(() => { chart && chart.dispose() })
 .map-container {
   width: 100%;
   height: 100%;
+  position: relative;
+  overflow: hidden;
 }
 .map {
   width: 100%;
