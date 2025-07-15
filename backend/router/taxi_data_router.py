@@ -69,8 +69,8 @@ async def get_heatmap_data_utc(
             # 网格聚合处理
             for _, row in chunk.iterrows():
                 # 计算网格坐标
-                grid_lat = round(row['latitude'] / grid_size) * grid_size
-                grid_lng = round(row['longitude'] / grid_size) * grid_size
+                grid_lat = round(row['latitude_bd09'] / grid_size) * grid_size
+                grid_lng = round(row['longitude_bd09'] / grid_size) * grid_size
                 grid_key = (grid_lat, grid_lng)
                 
                 if grid_key in grid_dict:
@@ -369,8 +369,8 @@ async def get_vehicle_track(
                     # 转换为轨迹点格式
                     for _, row in filtered_data.iterrows():
                         vehicle_tracks.append({
-                            "lng": float(row['longitude']),
-                            "lat": float(row['latitude']),
+                            "lng": float(row['longitude_bd09']),
+                            "lat": float(row['latitude_bd09']),
                             "timestamp": row['utc_time'].isoformat(),
                             "status": int(row.get('occupied', 0))
                         })
@@ -410,8 +410,9 @@ async def get_trajectory_heatmap_data(
             
             # 网格聚合
             for _, row in chunk.iterrows():
-                grid_lat = round(row['latitude'] / grid_size) * grid_size
-                grid_lng = round(row['longitude'] / grid_size) * grid_size
+                grid_lat = round(row['latitude_bd09'] / grid_size) * grid_size
+                grid_lng = round(row['longitude_bd09'] / grid_size) * grid_size
+
                 grid_key = (grid_lat, grid_lng)
                 
                 if grid_key in grid_dict:
@@ -448,13 +449,13 @@ async def get_data_distribution():
         df = pd.read_csv(trajectory_file, nrows=100000)
         
         # 计算坐标范围
-        lat_min, lat_max = df['latitude'].min(), df['latitude'].max()
-        lng_min, lng_max = df['longitude'].min(), df['longitude'].max()
+        lat_min, lat_max = df['latitude_bd09'].min(), df['latitude_bd09'].max()
+        lng_min, lng_max = df['longitude_bd09'].min(), df['longitude_bd09'].max()
         
         # 按纬度分区统计
         lat_mid = (lat_min + lat_max) / 2
-        north_count = len(df[df['latitude'] > lat_mid])
-        south_count = len(df[df['latitude'] <= lat_mid])
+        north_count = len(df[df['latitude_bd09'] > lat_mid])
+        south_count = len(df[df['latitude_bd09'] <= lat_mid])
         
         return {
             "coordinate_range": {
@@ -518,8 +519,9 @@ async def get_density_analysis():
         density_map = {}
         
         for _, row in sample_data.iterrows():
-            grid_lat = round(row['latitude'] / grid_size) * grid_size
-            grid_lng = round(row['longitude'] / grid_size) * grid_size
+            grid_lat = round(row['latitude_bd09'] / grid_size) * grid_size
+            grid_lng = round(row['longitude_bd09'] / grid_size) * grid_size
+
             grid_key = (grid_lat, grid_lng)
             density_map[grid_key] = density_map.get(grid_key, 0) + 1
         
@@ -576,8 +578,8 @@ async def get_heatmap_data_adaptive(
             
             # 粗网格密度统计
             for _, row in chunk.iterrows():
-                grid_lat = round(row['latitude'] / coarse_grid_size) * coarse_grid_size
-                grid_lng = round(row['longitude'] / coarse_grid_size) * coarse_grid_size
+                grid_lat = round(row['latitude_bd09'] / coarse_grid_size) * coarse_grid_size
+                grid_lng = round(row['longitude_bd09'] / coarse_grid_size) * coarse_grid_size
                 grid_key = (grid_lat, grid_lng)
                 density_grid[grid_key] = density_grid.get(grid_key, 0) + 1
         
@@ -612,23 +614,23 @@ async def get_heatmap_data_adaptive(
             
             for _, row in chunk.iterrows():
                 # 判断当前点所在区域的密度
-                coarse_lat = round(row['latitude'] / coarse_grid_size) * coarse_grid_size
-                coarse_lng = round(row['longitude'] / coarse_grid_size) * coarse_grid_size
+                coarse_lat = round(row['latitude_bd09'] / coarse_grid_size) * coarse_grid_size
+                coarse_lng = round(row['longitude_bd09'] / coarse_grid_size) * coarse_grid_size
                 region_density = density_grid.get((coarse_lat, coarse_lng), 0)
                 
                 if region_density > density_threshold * 3:  # 高密度区域
                     # 使用细网格聚合
                     fine_grid_size = 0.0005
-                    grid_lat = round(row['latitude'] / fine_grid_size) * fine_grid_size
-                    grid_lng = round(row['longitude'] / fine_grid_size) * fine_grid_size
+                    grid_lat = round(row['latitude_bd09'] / fine_grid_size) * fine_grid_size
+                    grid_lng = round(row['longitude_bd09'] / fine_grid_size) * fine_grid_size
                     grid_key = (grid_lat, grid_lng)
                     fine_grid_dict[grid_key] = fine_grid_dict.get(grid_key, 0) + 1
                     
                 elif region_density > density_threshold:  # 中密度区域
                     # 使用中等网格聚合
                     medium_grid_size = 0.002
-                    grid_lat = round(row['latitude'] / medium_grid_size) * medium_grid_size
-                    grid_lng = round(row['longitude'] / medium_grid_size) * medium_grid_size
+                    grid_lat = round(row['latitude_bd09'] / medium_grid_size) * medium_grid_size
+                    grid_lng = round(row['longitude_bd09'] / medium_grid_size) * medium_grid_size
                     grid_key = (grid_lat, grid_lng)
                     coarse_grid_dict[grid_key] = coarse_grid_dict.get(grid_key, 0) + 1
                     
@@ -636,8 +638,8 @@ async def get_heatmap_data_adaptive(
                     if preserve_sparse:
                         # 保留原始点，不进行聚合
                         sparse_points.append({
-                            'lat': float(row['latitude']),
-                            'lng': float(row['longitude']),
+                            'lat': float(row['latitude_bd09']),
+                            'lng': float(row['longitude_bd09']),
                             'count': 1
                         })
             
@@ -720,8 +722,8 @@ async def get_heatmap_data_full_trajectory(
             # 处理每个轨迹点
             for _, row in chunk.iterrows():
                 try:
-                    lat = float(row['latitude'])
-                    lng = float(row['longitude'])
+                    lat = float(row['latitude_bd09'])
+                    lng = float(row['longitude_bd09'])
                     
                     # 网格聚合
                     grid_lat = round(lat / grid_size) * grid_size

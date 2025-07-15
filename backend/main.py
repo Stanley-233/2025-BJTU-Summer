@@ -5,7 +5,8 @@ from util.engine import init_db
 
 import router.auth, router.mail_router,\
   router.log_router, router.video_detect_router,\
-  router.alarm_router, router.user_router
+  router.alarm_router, router.user_router,\
+  router.taxi_data_router
 
 app = FastAPI(
   title="滴嘟出行",
@@ -26,6 +27,8 @@ app.include_router(router.log_router.log_router)
 app.include_router(router.video_detect_router.video_detect_router)
 app.include_router(router.alarm_router.alarm_router)
 app.include_router(router.user_router.user_router)
+app.include_router(router.taxi_data_router.taxi_data_router)
+
 
 @app.get("/")
 async def root():

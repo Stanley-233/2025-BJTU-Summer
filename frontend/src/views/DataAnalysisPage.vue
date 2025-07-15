@@ -784,7 +784,6 @@ const onUtcTimeChange = () => {
   // 可以在这里添加实时预览逻辑
 };
 
-// 删除这里的重复函数定义（第565-625行之间的updateHeatmapData、updateHeatmap、toggleHeatmap）
 // 保留第265-310行之间的原始函数定义
 
 // 适应数据范围

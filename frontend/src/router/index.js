@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import WelcomePage from '../views/WelcomePage.vue';
 import DangerRecognition from '../views/DangerRecognition.vue';
 import CityVisualization from '../views/CityVisualization.vue';
+import DataAnalysisPage from '../views/DataAnalysisPage.vue';
 import ConsolePage from '../views/ConsolePage.vue';
 import LoginSelectionPage from '../views/LoginSelectionPage.vue';
 import LoginPage from '../views/LoginPage.vue';
@@ -14,6 +15,7 @@ const routes = [
   { path: '/', name: 'WelcomePage', component: WelcomePage },
   { path: '/danger', name: 'DangerRecognition', component: DangerRecognition },
   { path: '/city', name: 'CityVisualization', component: CityVisualization },
+  { path: '/data-analysis', name: 'DataAnalysisPage', component: DataAnalysisPage },
   { path: '/console', name: 'ConsolePage', component: ConsolePage },
   { path: '/login_select', name: 'LoginSelectionPage', component: LoginSelectionPage },
   { path: '/login', name: 'LoginPage', component: LoginPage },
