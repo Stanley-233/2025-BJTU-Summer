@@ -198,7 +198,7 @@ function onLogout() {
 
 .side-tabs {
   width: 140px;
-  background: #f7f7fa;
+  background: rgba(247, 247, 250, 0.7);
   border-right: 2px solid #ede7f6;
   box-shadow: 2px 0 8px rgba(79, 55, 138, 0.04);
   display: flex;
@@ -236,7 +236,7 @@ function onLogout() {
   min-height: 100%;
   margin-top: 0;
   padding: 40px 56px 32px 56px;
-  background: #f8f9fa;
+  background: rgba(248, 249, 250, 0.7);
   box-sizing: border-box;
   border-radius: 0;
   /* 增加更明显的阴影和顶部边框修饰 */
