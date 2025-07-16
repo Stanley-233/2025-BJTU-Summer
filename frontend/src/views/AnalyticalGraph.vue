@@ -1,8 +1,7 @@
 <template>
   <div class="analysis-container">
     <div class="header">
-      <h2>数据分析图表</h2>
-      <button @click="back" class="back-btn">返回</button>
+      <h2>城市交通数据图表</h2>
     </div>
 
     <!-- 添加数据状态提示 -->
@@ -13,18 +12,26 @@
     <div class="data-type-selector">
       <label>数据类型: </label>
       <select v-model="selectedDataType" @change="fetchData">
-        <option value="speed">速度分析</option>
-        <option value="taxi-weather">出租车与天气数据关系分析</option>
+        <option value="speed">道路平均速度分析</option>
+        <option value="taxi-weather">客运与天气关系分析</option>
       </select>
     </div>
 
     <!-- 添加日期选择器 -->
     <div>
-      <label for="start-date">开始日期: </label>
-      <input type="date" id="start-date" v-model="startDate" @change="fetchData">
-      <label for="end-date">结束日期: </label>
-      <input type="date" id="end-date" v-model="endDate" @change="fetchData">
+      <span style="display:inline-block; margin-right:20px;">
+        <label for="start-date">开始日期:
+          <input type="date" id="start-date" v-model="startDate" @change="fetchData" />
+        </label>
+      </span>
+      <span style="display:inline-block;">
+        <label for="end-date">结束日期:
+          <input type="date" id="end-date" v-model="endDate" @change="fetchData" />
+        </label>
+      </span>
     </div>
+
+    <br v-if="selectedDataType === 'speed' "></br>
 
     <!-- 时间点选择器 -->
     <div v-if="selectedDataType === 'taxi-weather' && data['taxi-weather'] && data['taxi-weather'].length > 0" class="time-selector">
@@ -32,22 +39,22 @@
       <select v-model="selectedTime" @change="updateDashboards">
         <option v-for="item in data['taxi-weather']" :key="item.hour" :value="item.hour">{{ item.hour }}</option>
       </select>
-      
+
       <div class="play-controls">
         <button @click="togglePlay" class="play-btn">
           {{ isPlaying ? '暂停' : '播放' }}
         </button>
         <span v-if="isPlaying" class="playing-indicator">
-          <i class="fa fa-circle" style="color: #4CAF50;"></i> 正在播放
+          <i class="fa fa-circle" style="color: #7c4caf;"></i> 正在播放
         </span>
       </div>
-      
+
       <div class="time-info">
-        <input 
-          type="range" 
-          v-model.number="timeIndex" 
-          :min="0" 
-          :max="maxTimeIndex" 
+        <input
+          type="range"
+          v-model.number="timeIndex"
+          :min="0"
+          :max="maxTimeIndex"
           @input="updateTimeFromSlider"
           class="time-slider"
         >
@@ -69,8 +76,10 @@
     </div>
 
     <!-- 添加图表容器 -->
-    <div id="main-chart" style="width: 100%; height: 400px;"></div>
-    <div id="secondary-chart" style="width: 100%; height: 400px;"></div>
+    <div class="charts-container">
+      <div id="main-chart" class="chart-card"></div>
+      <div id="secondary-chart" v-if="selectedDataType === 'speed'" class="chart-card"></div>
+    </div>
   </div>
 </template>
 
@@ -124,9 +133,11 @@ const fetchData = async () => {
   }
 
   const secondaryChartDom = document.getElementById('secondary-chart');
-  const secondaryChart = echarts.getInstanceByDom(secondaryChartDom);
-  if (secondaryChart) {
-    secondaryChart.clear();
+  if (secondaryChartDom) {
+    const secondaryChart = echarts.getInstanceByDom(secondaryChartDom);
+    if (secondaryChart) {
+      secondaryChart.clear();
+    }
   }
 
   // 清除仪表盘
@@ -287,12 +298,31 @@ const togglePlay = () => {
   isPlaying.value = !isPlaying.value;
 };
 
+// resize handler for echarts instances
+const handleResize = () => {
+  const mainChartDom = document.getElementById('main-chart');
+  const mainChartInstance = echarts.getInstanceByDom(mainChartDom);
+  if (mainChartInstance) mainChartInstance.resize();
+  if (selectedDataType.value === 'speed') {
+    const secondaryChartDom = document.getElementById('secondary-chart');
+    const secondaryChartInstance = echarts.getInstanceByDom(secondaryChartDom);
+    if (secondaryChartInstance) secondaryChartInstance.resize();
+  }
+};
+
+// 组件挂载时自动获取数据并渲染图表
+onMounted(() => {
+  fetchData();
+  window.addEventListener('resize', handleResize);
+});
+
 // 组件卸载时清除定时器
 onUnmounted(() => {
   if (playInterval) {
     clearInterval(playInterval);
     playInterval = null;
   }
+  window.removeEventListener('resize', handleResize);
 });
 
 // 监听时间索引变化
@@ -300,7 +330,7 @@ watch(timeIndex, () => {
   updateCurrentTimeDisplay();
 });
 
-// 监听selectedTime变化
+// 监听selectedTime���化
 watch(selectedTime, () => {
   updateDashboards();
 });
@@ -330,7 +360,7 @@ const renderSpeedCharts = () => {
   const mainChart = echarts.init(mainChartDom);
   const mainOption = {
     title: {
-      text: '平均速度趋势'
+      text: '全城道路平均速度趋势'
     },
     tooltip: {
       trigger: 'axis'
@@ -372,7 +402,7 @@ const renderSpeedCharts = () => {
 
   const secondaryOption = {
     title: {
-      text: '订单类型百分比分布',
+      text: '出租车订单类型分布',
       left: 'center'
     },
     tooltip: {
@@ -400,6 +430,8 @@ const renderSpeedCharts = () => {
     }]
   };
   secondaryChart.setOption(secondaryOption);
+  secondaryChart.resize()
+  mainChart.resize();
 };
 
 // 渲染出租车与天气数据关系图表
@@ -417,8 +449,14 @@ const renderTaxiWeatherCharts = () => {
       formatter: function(params) {
         let result = params[0].name + '<br/>';
         params.forEach(item => {
-          result += `<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${item.color}"></span>`;
-          result += `${item.seriesName}: ${item.value}${item.seriesName === '温度' ? '°C' : item.seriesName === '湿度' ? '%' : item.seriesName === '风速' ? ' m/s' : ' 辆'}<br/>`;
+          result += `<span style="display:flex;
+                      flex:1;
+                      margin-right:10px;
+                      border-radius:50%;
+                      width:100%;
+                      height:100%;
+                      background-color:${item.color}"></span>`;
+          result += `${item.seriesName}: ${item.value}${item.seriesName === '��度' ? '°C' : item.seriesName === '湿度' ? '%' : item.seriesName === '风速' ? ' m/s' : ' 辆'}<br/>`;
         });
         return result;
       }
@@ -493,6 +531,9 @@ const renderTaxiWeatherCharts = () => {
     ]
   };
   mainChart.setOption(mainOption);
+  if (selectedDataType !== "speed") {
+    mainChart.resize();
+  }
 };
 
 // 渲染仪表盘
@@ -525,7 +566,7 @@ const renderDashboards = () => {
           type: 'gauge',
           min: 0,
           max: 10,
-          detail: { formatter: '{value} m/s' },
+          detail: { formatter: '{value} m/s', textStyle: { fontSize: 16 } },
           data: [
             {
               value: currentItem.wind_speed.toFixed(1),
@@ -556,7 +597,7 @@ const renderDashboards = () => {
           type: 'gauge',
           min: 0,
           max: 40,
-          detail: { formatter: '{value} °C' },
+          detail: { formatter: '{value} °C', textStyle: { fontSize: 16 } },
           data: [
             {
               value: currentItem.temperature.toFixed(1),
@@ -587,7 +628,7 @@ const renderDashboards = () => {
           type: 'gauge',
           min: 0,
           max: 100,
-          detail: { formatter: '{value} %' },
+          detail: { formatter: '{value} %', textStyle: { fontSize: 16 } },
           data: [
             {
               value: currentItem.humidity.toFixed(1),
@@ -618,7 +659,7 @@ const renderDashboards = () => {
           type: 'gauge',
           min: 0,
           max: 6000,
-          detail: { formatter: '{value} 辆' },
+          detail: { formatter: '{value} 辆', textStyle: { fontSize: 16 } },
           data: [
             {
               value: currentItem.active_taxis,
@@ -635,14 +676,32 @@ const renderDashboards = () => {
 // 组件挂载时自动获取数据并渲染图表
 onMounted(() => {
   fetchData();
+  window.addEventListener('resize', handleResize);
+});
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (playInterval) {
+    clearInterval(playInterval);
+    playInterval = null;
+  }
+  window.removeEventListener('resize', handleResize);
 });
 </script>
 
 <style scoped>
 .analysis-container {
   padding: 20px;
-  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+}
+
+.dashboards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
 }
 
 .header {
@@ -652,34 +711,23 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
-.back-btn {
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.dashboard-item {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 }
 
-.back-btn:hover {
-  background: #e5e5e5;
-}
-
-.loading-message {
-  color: #333;
-  margin: 10px 0;
-  padding: 10px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-  text-align: center;
-}
-
-.error-message {
-  color: red;
-  margin: 10px 0;
-  padding: 10px;
-  background-color: #ffebee;
-  border-radius: 4px;
+.chart-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  flex: 1;
+  min-width: 0;
+  height: 400px;
 }
 
 /* 数据类型选择器样式 */
@@ -712,15 +760,15 @@ input[type="date"] {
 .time-selector {
   margin: 15px 0;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
 }
 
 .time-selector > div {
   display: flex;
   align-items: center;
-  width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .play-controls {
@@ -730,12 +778,14 @@ input[type="date"] {
 
 .playing-indicator {
   margin-left: 10px;
-  color: #4CAF50;
+  color: #7c4caf;
   font-size: 14px;
 }
 
 .time-info {
-  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 .time-slider {
@@ -755,7 +805,7 @@ input[type="date"] {
 }
 
 .play-btn {
-  background: #4CAF50;
+  background: #7c4caf;
   color: white;
   border: none;
   border-radius: 4px;
@@ -765,20 +815,29 @@ input[type="date"] {
 }
 
 .play-btn:hover {
-  background: #45a049;
+  background: #6945a0;
 }
 
 /* 仪表盘容器样式 */
 .dashboards-container {
-  display: flex;
-  flex-wrap: wrap;
-  margin: 20px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
 }
 
 .dashboard-item {
-  width: 25%;
+  width: 100%;
   height: 300px;
   box-sizing: border-box;
   padding: 10px;
+}
+
+.charts-container {
+  display: flex;
+  gap: 20px;
+}
+
+.charts-container .chart-card {
+  flex: 1 1 0;
 }
 </style>

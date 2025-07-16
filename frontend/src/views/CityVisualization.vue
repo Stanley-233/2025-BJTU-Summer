@@ -2,8 +2,8 @@
   <div class="page-container">
     <h2>城市时空可视化</h2>
     <div class="intro-section">
-      <p class="intro-text">欢迎使用济南市出租车时空可视化系统</p>
-      <p class="intro-desc">本系统提供济南市出租车运行数据的可视化分析，包括热力图展示和车辆轨迹追踪功能。</p>
+      <p class="intro-text">欢迎使用济南市智慧交通可视化系统</p>
+      <p class="intro-desc">本系统提供济南市出租车运行数据与城市综合交通数据的可视化分析，包括热力图展示和车辆轨迹追踪功能。</p>
     </div>
 
     <div class="map-container">
@@ -15,13 +15,13 @@
       <div class="action-buttons">
         <button @click="openDataAnalysis" class="analysis-btn">
           <span class="btn-icon">📊</span>
-          <span class="btn-text">进入数据分析</span>
+          <span class="btn-text">出租车数据</span>
           <span class="btn-desc">查看热力图和车辆轨迹</span>
         </button>
         <button @click="openGraphs" class="graphs-btn"> <!-- 新增按钮 -->
           <span class="btn-icon">📈</span>
-          <span class="btn-text">数据图表</span>
-          <span class="btn-desc">查看多维度分析图表</span>
+          <span class="btn-text">城市交通数据</span>
+          <span class="btn-desc">查看道路与天气多维度分析图表</span>
         </button>
         <button @click="showMapInfo" class="info-btn">
           <span class="btn-icon">ℹ️</span>
@@ -31,7 +31,7 @@
         <button @click="openPopulation" class="population-btn">
           <span class="btn-icon">👥</span>
           <span class="btn-text">人口可视化</span>
-          <span class="btn-desc">查看人口分布</span>
+          <span class="btn-desc">查看人口分布地图</span>
         </button>
       </div>
     </div>
@@ -91,7 +91,7 @@ const initMap = () => {
   map.addOverlay(marker);
   
   // 添加信息窗口
-  const infoWindow = new BMapGL.InfoWindow('济南市 - 出租车数据可视化中心', {
+  const infoWindow = new BMapGL.InfoWindow('济南市 - 智慧交通可视化中心', {
     width: 200,
     height: 50
   });

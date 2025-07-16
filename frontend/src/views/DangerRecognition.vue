@@ -263,7 +263,7 @@ function generateResultThumbnail(filePath) {
 .danger-main {
   flex: 1;
   padding: 40px 56px 32px 56px;
-  background: rgba(248, 249, 250, 0.9);
+  background: rgba(248, 249, 250, 0.8);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
