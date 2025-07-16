@@ -14,8 +14,7 @@
       <label>数据类型: </label>
       <select v-model="selectedDataType" @change="fetchData">
         <option value="speed">速度分析</option>
-        <option value="density">密度分布</option>
-        <option value="flow">流量趋势</option>
+        <option value="od">载客出租车数量分析</option>
       </select>
     </div>
 
@@ -47,6 +46,7 @@ const startDate = ref('2013-09-12');
 const endDate = ref('2013-09-18');
 const loading = ref(true);
 const errorMessage = ref('');
+const prevODCount = ref(0); // 上一次的载客出租车数量
 
 // 返回上一页
 const back = () => {
@@ -57,27 +57,37 @@ const back = () => {
 const fetchData = async () => {
   loading.value = true;
   errorMessage.value = '';
-  
+
   try {
     // 根据选择的数据类型调用不同的API
     let url = `http://localhost:8000/${selectedDataType.value}-data`;
     if (startDate.value && endDate.value) {
       url += `?start_date=${startDate.value}&end_date=${endDate.value}`;
     }
-    
+
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP错误: ${response.status}`);
     }
-    
+
     const result = await response.json();
-    
+
     if (!Array.isArray(result) || result.length === 0) {
       throw new Error('没有可用的数据，请检查日期范围或后端数据');
     }
-    
+
     data.value = result;
+    if (selectedDataType.value === 'od' && data.value.length > 0) {
+      const currentODCount = data.value[data.value.length - 1].active_vehicles;
+      if (prevODCount.value > 0) {
+        const diffPercent = ((currentODCount - prevODCount.value) / prevODCount.value) * 100;
+        renderODDashboard(currentODCount, diffPercent);
+      } else {
+        renderODDashboard(currentODCount, 0);
+      }
+      prevODCount.value = currentODCount;
+    }
     renderCharts();
   } catch (error) {
     errorMessage.value = `数据加载失败: ${error.message}`;
@@ -96,10 +106,8 @@ const renderCharts = () => {
   // 根据数据类型渲染不同的图表
   if (selectedDataType.value === 'speed') {
     renderSpeedCharts();
-  } else if (selectedDataType.value === 'density') {
-    renderDensityCharts();
-  } else if (selectedDataType.value === 'flow') {
-    renderFlowCharts();
+  } else if (selectedDataType.value === 'od') {
+    renderODCharts();
   }
 };
 
@@ -143,7 +151,7 @@ const renderSpeedCharts = () => {
   // 次要图表：速度区间分布饼图
   const secondaryChartDom = document.getElementById('secondary-chart');
   const secondaryChart = echarts.init(secondaryChartDom);
-  
+
   const speedRanges = [
     { name: '低速 (<10km/h)', min: 0, max: 10 },
     { name: '中低速 (10-30km/h)', min: 10, max: 30 },
@@ -151,12 +159,12 @@ const renderSpeedCharts = () => {
     { name: '高速 (60-90km/h)', min: 60, max: 90 },
     { name: '超高速 (≥90km/h)', min: 90, max: Infinity }
   ];
-  
+
   const rangeCounts = speedRanges.map(range => ({
     name: range.name,
     value: 0
   }));
-  
+
   data.value.forEach(item => {
     const speed = item.average_speed;
     for (let i = 0; i < speedRanges.length; i++) {
@@ -167,14 +175,14 @@ const renderSpeedCharts = () => {
       }
     }
   });
-  
+
   const total = rangeCounts.reduce((sum, item) => sum + item.value, 0);
   const pieData = rangeCounts.map(item => ({
     name: item.name,
     value: item.value,
     percent: ((item.value / total) * 100).toFixed(1) + '%'
   }));
-  
+
   const secondaryOption = {
     title: {
       text: '速度区间分布',
@@ -207,40 +215,14 @@ const renderSpeedCharts = () => {
   secondaryChart.setOption(secondaryOption);
 };
 
-// 渲染密度图表（示例）
-const renderDensityCharts = () => {
-  // 主图表：密度热力图
+// 渲染载客出租车数量图表
+const renderODCharts = () => {
+  // 主图表：载客出租车数量折线图
   const mainChartDom = document.getElementById('main-chart');
   const mainChart = echarts.init(mainChartDom);
   const mainOption = {
     title: {
-      text: '区域密度分布'
-    },
-    tooltip: {
-      trigger: 'item'
-    },
-    xAxis: {
-      type: 'category',
-      data: ['区域A', '区域B', '区域C', '区域D', '区域E']
-    },
-    yAxis: {
-      type: 'value',
-      name: '车辆密度 (辆/平方公里)'
-    },
-    series: [{
-      name: '密度',
-      data: data.value.map(item => item.density),
-      type: 'bar'
-    }]
-  };
-  mainChart.setOption(mainOption);
-
-  // 次要图表：密度趋势图
-  const secondaryChartDom = document.getElementById('secondary-chart');
-  const secondaryChart = echarts.init(secondaryChartDom);
-  const secondaryOption = {
-    title: {
-      text: '密度随时间变化'
+      text: '载客出租车数量趋势'
     },
     tooltip: {
       trigger: 'axis'
@@ -251,74 +233,56 @@ const renderDensityCharts = () => {
     },
     yAxis: {
       type: 'value',
-      name: '平均密度 (辆/平方公里)'
+      name: '载客出租车数量'
     },
     series: [{
-      name: '密度',
-      data: data.value.map(item => item.avg_density),
+      name: '载客出租车数量',
+      data: data.value.map(item => item.active_vehicles),
       type: 'line',
       smooth: true
-    }]
+    }],
+    dataZoom: [
+      {
+        type: 'slider',
+        xAxisIndex: 0,
+        start: 0,
+        end: 100
+      }
+    ]
   };
-  secondaryChart.setOption(secondaryOption);
+  mainChart.setOption(mainOption);
 };
 
-// 渲染流量图表（示例）
-const renderFlowCharts = () => {
-  // 主图表：流量趋势图
-  const mainChartDom = document.getElementById('main-chart');
-  const mainChart = echarts.init(mainChartDom);
-  const mainOption = {
+// 渲染载客出租车数量仪表盘
+const renderODDashboard = (currentODCount, diffPercent) => {
+  const dashboardChartDom = document.getElementById('secondary-chart');
+  const dashboardChart = echarts.init(dashboardChartDom);
+  const dashboardOption = {
     title: {
-      text: '交通流量趋势'
+      text: '载客出租车数量实时情况',
+      left: 'center'
     },
     tooltip: {
-      trigger: 'axis'
+      formatter: '{a} <br/>{b} : {c} 辆<br/> 变化: {d}%'
     },
-    xAxis: {
-      type: 'category',
-      data: data.value.map(item => item.timestamp)
-    },
-    yAxis: {
-      type: 'value',
-      name: '流量 (辆/小时)'
-    },
-    series: [{
-      name: '流量',
-      data: data.value.map(item => item.flow),
-      type: 'line',
-      smooth: true
-    }]
+    series: [
+      {
+        name: '载客出租车数量',
+        type: 'gauge',
+        detail: {
+          formatter: '{value}'
+        },
+        data: [
+          {
+            value: currentODCount,
+            name: '当前数量',
+            d: diffPercent.toFixed(2)
+          }
+        ]
+      }
+    ]
   };
-  mainChart.setOption(mainOption);
-
-  // 次要图表：流量分布饼图
-  const secondaryChartDom = document.getElementById('secondary-chart');
-  const secondaryChart = echarts.init(secondaryChartDom);
-  const secondaryOption = {
-    title: {
-      text: '时段流量分布'
-    },
-    tooltip: {
-      trigger: 'item',
-      formatter: '{b}: {c} 辆 ({d}%)'
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left'
-    },
-    series: [{
-      type: 'pie',
-      radius: '50%',
-      data: [
-        { name: '早高峰 (7-9点)', value: data.value[0].morning_peak },
-        { name: '平峰期 (9-17点)', value: data.value[0].off_peak },
-        { name: '晚高峰 (17-19点)', value: data.value[0].evening_peak },
-        { name: '夜间 (19-7点)', value: data.value[0].night }
-      ]
-    }]
-  };
-  secondaryChart.setOption(secondaryOption);
+  dashboardChart.setOption(dashboardOption);
 };
 
 // 组件挂载时自动获取数据并渲染图表
