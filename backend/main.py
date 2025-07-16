@@ -24,13 +24,13 @@ app.add_middleware(
     allow_headers=["*"],  # 允许所有头部
 )
 
-app.include_router(router.auth.auth_router)
-app.include_router(router.mail_router.mail_router)
-app.include_router(router.log_router.log_router)
-app.include_router(router.video_detect_router.video_detect_router)
-app.include_router(router.alarm_router.alarm_router)
-app.include_router(router.user_router.user_router)
-app.include_router(router.taxi_data_router.taxi_data_router)
+app.include_router(router.auth.auth_router, tags=["认证与授权"])
+app.include_router(router.mail_router.mail_router, tags=["邮件服务"])
+app.include_router(router.log_router.log_router, tags=["日志服务"])
+app.include_router(router.video_detect_router.video_detect_router, tags=["道路病害识别"])
+app.include_router(router.alarm_router.alarm_router, tags=["安全告警服务"])
+app.include_router(router.user_router.user_router, tags=["用户管理"])
+app.include_router(router.taxi_data_router.taxi_data_router, tags=["可视化数据服务"])
 
 
 @app.get("/")
