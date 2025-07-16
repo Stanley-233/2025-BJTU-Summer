@@ -5,11 +5,11 @@
       <p class="intro-text">欢迎使用济南市出租车时空可视化系统</p>
       <p class="intro-desc">本系统提供济南市出租车运行数据的可视化分析，包括热力图展示和车辆轨迹追踪功能。</p>
     </div>
-    
+
     <div class="map-container">
       <div id="main-map-container" class="map"></div>
     </div>
-    
+
     <div class="action-panel">
       <div class="panel-title">功能入口</div>
       <div class="action-buttons">
@@ -17,6 +17,11 @@
           <span class="btn-icon">📊</span>
           <span class="btn-text">进入数据分析</span>
           <span class="btn-desc">查看热力图和车辆轨迹</span>
+        </button>
+        <button @click="openGraphs" class="graphs-btn"> <!-- 新增按钮 -->
+          <span class="btn-icon">📈</span>
+          <span class="btn-text">数据图表</span>
+          <span class="btn-desc">查看多维度分析图表</span>
         </button>
         <button @click="showMapInfo" class="info-btn">
           <span class="btn-icon">ℹ️</span>
@@ -30,7 +35,7 @@
         </button>
       </div>
     </div>
-    
+
     <div class="info-panel" v-if="showInfo">
       <div class="panel-title">济南市基本信息</div>
       <div class="info-content">
@@ -44,7 +49,7 @@
         </div>
         <div class="info-item">
           <span class="info-label">数据日期：</span>
-          <span class="info-value">2023年9月12日</span>
+          <span class="info-value">2013年9月12日至2013年9月18日</span>
         </div>
         <div class="info-item">
           <span class="info-label">数据类型：</span>
@@ -96,14 +101,17 @@ const initMap = () => {
   });
 };
 
-// 打开数据分析页面
+// 打开数据分析页面（保持原有功能不变）
 const openDataAnalysis = () => {
-  // 在新标签页中打开数据分析页面
   router.push('/data-analysis');
 };
 
+// 打开数据图表页面（新增功能）
+const openGraphs = () => {
+  router.push('/analytical-graph');
+};
+
 const openPopulation = () => {
-  // 在新标签页中打开人口可视化页面
   router.push('/population-visualize');
 };
 
@@ -189,9 +197,11 @@ onUnmounted(() => {
   display: flex;
   gap: 20px;
   justify-content: center;
+  flex-wrap: wrap; /* 允许按钮换行 */
 }
 
-.analysis-btn, .info-btn, .population-btn {
+/* 合并所有按钮的通用样式 */
+.analysis-btn, .info-btn, .population-btn, .graphs-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -201,24 +211,29 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 200px;
+  color: white;
+  font-family: inherit; /* 确保字体一致性 */
 }
 
+/* 为每个按钮设置独特的背景色 */
 .analysis-btn {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
 }
 
 .info-btn {
   background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-  color: white;
 }
 
 .population-btn {
   background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
-  color: white;
 }
 
-.analysis-btn:hover, .info-btn:hover, .population-btn:hover {
+.graphs-btn {
+  background: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%);
+}
+
+/* 统一悬停效果 */
+.analysis-btn:hover, .info-btn:hover, .population-btn:hover, .graphs-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0,0,0,0.2);
 }

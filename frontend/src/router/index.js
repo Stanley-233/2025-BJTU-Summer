@@ -11,7 +11,7 @@ import FaceRecognition from '../views/FaceRecognition.vue';
 import EmailLoginPage from '../views/EmailLoginPage.vue';
 import NotFound from '../views/NotFound.vue';
 import PopulationVisualize from '../views/PopulationVisualize.vue';
-
+import AnalyticalGraph from '@/views/AnalyticalGraph.vue';
 const routes = [
   { path: '/', name: 'WelcomePage', component: WelcomePage },
   { path: '/danger', name: 'DangerRecognition', component: DangerRecognition },
@@ -24,6 +24,11 @@ const routes = [
   { path: '/face', name: 'FaceRecognition', component: FaceRecognition },
   { path: '/email_login', name: 'EmailLoginPage', component: EmailLoginPage },
   { path: '/population-visualize', name: 'PopulationVisualize', component: PopulationVisualize },
+  {
+    path: '/analytical-graph', // 新路由
+    name: 'AnalyticalGraph',
+    component: AnalyticalGraph
+  },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
 ];
 
