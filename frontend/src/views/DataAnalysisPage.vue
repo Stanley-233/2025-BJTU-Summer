@@ -74,42 +74,6 @@
         <!-- 时间范围分析页面 -->
         <div v-if="activeTab === 'timerange'" class="tab-panel">
           <div class="sidebar-panel">
-            <div class="panel-title">UTC时间范围查询</div>
-            <div class="time-inputs">
-              <div class="time-input-group">
-                <label>起始时间:</label>
-                <input 
-                  type="datetime-local" 
-                  v-model="startUtcTime" 
-                  @change="onUtcTimeChange"
-                  class="time-input"
-                />
-              </div>
-              <div class="time-input-group">
-                <label>结束时间:</label>
-                <input 
-                  type="datetime-local" 
-                  v-model="endUtcTime" 
-                  @change="onUtcTimeChange"
-                  class="time-input"
-                />
-              </div>
-            </div>
-            <div class="time-controls">
-              <button @click="applyUtcTimeFilter" :disabled="isLoading" class="apply-btn">
-                {{ isLoading ? '加载中...' : '查询热力图' }}
-              </button>
-              <button @click="clearUtcTimeFilter" class="clear-btn">清除过滤</button>
-            </div>
-            <div class="preset-buttons">
-              <button @click="setPresetUtcTime('today')" class="preset-btn">0912全天</button>
-              <button @click="setPresetUtcTime('morning')" class="preset-btn">早高峰(7-9点)</button>
-              <button @click="setPresetUtcTime('evening')" class="preset-btn">晚高峰(17-19点)</button>
-              <button @click="setPresetUtcTime('last_hour')" class="preset-btn">22-23点</button>
-            </div>
-          </div>
-          
-          <div class="sidebar-panel">
             <div class="panel-title">北京时间范围查询 (2013/09/12)</div>
             <div class="time-inputs">
               <div class="time-input-group">
@@ -133,7 +97,7 @@
               <button @click="fetchBeijingTimeHeatmap" :disabled="isBeijingTimeLoading" class="apply-btn">
                 {{ isBeijingTimeLoading ? '加载中...' : '查询热力图' }}
               </button>
-              <button @click="clearBeijingTimeHeatmap" class="clear-btn">清除过滤</button>
+              <button @click="clearBeijingTimeHeatmap" class="clear-btn">清除热力图</button>
             </div>
             <div class="preset-buttons">
               <button @click="setPresetBeijingTime('morning_rush')" class="preset-btn">早高峰(7-9点)</button>
@@ -145,26 +109,9 @@
           </div>
           
           <!-- 时间统计面板 -->
-          <div class="sidebar-panel" v-if="utcTimeStats || beijingTimeStats">
+          <div class="sidebar-panel" v-if="beijingTimeStats">
             <div class="panel-title">时间统计</div>
-            <div class="utc-stats" v-if="utcTimeStats">
-              <div class="stat-item">
-                <span>UTC时间范围: {{ utcTimeStats.time_range }}</span>
-              </div>
-              <div class="stat-item">
-                <span>总行程数: {{ utcTimeStats.total_trips }}</span>
-              </div>
-              <div class="stat-item">
-                <span>车辆数: {{ utcTimeStats.unique_vehicles }}</span>
-              </div>
-              <div class="stat-item">
-                <span>平均距离: {{ utcTimeStats.avg_distance }}km</span>
-              </div>
-              <div class="stat-item">
-                <span>平均时长: {{ utcTimeStats.avg_duration }}分钟</span>
-              </div>
-            </div>
-            <div class="utc-stats" v-if="beijingTimeStats">
+            <div class="beijing-stats">
               <div class="stat-item">
                 <span>北京时间范围: {{ beijingTimeStats.time_range }}</span>
               </div>
@@ -177,9 +124,7 @@
               <div class="stat-item">
                 <span>平均距离: {{ beijingTimeStats.avg_distance }}km</span>
               </div>
-              <div class="stat-item">
-                <span>平均时长: {{ beijingTimeStats.avg_duration }}分钟</span>
-              </div>
+              
             </div>
           </div>
           
@@ -190,7 +135,7 @@
               <span>状态：{{ dataStatus }}</span>
             </div>
             <div class="stat-item">
-              <span>当前显示：{{ utcTimeStats ? 'UTC时间过滤数据' : (beijingTimeStats ? '北京时间过滤数据' : '默认热力图') }}</span>
+              <span>当前显示：{{ beijingTimeStats ? '北京时间过滤数据' : '默认热力图' }}</span>
             </div>
           </div>
         </div>
@@ -335,11 +280,6 @@ const heatmapRadius = ref(25);     // 增大半径：从10改为25
 const showHeatmap = ref(true);
 const isLoading = ref(false);
 const isTrackLoading = ref(false);
-
-// UTC时间过滤参数
-const startUtcTime = ref('');
-const endUtcTime = ref('');
-const utcTimeStats = ref(null);
 
 // 北京时间过滤参数
 const beijingTimeStart = ref('');
@@ -1252,20 +1192,19 @@ const fetchBeijingTimeHeatmap = async () => {
     // 清除之前的热力图
     clearBeijingTimeHeatmap();
     
-    // 将北京时间转换为UTC时间（减8小时）
+    // 解析北京时间字符串
     const startBJ = new Date(beijingTimeStart.value);
     const endBJ = new Date(beijingTimeEnd.value);
-    const startUTC = new Date(startBJ.getTime() - 8 * 60 * 60 * 1000);
-    const endUTC = new Date(endBJ.getTime() - 8 * 60 * 60 * 1000);
     
-    const startUtcStr = startUTC.toISOString().slice(0, 19).replace('T', ' ');
-    const endUtcStr = endUTC.toISOString().slice(0, 19).replace('T', ' ');
+    // 直接格式化为数据库使用的格式 YYYY-MM-DD HH:MM:SS，保持北京时间
+    const startBJStr = `${startBJ.getFullYear()}-${String(startBJ.getMonth() + 1).padStart(2, '0')}-${String(startBJ.getDate()).padStart(2, '0')} ${String(startBJ.getHours()).padStart(2, '0')}:${String(startBJ.getMinutes()).padStart(2, '0')}:00`;
+    const endBJStr = `${endBJ.getFullYear()}-${String(endBJ.getMonth() + 1).padStart(2, '0')}-${String(endBJ.getDate()).padStart(2, '0')} ${String(endBJ.getHours()).padStart(2, '0')}:${String(endBJ.getMinutes()).padStart(2, '0')}:00`;
     
-    // 获取热力图数据
-    const response = await axios.get(`${API_BASE_URL}/taxi/heatmap-data-utc`, {
+    // 获取热力图数据，使用新的API端点
+    const response = await axios.get(`${API_BASE_URL}/taxi/heatmap-data-beijing`, {
       params: {
-        start_utc: startUtcStr,
-        end_utc: endUtcStr,
+        start_time: startBJStr,
+        end_time: endBJStr,
         max_points: 15000,
         grid_size: 0.005
       }
@@ -1278,7 +1217,7 @@ const fetchBeijingTimeHeatmap = async () => {
       createBeijingTimeHeatmap();
       
       // 获取统计信息
-      await fetchBeijingTimeStats(startUtcStr, endUtcStr);
+      await fetchBeijingTimeStats(startBJStr, endBJStr);
       
       dataStatus.value = `北京时间热力图加载完成 (${response.data.length}个点)`;
     } else {
@@ -1349,12 +1288,12 @@ const clearBeijingTimeHeatmap = () => {
 };
 
 // 获取北京时间统计信息
-const fetchBeijingTimeStats = async (startUtc, endUtc) => {
+const fetchBeijingTimeStats = async (startTime, endTime) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/taxi/utc-time-stats`, {
+    const response = await axios.get(`${API_BASE_URL}/taxi/beijing-time-stats`, {
       params: {
-        start_utc: startUtc,
-        end_utc: endUtc
+        start_time: startTime,
+        end_time: endTime
       }
     });
     beijingTimeStats.value = response.data;
@@ -1449,21 +1388,22 @@ onUnmounted(() => {
 .sidebar-header {
   padding: 20px;
   border-bottom: 1px solid #e0e0e0;
-  background: #4F378A;
-  color: white;
+  background: #4F378A;  /* 这里设置了背景颜色为紫色 */
+  color: #FFFFFF;       /* 使用纯白色 */
 }
 
 .sidebar-header h2 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
+  color: #F0F0F0;       /* 使用更亮的白色 */
 }
 
 /* 新增：标签页导航样式 */
 .nav-tabs {
   display: flex;
   flex-wrap: wrap;
-  background: #f8f9fa;
+  background: #4F378A; /* 修改为与标题背景相同的紫色 */
   border-bottom: 1px solid #e0e0e0;
 }
 
@@ -1473,9 +1413,9 @@ onUnmounted(() => {
   padding: 12px 8px;
   border: none;
   background: transparent;
-  color: #333; /* 改为深灰色，增加对比度 */
-  font-size: 13px; /* 稍微增大字体 */
-  font-weight: 500; /* 增加字体粗细 */
+  color: white; /* 修改为白色，在紫色背景上更清晰 */
+  font-size: 13px;
+  font-weight: 600; /* 增加字体粗细 */
   cursor: pointer;
   transition: all 0.3s ease;
   border-bottom: 3px solid transparent;
@@ -1486,14 +1426,14 @@ onUnmounted(() => {
 }
 
 .nav-tab:hover {
-  background: #e9ecef;
-  color: #2c3e50; /* 悬停时使用更深的颜色 */
+  background: rgba(255, 255, 255, 0.2); /* 修改悬停背景为半透明白色 */
+  color: white; /* 悬停时保持白色 */
 }
 
 .nav-tab.active {
-  background: white;
-  color: #2c3e50; /* 激活状态使用深色 */
-  border-bottom-color: #4F378A;
+  background: rgba(255, 255, 255, 0.3); /* 激活状态使用更明显的半透明白色 */
+  color: white; /* 激活状态使用白色 */
+  border-bottom-color: white; /* 底部边框也改为白色 */
   font-weight: 700; /* 激活状态字体更粗 */
 }
 
@@ -1524,7 +1464,7 @@ onUnmounted(() => {
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 15px;
-  color: #333;
+  color: #333;  /* 可以保持这个颜色，它是深灰色，应该有足够对比度 */
   border-left: 4px solid #4F378A;
   padding-left: 10px;
 }

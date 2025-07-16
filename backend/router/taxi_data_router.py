@@ -211,6 +211,56 @@ async def get_utc_time_stats(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取UTC时间统计失败: {str(e)}")
 
+# 获取北京时间范围统计信息
+@taxi_data_router.get("/taxi/beijing-time-stats")
+async def get_beijing_time_stats(
+    start_time: str = Query(..., description="起始北京时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    end_time: str = Query(..., description="结束北京时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    db: Session = Depends(get_db)
+):
+    """获取指定北京时间范围的统计信息"""
+    try:
+        # 查询OD数据统计
+        query = """
+        SELECT 
+            COUNT(*) as total_trips,
+            COUNT(DISTINCT vehicle_id) as unique_vehicles,
+            AVG(CASE 
+                WHEN pick_up_latitude IS NOT NULL AND pick_up_longitude IS NOT NULL 
+                     AND drop_off_latitude IS NOT NULL AND drop_off_longitude IS NOT NULL
+                THEN 6371 * acos(cos(radians(pick_up_latitude)) * cos(radians(drop_off_latitude)) 
+                     * cos(radians(drop_off_longitude) - radians(pick_up_longitude)) 
+                     + sin(radians(pick_up_latitude)) * sin(radians(drop_off_latitude)))
+                ELSE NULL
+            END) as avg_distance,
+            AVG(CASE
+                WHEN pick_up_timestamp IS NOT NULL AND drop_off_timestamp IS NOT NULL
+                THEN EXTRACT(EPOCH FROM (drop_off_timestamp - pick_up_timestamp)) / 60
+                ELSE NULL
+            END) as avg_duration
+        FROM taxi_od_clusters
+        WHERE pick_up_timestamp >= :start_time AND pick_up_timestamp <= :end_time
+        LIMIT 50000
+        """
+        
+        result = db.execute(text(query), {
+            'start_time': start_time,
+            'end_time': end_time
+        })
+        
+        row = result.fetchone()
+        
+        return {
+            "time_range": f"{start_time} - {end_time} (北京时间)",
+            "total_trips": row[0] if row[0] else 0,
+            "unique_vehicles": row[1] if row[1] else 0,
+            "avg_distance": round(row[2], 2) if row[2] else 0,
+            "avg_duration": round(row[3], 1) if row[3] else 0  # 使用实际计算的平均时长
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取北京时间统计失败: {str(e)}")
+
 @taxi_data_router.get("/taxi/od-data")
 async def get_od_data(
     limit: Optional[int] = 1000,
@@ -1252,6 +1302,43 @@ async def get_heatmap_data_adaptive(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"自适应聚合处理失败: {str(e)}")
+
+# 北京时间热力图API
+@taxi_data_router.get("/taxi/heatmap-data-beijing", response_model=List[HeatmapPoint])
+@api_exception_handler("处理北京时间范围数据失败")
+async def get_heatmap_data_beijing(
+    start_time: str = Query(..., description="起始北京时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    end_time: str = Query(..., description="结束北京时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    max_points: Optional[int] = Query(8000, description="最大返回点数"),
+    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)"),
+    db: Session = Depends(get_db)
+):
+    """获取热力图数据 - 基于北京时间范围过滤，直接使用数据库时间格式"""
+    # 构建SQL查询
+    query = """
+    SELECT latitude_bd09, longitude_bd09
+    FROM cleaned_taxi_trajectory
+    WHERE 1=1
+    """
+    
+    params = {}
+    
+    # 如果指定了时间范围，进行过滤
+    if start_time and end_time:
+        # 直接使用北京时间，不需要转换
+        query += " AND timestamp >= :start_time AND timestamp <= :end_time"
+        params['start_time'] = start_time
+        params['end_time'] = end_time
+    
+    # 限制查询数量并添加随机采样
+    query += " AND random() < 0.1 LIMIT 500000"
+    
+    # 执行查询
+    result = db.execute(text(query), params)
+    
+    # 使用通用函数处理数据
+    grid_dict = aggregate_grid_data(result, grid_size)
+    return convert_to_heatmap_points(grid_dict, max_points)
 
 # 基于完整轨迹数据的热力图API
 @taxi_data_router.get("/taxi/heatmap-data-full-trajectory", response_model=List[HeatmapPoint])
