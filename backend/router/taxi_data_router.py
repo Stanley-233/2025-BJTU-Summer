@@ -1570,3 +1570,72 @@ async def get_heatmap_data_mixed(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"混合热力图数据处理失败: {str(e)}")
+
+# 新增：北京时间范围热力图API
+@taxi_data_router.get("/taxi/beijing-time-heatmap", response_model=List[HeatmapPoint])
+@api_exception_handler("处理北京时间范围热力图数据失败")
+async def get_beijing_time_heatmap(
+    start_time: str = Query(..., description="起始北京时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    end_time: str = Query(..., description="结束北京时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    max_points: Optional[int] = Query(5000, description="最大返回点数"),
+    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)"),
+    db: Session = Depends(get_db)
+):
+    """获取北京时间范围的热力图数据 - 用于动态热力图"""
+    
+    # 构建SQL查询 - 直接使用北京时间
+    query = """
+    SELECT latitude_bd09, longitude_bd09
+    FROM cleaned_taxi_trajectory
+    WHERE timestamp >= :start_time AND timestamp <= :end_time
+          AND latitude_bd09 IS NOT NULL AND longitude_bd09 IS NOT NULL
+          AND random() < 0.2
+    LIMIT 100000
+    """
+    
+    # 执行查询
+    result = db.execute(text(query), {
+        'start_time': start_time,
+        'end_time': end_time
+    })
+    
+    # 使用通用函数处理数据
+    grid_dict = aggregate_grid_data(result, grid_size)
+    return convert_to_heatmap_points(grid_dict, max_points)
+
+# 新增：动态热力图数据API
+@taxi_data_router.get("/taxi/dynamic-heatmap-data", response_model=List[HeatmapPoint])
+@api_exception_handler("获取动态热力图数据失败")
+async def get_dynamic_heatmap_data(
+    start_time: str = Query(..., description="起始北京时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    end_time: str = Query(..., description="结束北京时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    max_points: Optional[int] = Query(5000, description="最大返回点数"),
+    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)"),
+    db: Session = Depends(get_db)
+):
+    """获取动态热力图数据 - 基于taxi_od_clusters表的上客点数据"""
+    try:
+        # 查询taxi_od_clusters表中的上客点数据
+        query = """
+        SELECT pick_up_latitude, pick_up_longitude
+        FROM taxi_od_clusters
+        WHERE pick_up_timestamp >= :start_time 
+              AND pick_up_timestamp <= :end_time
+              AND pick_up_latitude IS NOT NULL 
+              AND pick_up_longitude IS NOT NULL
+              AND pick_up_latitude BETWEEN 36.0 AND 37.5
+              AND pick_up_longitude BETWEEN 116.0 AND 118.0
+        LIMIT 100000
+        """
+        
+        result = db.execute(text(query), {
+            'start_time': start_time,
+            'end_time': end_time
+        })
+        
+        # 使用通用函数处理数据
+        grid_dict = aggregate_grid_data(result, grid_size)
+        return convert_to_heatmap_points(grid_dict, max_points)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取动态热力图数据失败: {str(e)}")

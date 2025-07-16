@@ -12,6 +12,8 @@ import EmailLoginPage from '../views/EmailLoginPage.vue';
 import NotFound from '../views/NotFound.vue';
 import PopulationVisualize from '../views/PopulationVisualize.vue';
 import AnalyticalGraph from '@/views/AnalyticalGraph.vue';
+import DynamicHeatmapPage from '../views/DynamicHeatmapPage.vue';
+
 const routes = [
   { path: '/', name: 'WelcomePage', component: WelcomePage },
   { path: '/danger', name: 'DangerRecognition', component: DangerRecognition },
@@ -25,9 +27,14 @@ const routes = [
   { path: '/email_login', name: 'EmailLoginPage', component: EmailLoginPage },
   { path: '/population-visualize', name: 'PopulationVisualize', component: PopulationVisualize },
   {
-    path: '/analytical-graph', // 新路由
+    path: '/analytical-graph',
     name: 'AnalyticalGraph',
     component: AnalyticalGraph
+  },
+  {
+    path: '/dynamic-heatmap',
+    name: 'DynamicHeatmapPage', 
+    component: DynamicHeatmapPage
   },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
 ];

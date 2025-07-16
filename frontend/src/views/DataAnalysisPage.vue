@@ -98,6 +98,10 @@
                 {{ isBeijingTimeLoading ? '加载中...' : '查询热力图' }}
               </button>
               <button @click="clearBeijingTimeHeatmap" class="clear-btn">清除热力图</button>
+              <!-- 新增动态热力图按钮 -->
+              <button @click="goToDynamicHeatmap" class="dynamic-btn">
+                <i class="fas fa-play"></i> 动态热力图
+              </button>
             </div>
             <div class="preset-buttons">
               <button @click="setPresetBeijingTime('morning_rush')" class="preset-btn">早高峰(7-9点)</button>
@@ -264,7 +268,11 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import axios from 'axios';
+
+// 添加路由实例
+const router = useRouter();
 
 // 地图和热力图实例
 let map = null;
@@ -1335,6 +1343,11 @@ const setPresetBeijingTime = (preset) => {
   }
 };
 
+// 跳转到动态热力图页面
+const goToDynamicHeatmap = () => {
+  router.push('/dynamic-heatmap');
+};
+
 // 组件卸载
 onUnmounted(() => {
   // 清理MapVGL资源
@@ -1542,6 +1555,30 @@ onUnmounted(() => {
 
 .clear-btn:hover {
   background: #5a6268;
+}
+
+.dynamic-btn {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.dynamic-btn:hover {
+  background: #138496;
+}
+
+.dynamic-btn i {
+  font-size: 12px;
 }
 
 .preset-buttons {
