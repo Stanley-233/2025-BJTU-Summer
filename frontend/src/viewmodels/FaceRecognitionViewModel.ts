@@ -83,7 +83,7 @@ export default function useFaceRecognition() {
         } else {
           alert("人脸识别成功，欢迎回来，" + user_name + "！");
         }
-        window.location.reload()
+        window.location.assign('/console')
       } catch (error: any) {
         console.error(error)
         const status = error.response?.status
