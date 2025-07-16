@@ -11,9 +11,8 @@ let map
 
 onMounted(() => {
   map = new BMapGL.Map('shandong-map')
-  // 山东省中心坐标，大约117.0009E, 36.6758N，缩放级别设为7
-  const center = new BMapGL.Point(117.000923, 36.675807)
-  map.centerAndZoom(center, 7)
+  const center = new BMapGL.Point(119.000923, 36.275807)
+  map.centerAndZoom(center, 7.5)
   map.enableScrollWheelZoom(true)
   map.addControl(new BMapGL.NavigationControl())
   map.addControl(new BMapGL.ScaleControl())

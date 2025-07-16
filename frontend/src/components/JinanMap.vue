@@ -8,6 +8,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import 'echarts/extension/bmap/bmap'
+import regionGeoJson from '@/assets/济南市.json'
 
 let chart
 // track drawn boundary polygons
@@ -52,11 +53,43 @@ function convertData(data) {
   }).filter(item => item !== null)
 }
 
+// Add helper functions for color interpolation
+function hexToRgb(hex) {
+  const m = hex.match(/^#?([a-fA-F0-9]{6})$/);
+  const i = parseInt(m[1], 16);
+  return { r: (i >> 16) & 255, g: (i >> 8) & 255, b: i & 255 };
+}
+function rgbToHex({ r, g, b }) {
+  const h = (n) => (n < 16 ? '0' : '') + n.toString(16);
+  return `#${h(r)}${h(g)}${h(b)}`;
+}
+function interpolateColor(c1, c2, factor) {
+  const rgb1 = hexToRgb(c1), rgb2 = hexToRgb(c2);
+  return rgbToHex({ r: Math.round(rgb1.r + (rgb2.r - rgb1.r) * factor), g: Math.round(rgb1.g + (rgb2.g - rgb1.g) * factor), b: Math.round(rgb1.b + (rgb2.b - rgb1.b) * factor) });
+}
+
+// Add helper to convert GCJ-02 to BD-09
+function gcj02ToBd09(lon, lat) {
+  const x = lon, y = lat;
+  const z = Math.sqrt(x * x + y * y) + 0.00002 * Math.sin(y * Math.PI);
+  const theta = Math.atan2(y, x) + 0.000003 * Math.cos(x * Math.PI);
+  return [z * Math.cos(theta) + 0.0065, z * Math.sin(theta) + 0.006];
+}
+
 onMounted(() => {
   const dom = document.getElementById('jinan-map')
   chart = echarts.init(dom)
-  const vals = populationData.map(i => i.value)
-  const minVal = Math.min(...vals), maxVal = Math.max(...vals)
+  const vals = populationData.map(i => i.value);
+  const minVal = Math.min(...vals), maxVal = Math.max(...vals);
+  const vmColors = ['#50a3ba', '#eac763', '#d94e5d'];
+  // compute color for a given value
+  function getColor(value) {
+    const ratio = (value - minVal) / (maxVal - minVal);
+    if (ratio <= 0.5) {
+      return interpolateColor(vmColors[0], vmColors[1], ratio * 2);
+    }
+    return interpolateColor(vmColors[1], vmColors[2], (ratio - 0.5) * 2);
+  }
   chart.setOption({
     bmap: { center: [117.000923,36.675807], zoom:11, roam:true, mapStyle:{} },
     tooltip:{
@@ -71,42 +104,32 @@ onMounted(() => {
       type:'scatter',
       coordinateSystem:'bmap',
       data:convertData(populationData),
+      // @ts-ignore: symbolSize is a valid series property
       symbolSize: val => Math.max(val[2] / 80000, 20),
       encode:{ value:2 },
-      itemStyle:{ color:'purple' }
+      // remove fixed color to allow visualMap coloring
     }]
-  })
-  // 点击散点显示行政区边界
-  chart.on('click', function(params) {
-    if (params.componentType === 'series' && params.seriesType === 'scatter') {
-      const name = params.name;
-      const bmapComp = chart.getModel().getComponent('bmap');
-      const bmap = bmapComp.getBMap();
-      // 移除之前绘制的行政区边界
-      boundaryPolygons.forEach(poly => bmap.removeOverlay(poly));
-      boundaryPolygons = [];
-      // 移除之前绘制的行政区边界
-      boundaryPolygons.forEach(poly => bmap.removeOverlay(poly));
-      boundaryPolygons = [];
-      const bdary = new BMap.Boundary();
-      // 指定济南市行政区，避免同名歧义
-          // 构建多边形覆盖物
-      const regionName = `济南市${name}`;
-      bdary.get(regionName, function(rs) {
-        for (let i = 0; i < rs.boundaries.length; i++) {
-          // 构建多边形覆盖物
-          const ply = new BMap.Polygon(rs.boundaries[i], {
-             strokeWeight: 2,
-             strokeColor: '#ff0000',
-             fillColor: 'rgba(255,0,0,0.3)'
-           });
-          bmap.addOverlay(ply);
-          boundaryPolygons.push(ply);
-         }
-        // 不调整视野，保持点击前的中心和缩放级别
-       });
-     }
-   });
+  });
+  // draw initial boundaries matching population data colors using GeoJSON
+  const bmap = chart.getModel().getComponent('bmap').getBMap();
+  regionGeoJson.features.forEach(feature => {
+    const name = feature.properties.name;
+    const item = populationData.find(d => d.name === name);
+    const color = item ? getColor(item.value) : '#000';
+    const polys = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
+    polys.forEach(polygon => {
+      const ring = polygon[0];
+      const points = ring.map(coord => {
+        const [lon, lat] = coord;
+        const [bdLon, bdLat] = gcj02ToBd09(lon, lat);
+        return new BMap.Point(bdLon, bdLat);
+      });
+      const ply = new BMap.Polygon(points, { strokeWeight: 2, strokeColor: color, fillColor: color, fillOpacity: 0.3 });
+      bmap.addOverlay(ply);
+      boundaryPolygons.push(ply);
+    });
+  });
+  // 点击散点事件已移除
 })
 
 onUnmounted(() => { chart && chart.dispose() })
