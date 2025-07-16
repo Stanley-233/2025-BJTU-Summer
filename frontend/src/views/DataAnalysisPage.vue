@@ -538,6 +538,88 @@ const updateHeatmapData = () => {
   heatmapLayer.setData(data);
 };
 
+// 通用热力图数据获取函数
+const fetchHeatmapData = async (url, params, successCallback, errorCallback) => {
+  try {
+    isLoading.value = true;
+    dataStatus.value = '正在加载热力图数据...';
+    
+    const response = await axios.get(`${API_BASE_URL}${url}`, { params });
+    
+    if (response.data && response.data.length > 0) {
+      const processedData = processHeatmapData(response.data);
+      updateStats(response.data);
+      
+      if (successCallback) {
+        successCallback(processedData);
+      }
+      
+      dataStatus.value = `热力图数据加载完成 (${response.data.length}个点)`;
+    } else {
+      dataStatus.value = '无可用的热力图数据';
+    }
+  } catch (error) {
+    console.error('获取热力图数据失败:', error);
+    dataStatus.value = `热力图数据加载失败: ${error.message}`;
+    
+    if (errorCallback) {
+      errorCallback(error);
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 通用热力图图层创建函数
+const createHeatmapLayer = (data, options = {}) => {
+  if (!mapvglView || data.length === 0) return null;
+  
+  // 计算实际数据的最大count值
+  const maxCount = Math.max(...data.map(point => point.count));
+  const dynamicMax = Math.max(maxCount * 1.2, 10); // 设置为最大值的1.2倍，最小为10
+  
+  // 创建热力图数据
+  const mapData = data.map(point => ({
+    geometry: {
+      type: 'Point',
+      coordinates: [point.lng, point.lat]
+    },
+    properties: {
+      count: point.count
+    }
+  }));
+  
+  // 默认配置
+  const defaultOptions = {
+    size: heatmapRadius.value * 80,
+    max: dynamicMax,
+    unit: 'm',
+    gradient: {
+      0.0: 'rgba(50, 50, 255, 0.0)',
+      0.1: 'rgba(50, 50, 255, 0.5)',
+      0.2: 'rgba(0, 100, 255, 0.6)',
+      0.3: 'rgba(0, 150, 255, 0.7)',
+      0.4: 'rgba(0, 200, 255, 0.8)',
+      0.5: 'rgba(0, 255, 255, 0.9)',
+      0.6: 'rgba(0, 255, 200, 0.9)',
+      0.7: 'rgba(0, 255, 100, 0.9)',
+      0.8: 'rgba(0, 255, 0, 0.9)',
+      0.9: 'rgba(255, 255, 0, 0.9)',
+      1.0: 'rgba(255, 0, 0, 1.0)'
+    },
+    opacity: heatmapIntensity.value / 100
+  };
+  
+  // 合并选项
+  const mergedOptions = { ...defaultOptions, ...options };
+  
+  // 创建热力图图层
+  const layer = new mapvgl.HeatmapLayer(mergedOptions);
+  layer.setData(mapData);
+  
+  return layer;
+};
+
 // 更新热力图参数
 const updateHeatmap = () => {
   if (!heatmapLayer) return;
@@ -964,8 +1046,20 @@ const applyUtcTimeFilter = async () => {
   const startUtc = new Date(startUtcTime.value).toISOString().slice(0, 19).replace('T', ' ');
   const endUtc = new Date(endUtcTime.value).toISOString().slice(0, 19).replace('T', ' ');
   
-  await fetchHeatmapDataUtc(startUtc, endUtc);
-  await fetchUtcTimeStats(startUtc, endUtc);
+  await fetchHeatmapData(
+    '/taxi/heatmap-data-utc',
+    {
+      start_utc: startUtc,
+      end_utc: endUtc,
+      max_points: 15000,
+      grid_size: 0.005
+    },
+    (processedData) => {
+      realDataPoints.value = processedData;
+      updateHeatmapData();
+      fetchUtcTimeStats(startUtc, endUtc);
+    }
+  );
 };
 
 // 清除UTC时间过滤
@@ -1079,22 +1173,15 @@ onMounted(() => {
 
 // 获取密集上客区域数据
 const fetchPickupClusters = async () => {
-  try {
-    isLoading.value = true;
-    dataStatus.value = '正在加载密集上客区域数据...';
-    
-    const response = await axios.get(`${API_BASE_URL}/taxi/heatmap-data-cluster`, {
-      params: {
-        max_points: 50 // 限制只获取最密集的50个上客区域
-      }
-    });
-    
-    if (response.data && response.data.length > 0) {
+  await fetchHeatmapData(
+    '/taxi/heatmap-data-cluster',
+    { max_points: 50 },
+    (processedData) => {
       // 清除之前的标记
       clearPickupClusterMarkers();
       
       // 添加新的标记
-      response.data.forEach((point, index) => {
+      processedData.forEach((point, index) => {
         // 创建自定义图标
         const size = Math.min(50, Math.max(20, Math.sqrt(point.count) * 0.8));
         const label = new BMapGL.Label(`上客点 #${index+1}\n${point.count}次`, {
@@ -1134,20 +1221,12 @@ const fetchPickupClusters = async () => {
       });
       
       // 调整地图视野以包含所有标记
-      const points = response.data.map(point => new BMapGL.Point(point.lng, point.lat));
+      const points = processedData.map(point => new BMapGL.Point(point.lng, point.lat));
       map.setViewport(points);
       
       showPickupClusters.value = true;
-      dataStatus.value = `密集上客区域加载完成 (${response.data.length}个点)`;
-    } else {
-      dataStatus.value = '无可用的密集上客区域数据';
     }
-  } catch (error) {
-    console.error('获取密集上客区域数据失败:', error);
-    dataStatus.value = `密集上客区域数据加载失败: ${error.message}`;
-  } finally {
-    isLoading.value = false;
-  }
+  );
 };
 
 // 清除密集上客区域标记
