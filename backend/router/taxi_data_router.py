@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import json
 import os
+from functools import wraps
 
 import numpy as np
 import pandas as pd
@@ -26,8 +27,24 @@ def get_db():
 
 taxi_data_router = APIRouter()
 
-import os
 from pathlib import Path
+
+
+def api_exception_handler(error_message):
+    """API异常处理装饰器
+    
+    Args:
+        error_message: 错误消息前缀
+    """
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            try:
+                return await func(*args, **kwargs)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"{error_message}: {str(e)}")
+        return wrapper
+    return decorator
 
 
 
@@ -49,73 +66,101 @@ class TimeStats(BaseModel):
     avg_distance: float
     avg_duration: float
 
-# UTC时间范围热力图API性能优化
-@taxi_data_router.get("/taxi/heatmap-data-utc", response_model=List[HeatmapPoint])
-async def get_heatmap_data_utc(
-    start_utc: Optional[str] = Query(None, description="起始UTC时间 (格式: YYYY-MM-DD HH:MM:SS)"),
-    end_utc: Optional[str] = Query(None, description="结束UTC时间 (格式: YYYY-MM-DD HH:MM:SS)"),
-    max_points: Optional[int] = Query(8000, description="最大返回点数"),  # 从10000改为8000
-    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)"),  # 从0.001改为0.005
-    db: Session = Depends(get_db)
-):
-    """获取热力图数据 - 基于UTC时间范围过滤，性能优化版本"""
-    try:
-        # 构建SQL查询
-        query = """
-        SELECT latitude_bd09, longitude_bd09
-        FROM cleaned_taxi_trajectory
-        WHERE 1=1
-        """
-        
-        params = {}
-        
-        # 如果指定了时间范围，进行过滤
-        if start_utc and end_utc:
-            # 将UTC时间转换为本地时间（数据库中存储的是本地时间）
-            start_time = pd.to_datetime(start_utc) + pd.Timedelta(hours=8)
-            end_time = pd.to_datetime(end_utc) + pd.Timedelta(hours=8)
+# 添加通用的网格聚合处理函数
+def aggregate_grid_data(result, grid_size, count_field_index=None):
+    """通用网格聚合处理函数
+    
+    Args:
+        result: 数据库查询结果
+        grid_size: 网格大小
+        count_field_index: 计数字段索引，如果提供则使用该字段值作为计数，否则默认为1
+    
+    Returns:
+        网格聚合后的字典 {(lat, lng): count}
+    """
+    grid_dict = {}
+    for row in result:
+        try:
+            lat = float(row[0])
+            lng = float(row[1])
+            count = int(row[count_field_index]) if count_field_index is not None else 1
             
-            query += " AND timestamp >= :start_time AND timestamp <= :end_time"
-            params['start_time'] = start_time.strftime('%Y/%m/%d %H:%M:%S')
-            params['end_time'] = end_time.strftime('%Y/%m/%d %H:%M:%S')
-        
-        # 限制查询数量并添加随机采样
-        query += " AND random() < 0.1 LIMIT 500000"
-        
-        # 执行查询
-        result = db.execute(text(query), params)
-        rows = result.fetchall()
-        
-        # 网格聚合处理
-        grid_dict = {}
-        for row in rows:
-            # 计算网格坐标
-            lat, lng = row[0], row[1]
+            # 网格聚合
             grid_lat = round(lat / grid_size) * grid_size
             grid_lng = round(lng / grid_size) * grid_size
             grid_key = (grid_lat, grid_lng)
             
-            if grid_key in grid_dict:
-                grid_dict[grid_key] += 1
-            else:
-                grid_dict[grid_key] = 1
+            grid_dict[grid_key] = grid_dict.get(grid_key, 0) + count
+            
+        except (ValueError, KeyError, IndexError) as e:
+            # 跳过无效数据
+            continue
+    
+    return grid_dict
+
+def convert_to_heatmap_points(grid_dict, max_points):
+    """将网格字典转换为热力图点列表
+    
+    Args:
+        grid_dict: 网格聚合后的字典 {(lat, lng): count}
+        max_points: 最大返回点数
+    
+    Returns:
+        热力图点列表
+    """
+    # 转换为热力图点
+    heatmap_points = []
+    for (lat, lng), count in grid_dict.items():
+        point = HeatmapPoint(
+            lng=float(lng),
+            lat=float(lat),
+            count=count
+        )
+        heatmap_points.append(point)
+    
+    # 按权重排序并限制数量
+    heatmap_points.sort(key=lambda x: x.count, reverse=True)
+    return heatmap_points[:max_points]
+
+# UTC时间范围热力图API性能优化
+@taxi_data_router.get("/taxi/heatmap-data-utc", response_model=List[HeatmapPoint])
+@api_exception_handler("处理UTC时间范围数据失败")
+async def get_heatmap_data_utc(
+    start_utc: Optional[str] = Query(None, description="起始UTC时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    end_utc: Optional[str] = Query(None, description="结束UTC时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    max_points: Optional[int] = Query(8000, description="最大返回点数"),
+    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)"),
+    db: Session = Depends(get_db)
+):
+    """获取热力图数据 - 基于UTC时间范围过滤，性能优化版本"""
+    # 构建SQL查询
+    query = """
+    SELECT latitude_bd09, longitude_bd09
+    FROM cleaned_taxi_trajectory
+    WHERE 1=1
+    """
+    
+    params = {}
+    
+    # 如果指定了时间范围，进行过滤
+    if start_utc and end_utc:
+        # 将UTC时间转换为本地时间（数据库中存储的是本地时间）
+        start_time = pd.to_datetime(start_utc) + pd.Timedelta(hours=8)
+        end_time = pd.to_datetime(end_utc) + pd.Timedelta(hours=8)
         
-        # 转换为热力图点并限制数量
-        heatmap_points = []
-        for (lat, lng), count in grid_dict.items():
-            point = HeatmapPoint(
-                lng=float(lng),
-                lat=float(lat),
-                count=count
-            )
-            heatmap_points.append(point)
-        
-        # 按权重排序并限制返回数量
-        heatmap_points.sort(key=lambda x: x.count, reverse=True)
-        return heatmap_points[:max_points]
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"处理UTC时间范围数据失败: {str(e)}")
+        query += " AND timestamp >= :start_time AND timestamp <= :end_time"
+        params['start_time'] = start_time.strftime('%Y/%m/%d %H:%M:%S')
+        params['end_time'] = end_time.strftime('%Y/%m/%d %H:%M:%S')
+    
+    # 限制查询数量并添加随机采样
+    query += " AND random() < 0.1 LIMIT 500000"
+    
+    # 执行查询
+    result = db.execute(text(query), params)
+    
+    # 使用通用函数处理数据
+    grid_dict = aggregate_grid_data(result, grid_size)
+    return convert_to_heatmap_points(grid_dict, max_points)
 
 # 新增：获取UTC时间范围统计信息
 @taxi_data_router.get("/taxi/utc-time-stats")
@@ -165,6 +210,56 @@ async def get_utc_time_stats(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取UTC时间统计失败: {str(e)}")
+
+# 获取北京时间范围统计信息
+@taxi_data_router.get("/taxi/beijing-time-stats")
+async def get_beijing_time_stats(
+    start_time: str = Query(..., description="起始北京时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    end_time: str = Query(..., description="结束北京时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    db: Session = Depends(get_db)
+):
+    """获取指定北京时间范围的统计信息"""
+    try:
+        # 查询OD数据统计
+        query = """
+        SELECT 
+            COUNT(*) as total_trips,
+            COUNT(DISTINCT vehicle_id) as unique_vehicles,
+            AVG(CASE 
+                WHEN pick_up_latitude IS NOT NULL AND pick_up_longitude IS NOT NULL 
+                     AND drop_off_latitude IS NOT NULL AND drop_off_longitude IS NOT NULL
+                THEN 6371 * acos(cos(radians(pick_up_latitude)) * cos(radians(drop_off_latitude)) 
+                     * cos(radians(drop_off_longitude) - radians(pick_up_longitude)) 
+                     + sin(radians(pick_up_latitude)) * sin(radians(drop_off_latitude)))
+                ELSE NULL
+            END) as avg_distance,
+            AVG(CASE
+                WHEN pick_up_timestamp IS NOT NULL AND drop_off_timestamp IS NOT NULL
+                THEN EXTRACT(EPOCH FROM (drop_off_timestamp - pick_up_timestamp)) / 60
+                ELSE NULL
+            END) as avg_duration
+        FROM taxi_od_clusters
+        WHERE pick_up_timestamp >= :start_time AND pick_up_timestamp <= :end_time
+        LIMIT 50000
+        """
+        
+        result = db.execute(text(query), {
+            'start_time': start_time,
+            'end_time': end_time
+        })
+        
+        row = result.fetchone()
+        
+        return {
+            "time_range": f"{start_time} - {end_time} (北京时间)",
+            "total_trips": row[0] if row[0] else 0,
+            "unique_vehicles": row[1] if row[1] else 0,
+            "avg_distance": round(row[2], 2) if row[2] else 0,
+            "avg_duration": round(row[3], 1) if row[3] else 0  # 使用实际计算的平均时长
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取北京时间统计失败: {str(e)}")
 
 @taxi_data_router.get("/taxi/od-data")
 async def get_od_data(
@@ -255,7 +350,44 @@ async def get_vehicle_track(
 ):
     """获取指定车辆在指定时间范围内的轨迹数据"""
     try:
-        # 直接使用北京时间，无需转换
+        # 打印接收到的原始参数
+        print(f"接收到的参数 - 车辆ID: {vehicle_id}, 开始时间: {start_time}, 结束时间: {end_time}")
+        
+        # 不再转换时间格式，直接使用前端传来的格式（带连字符的格式）
+        # start_time_formatted = start_time.replace('-', '/')
+        # end_time_formatted = end_time.replace('-', '/')
+        start_time_formatted = start_time
+        end_time_formatted = end_time
+        
+        # 打印使用的时间格式
+        print(f"使用的时间格式 - 开始时间: {start_time_formatted}, 结束时间: {end_time_formatted}")
+        
+        # 先执行一个测试查询，检查是否有该车辆的数据
+        test_query = """
+        SELECT COUNT(*) 
+        FROM cleaned_taxi_trajectory 
+        WHERE vehicle_id = :vehicle_id
+        """
+        
+        test_result = db.execute(text(test_query), {'vehicle_id': vehicle_id})
+        vehicle_count = test_result.scalar()
+        print(f"数据库中车辆 {vehicle_id} 的记录数: {vehicle_count}")
+        
+        # 再执行一个测试查询，检查时间范围内是否有数据
+        time_test_query = """
+        SELECT MIN(timestamp), MAX(timestamp) 
+        FROM cleaned_taxi_trajectory 
+        WHERE vehicle_id = :vehicle_id
+        """
+        
+        time_test_result = db.execute(text(time_test_query), {'vehicle_id': vehicle_id})
+        time_range = time_test_result.fetchone()
+        if time_range and time_range[0] and time_range[1]:
+            print(f"车辆 {vehicle_id} 的时间范围: {time_range[0]} 到 {time_range[1]}")
+        else:
+            print(f"未找到车辆 {vehicle_id} 的时间范围信息")
+        
+        # 使用原始时间格式查询
         query = """
         SELECT longitude_bd09, latitude_bd09, timestamp, occupied
         FROM cleaned_taxi_trajectory
@@ -268,11 +400,13 @@ async def get_vehicle_track(
         
         result = db.execute(text(query), {
             'vehicle_id': vehicle_id,
-            'start_time': start_time,  # 直接使用传入的北京时间
-            'end_time': end_time
+            'start_time': start_time_formatted,  # 使用原始时间格式
+            'end_time': end_time_formatted
         })
         
         rows = result.fetchall()
+        print(f"查询结果行数: {len(rows)}")
+        
         vehicle_tracks = []
         
         for row in rows:
@@ -1169,6 +1303,43 @@ async def get_heatmap_data_adaptive(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"自适应聚合处理失败: {str(e)}")
 
+# 北京时间热力图API
+@taxi_data_router.get("/taxi/heatmap-data-beijing", response_model=List[HeatmapPoint])
+@api_exception_handler("处理北京时间范围数据失败")
+async def get_heatmap_data_beijing(
+    start_time: str = Query(..., description="起始北京时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    end_time: str = Query(..., description="结束北京时间 (格式: YYYY-MM-DD HH:MM:SS)"),
+    max_points: Optional[int] = Query(8000, description="最大返回点数"),
+    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)"),
+    db: Session = Depends(get_db)
+):
+    """获取热力图数据 - 基于北京时间范围过滤，直接使用数据库时间格式"""
+    # 构建SQL查询
+    query = """
+    SELECT latitude_bd09, longitude_bd09
+    FROM cleaned_taxi_trajectory
+    WHERE 1=1
+    """
+    
+    params = {}
+    
+    # 如果指定了时间范围，进行过滤
+    if start_time and end_time:
+        # 直接使用北京时间，不需要转换
+        query += " AND timestamp >= :start_time AND timestamp <= :end_time"
+        params['start_time'] = start_time
+        params['end_time'] = end_time
+    
+    # 限制查询数量并添加随机采样
+    query += " AND random() < 0.1 LIMIT 500000"
+    
+    # 执行查询
+    result = db.execute(text(query), params)
+    
+    # 使用通用函数处理数据
+    grid_dict = aggregate_grid_data(result, grid_size)
+    return convert_to_heatmap_points(grid_dict, max_points)
+
 # 基于完整轨迹数据的热力图API
 @taxi_data_router.get("/taxi/heatmap-data-full-trajectory", response_model=List[HeatmapPoint])
 async def get_heatmap_data_full_trajectory(
@@ -1345,6 +1516,31 @@ async def get_heatmap_data_clusters(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"读取聚类热力图数据失败: {str(e)}")
+
+# 密集上客点查询API
+@taxi_data_router.get("/taxi/heatmap-data-cluster", response_model=List[HeatmapPoint])
+@api_exception_handler("获取密集上客区域数据失败")
+async def get_heatmap_data_cluster(
+    max_points: Optional[int] = Query(50, description="最大返回点数"),
+    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)"),
+    db: Session = Depends(get_db)
+):
+    """获取密集上客区域数据 - 返回上客次数最多的区域"""
+    # 从数据库获取上客点数据
+    query = """
+    SELECT pick_up_latitude, pick_up_longitude, COUNT(*) as pickup_count
+    FROM taxi_od_clusters
+    WHERE pick_up_latitude IS NOT NULL AND pick_up_longitude IS NOT NULL
+    GROUP BY pick_up_latitude, pick_up_longitude
+    ORDER BY pickup_count DESC
+    LIMIT 1000
+    """
+    
+    result = db.execute(text(query))
+    
+    # 使用通用函数处理数据，指定计数字段索引为2
+    grid_dict = aggregate_grid_data(result, grid_size, count_field_index=2)
+    return convert_to_heatmap_points(grid_dict, max_points)
 
 # 混合热力图API - 结合OD和聚类数据
 @taxi_data_router.get("/taxi/heatmap-data-mixed", response_model=List[HeatmapPoint])
