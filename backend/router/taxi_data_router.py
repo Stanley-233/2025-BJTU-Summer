@@ -1385,6 +1385,63 @@ async def get_heatmap_data_clusters(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"读取聚类热力图数据失败: {str(e)}")
 
+# 密集上客点查询API
+@taxi_data_router.get("/taxi/heatmap-data-cluster", response_model=List[HeatmapPoint])
+async def get_heatmap_data_cluster(
+    max_points: Optional[int] = Query(50, description="最大返回点数"),
+    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)"),
+    db: Session = Depends(get_db)
+):
+    """获取密集上客区域数据 - 返回上客次数最多的区域"""
+    try:
+        # 从数据库获取上客点数据
+        query = """
+        SELECT pick_up_latitude, pick_up_longitude, COUNT(*) as pickup_count
+        FROM taxi_od_clusters
+        WHERE pick_up_latitude IS NOT NULL AND pick_up_longitude IS NOT NULL
+        GROUP BY pick_up_latitude, pick_up_longitude
+        ORDER BY pickup_count DESC
+        LIMIT 1000
+        """
+        
+        result = db.execute(text(query))
+        
+        # 网格聚合处理
+        grid_dict = {}
+        for row in result:
+            try:
+                lat = float(row[0])
+                lng = float(row[1])
+                count = int(row[2])
+                
+                # 网格聚合
+                grid_lat = round(lat / grid_size) * grid_size
+                grid_lng = round(lng / grid_size) * grid_size
+                grid_key = (grid_lat, grid_lng)
+                
+                grid_dict[grid_key] = grid_dict.get(grid_key, 0) + count
+                
+            except (ValueError, KeyError) as e:
+                # 跳过无效数据
+                continue
+        
+        # 转换为热力图点
+        heatmap_points = []
+        for (lat, lng), count in grid_dict.items():
+            point = HeatmapPoint(
+                lng=float(lng),
+                lat=float(lat),
+                count=count
+            )
+            heatmap_points.append(point)
+        
+        # 按上客次数排序并限制数量
+        heatmap_points.sort(key=lambda x: x.count, reverse=True)
+        return heatmap_points[:max_points]
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取密集上客区域数据失败: {str(e)}")
+
 # 混合热力图API - 结合OD和聚类数据
 @taxi_data_router.get("/taxi/heatmap-data-mixed", response_model=List[HeatmapPoint])
 async def get_heatmap_data_mixed(
