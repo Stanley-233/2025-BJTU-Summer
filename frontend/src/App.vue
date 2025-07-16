@@ -117,7 +117,7 @@ watch(isLogin, val => { if (val) startAlarmStream() })
 }
 .app-bar {
   width: 100%;
-  background: rgba(248, 249, 250, 0.8);
+  background: rgba(248, 249, 250, 0.5);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   position: fixed;
   top: 0;
