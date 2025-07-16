@@ -255,7 +255,44 @@ async def get_vehicle_track(
 ):
     """获取指定车辆在指定时间范围内的轨迹数据"""
     try:
-        # 直接使用北京时间，无需转换
+        # 打印接收到的原始参数
+        print(f"接收到的参数 - 车辆ID: {vehicle_id}, 开始时间: {start_time}, 结束时间: {end_time}")
+        
+        # 不再转换时间格式，直接使用前端传来的格式（带连字符的格式）
+        # start_time_formatted = start_time.replace('-', '/')
+        # end_time_formatted = end_time.replace('-', '/')
+        start_time_formatted = start_time
+        end_time_formatted = end_time
+        
+        # 打印使用的时间格式
+        print(f"使用的时间格式 - 开始时间: {start_time_formatted}, 结束时间: {end_time_formatted}")
+        
+        # 先执行一个测试查询，检查是否有该车辆的数据
+        test_query = """
+        SELECT COUNT(*) 
+        FROM cleaned_taxi_trajectory 
+        WHERE vehicle_id = :vehicle_id
+        """
+        
+        test_result = db.execute(text(test_query), {'vehicle_id': vehicle_id})
+        vehicle_count = test_result.scalar()
+        print(f"数据库中车辆 {vehicle_id} 的记录数: {vehicle_count}")
+        
+        # 再执行一个测试查询，检查时间范围内是否有数据
+        time_test_query = """
+        SELECT MIN(timestamp), MAX(timestamp) 
+        FROM cleaned_taxi_trajectory 
+        WHERE vehicle_id = :vehicle_id
+        """
+        
+        time_test_result = db.execute(text(time_test_query), {'vehicle_id': vehicle_id})
+        time_range = time_test_result.fetchone()
+        if time_range and time_range[0] and time_range[1]:
+            print(f"车辆 {vehicle_id} 的时间范围: {time_range[0]} 到 {time_range[1]}")
+        else:
+            print(f"未找到车辆 {vehicle_id} 的时间范围信息")
+        
+        # 使用原始时间格式查询
         query = """
         SELECT longitude_bd09, latitude_bd09, timestamp, occupied
         FROM cleaned_taxi_trajectory
@@ -268,11 +305,13 @@ async def get_vehicle_track(
         
         result = db.execute(text(query), {
             'vehicle_id': vehicle_id,
-            'start_time': start_time,  # 直接使用传入的北京时间
-            'end_time': end_time
+            'start_time': start_time_formatted,  # 使用原始时间格式
+            'end_time': end_time_formatted
         })
         
         rows = result.fetchall()
+        print(f"查询结果行数: {len(rows)}")
+        
         vehicle_tracks = []
         
         for row in rows:
