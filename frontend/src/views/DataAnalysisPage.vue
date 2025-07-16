@@ -34,6 +34,16 @@
           </div>
           
           <div class="sidebar-panel">
+            <div class="panel-title">密集上客区域</div>
+            <div class="control-item">
+              <button @click="fetchPickupClusters" class="control-btn">显示密集上客区域</button>
+            </div>
+            <div class="control-item">
+              <button @click="clearPickupClusterMarkers" class="control-btn">清除上客区域标记</button>
+            </div>
+          </div>
+          
+          <div class="sidebar-panel">
             <div class="panel-title">地图控制</div>
             <div class="control-item">
               <button @click="fitToData" class="control-btn">适应数据范围</button>
@@ -64,7 +74,7 @@
         <!-- 时间范围分析页面 -->
         <div v-if="activeTab === 'timerange'" class="tab-panel">
           <div class="sidebar-panel">
-            <div class="panel-title">时间范围查询</div>
+            <div class="panel-title">UTC时间范围查询</div>
             <div class="time-inputs">
               <div class="time-input-group">
                 <label>起始时间:</label>
@@ -99,12 +109,47 @@
             </div>
           </div>
           
+          <div class="sidebar-panel">
+            <div class="panel-title">北京时间范围查询 (2013/09/12)</div>
+            <div class="time-inputs">
+              <div class="time-input-group">
+                <label>起始时间:</label>
+                <input 
+                  type="datetime-local" 
+                  v-model="beijingTimeStart" 
+                  class="time-input"
+                />
+              </div>
+              <div class="time-input-group">
+                <label>结束时间:</label>
+                <input 
+                  type="datetime-local" 
+                  v-model="beijingTimeEnd" 
+                  class="time-input"
+                />
+              </div>
+            </div>
+            <div class="time-controls">
+              <button @click="fetchBeijingTimeHeatmap" :disabled="isBeijingTimeLoading" class="apply-btn">
+                {{ isBeijingTimeLoading ? '加载中...' : '查询热力图' }}
+              </button>
+              <button @click="clearBeijingTimeHeatmap" class="clear-btn">清除过滤</button>
+            </div>
+            <div class="preset-buttons">
+              <button @click="setPresetBeijingTime('morning_rush')" class="preset-btn">早高峰(7-9点)</button>
+              <button @click="setPresetBeijingTime('noon')" class="preset-btn">中午(11-13点)</button>
+              <button @click="setPresetBeijingTime('evening_rush')" class="preset-btn">晚高峰(17-19点)</button>
+              <button @click="setPresetBeijingTime('night')" class="preset-btn">夜间(20-22点)</button>
+              <button @click="setPresetBeijingTime('all_day')" class="preset-btn">全天</button>
+            </div>
+          </div>
+          
           <!-- 时间统计面板 -->
-          <div class="sidebar-panel" v-if="utcTimeStats">
+          <div class="sidebar-panel" v-if="utcTimeStats || beijingTimeStats">
             <div class="panel-title">时间统计</div>
-            <div class="utc-stats">
+            <div class="utc-stats" v-if="utcTimeStats">
               <div class="stat-item">
-                <span>时间范围: {{ utcTimeStats.time_range }}</span>
+                <span>UTC时间范围: {{ utcTimeStats.time_range }}</span>
               </div>
               <div class="stat-item">
                 <span>总行程数: {{ utcTimeStats.total_trips }}</span>
@@ -119,6 +164,23 @@
                 <span>平均时长: {{ utcTimeStats.avg_duration }}分钟</span>
               </div>
             </div>
+            <div class="utc-stats" v-if="beijingTimeStats">
+              <div class="stat-item">
+                <span>北京时间范围: {{ beijingTimeStats.time_range }}</span>
+              </div>
+              <div class="stat-item">
+                <span>总行程数: {{ beijingTimeStats.total_trips }}</span>
+              </div>
+              <div class="stat-item">
+                <span>车辆数: {{ beijingTimeStats.unique_vehicles }}</span>
+              </div>
+              <div class="stat-item">
+                <span>平均距离: {{ beijingTimeStats.avg_distance }}km</span>
+              </div>
+              <div class="stat-item">
+                <span>平均时长: {{ beijingTimeStats.avg_duration }}分钟</span>
+              </div>
+            </div>
           </div>
           
           <!-- 数据状态面板 -->
@@ -128,7 +190,7 @@
               <span>状态：{{ dataStatus }}</span>
             </div>
             <div class="stat-item">
-              <span>当前显示：{{ utcTimeStats ? '时间过滤数据' : '默认热力图' }}</span>
+              <span>当前显示：{{ utcTimeStats ? 'UTC时间过滤数据' : (beijingTimeStats ? '北京时间过滤数据' : '默认热力图') }}</span>
             </div>
           </div>
         </div>
@@ -279,6 +341,19 @@ const startUtcTime = ref('');
 const endUtcTime = ref('');
 const utcTimeStats = ref(null);
 
+// 北京时间过滤参数
+const beijingTimeStart = ref('');
+const beijingTimeEnd = ref('');
+const isBeijingTimeLoading = ref(false);
+const beijingTimeHeatmapPoints = ref([]);
+const showBeijingTimeHeatmap = ref(false);
+const beijingTimeStats = ref(null);
+const beijingTimeHeatmapLayer = ref(null);
+
+// 密集上客区域参数
+const showPickupClusters = ref(false);
+const pickupClusterMarkers = ref([]);
+
 // 车辆轨迹查询参数
 const vehicleId = ref('');
 const trackStartTime = ref('');
@@ -317,6 +392,8 @@ const switchTab = (tabKey) => {
       if (!showHeatmap.value) {
         loadDefaultHeatmap();
       }
+      // 清除北京时间热力图
+      clearBeijingTimeHeatmap();
       break;
     case 'timerange':
       // 可以在这里初始化时间相关的数据
@@ -324,6 +401,15 @@ const switchTab = (tabKey) => {
     case 'trajectory':
       // 清除之前的轨迹显示
       clearVehicleTrack();
+      // 清除密集上客区域标记
+      clearPickupClusterMarkers();
+      // 清除北京时间热力图
+      clearBeijingTimeHeatmap();
+      // 隐藏热力图以提供更清晰的轨迹查看体验
+      if (showHeatmap.value && heatmapLayer && mapvglView) {
+        mapvglView.removeLayer(heatmapLayer);
+        showHeatmap.value = false;
+      }
       break;
     case 'statistics':
       // 可以在这里刷新统计数据
@@ -741,17 +827,20 @@ const fetchUtcTimeStats = async (startUtc, endUtc) => {
 // 查询车辆轨迹
 const queryVehicleTrack = async () => {
   if (!vehicleId.value || !trackStartTime.value || !trackEndTime.value) {
-    alert('请输入车牌号和时间范围');
+    alert('请填写完整的查询条件');
     return;
   }
   
+  isTrackLoading.value = true;
+  
   try {
-    isTrackLoading.value = true;
+    const startTime = trackStartTime.value.replace('T', ' ') + ':00';
+    const endTime = trackEndTime.value.replace('T', ' ') + ':00';
     
-    const startUtc = new Date(trackStartTime.value).toISOString().slice(0, 19).replace('T', ' ');
-    const endUtc = new Date(trackEndTime.value).toISOString().slice(0, 19).replace('T', ' ');
+    const encodedStartTime = encodeURIComponent(startTime);
+    const encodedEndTime = encodeURIComponent(endTime);
     
-    const response = await axios.get(`${API_BASE_URL}/taxi/vehicle-track?vehicle_id=${vehicleId.value}&start_utc=${startUtc}&end_utc=${endUtc}`);
+    const response = await axios.get(`${API_BASE_URL}/taxi/vehicle-track?vehicle_id=${vehicleId.value}&start_time=${encodedStartTime}&end_time=${encodedEndTime}`);
     const trackData = response.data;
     
     if (trackData.length === 0) {
@@ -762,32 +851,66 @@ const queryVehicleTrack = async () => {
     // 清除之前的轨迹
     clearVehicleTrack();
     
-    // 创建轨迹点和线
-    const points = [];
-    trackData.forEach((point, index) => {
-      const bPoint = new BMapGL.Point(point.lng, point.lat);
-      points.push(bPoint);
-      
-      // 添加标记点
-      const marker = new BMapGL.Marker(bPoint);
-      const label = new BMapGL.Label(`${index + 1}`, {
-        offset: new BMapGL.Size(10, -10)
-      });
-      marker.setLabel(label);
-      map.addOverlay(marker);
-      vehicleMarkers.push(marker);
-    });
+    // 按时间排序确保轨迹连续性
+    trackData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
-    // 创建轨迹线
+    // 创建轨迹点
+    const points = trackData.map(point => new BMapGL.Point(point.lng, point.lat));
+    
+    // 创建优化的轨迹线
     vehiclePolyline = new BMapGL.Polyline(points, {
-      strokeColor: 'red',
-      strokeWeight: 3,
-      strokeOpacity: 0.8
+      strokeColor: '#FF4444',
+      strokeWeight: 4,
+      strokeOpacity: 0.8,
+      strokeStyle: 'solid'
     });
     map.addOverlay(vehiclePolyline);
     
+    // 只添加起点和终点标记（使用简单图标）
+    if (points.length > 0) {
+      // 起点标记（绿色圆点）
+      const startMarker = new BMapGL.Marker(points[0]);
+      const startLabel = new BMapGL.Label('起点', {
+        offset: new BMapGL.Size(10, -10)
+      });
+      startLabel.setStyle({
+        color: 'white',
+        backgroundColor: '#00AA00',
+        border: '1px solid white',
+        borderRadius: '3px',
+        padding: '2px 5px',
+        fontSize: '12px',
+        fontWeight: 'bold'
+      });
+      startMarker.setLabel(startLabel);
+      map.addOverlay(startMarker);
+      vehicleMarkers.push(startMarker);
+      
+      // 终点标记（红色圆点）
+      if (points.length > 1) {
+        const endMarker = new BMapGL.Marker(points[points.length - 1]);
+        const endLabel = new BMapGL.Label('终点', {
+          offset: new BMapGL.Size(10, -10)
+        });
+        endLabel.setStyle({
+          color: 'white',
+          backgroundColor: '#FF0000',
+          border: '1px solid white',
+          borderRadius: '3px',
+          padding: '2px 5px',
+          fontSize: '12px',
+          fontWeight: 'bold'
+        });
+        endMarker.setLabel(endLabel);
+        map.addOverlay(endMarker);
+        vehicleMarkers.push(endMarker);
+      }
+    }
+    
     // 调整地图视野
-    map.setViewport(points);
+    if (points.length > 0) {
+      map.setViewport(points);
+    }
     
     // 计算轨迹统计
     let totalDistance = 0;
@@ -795,9 +918,10 @@ const queryVehicleTrack = async () => {
       totalDistance += map.getDistance(points[i-1], points[i]);
     }
     
-    const startTime = new Date(trackData[0].timestamp);
-    const endTime = new Date(trackData[trackData.length - 1].timestamp);
-    const totalDuration = (endTime - startTime) / (1000 * 60); // 分钟
+    // 计算轨迹统计时直接使用返回的时间戳
+    const startTimeCalc = new Date(trackData[0].timestamp);
+    const endTimeCalc = new Date(trackData[trackData.length - 1].timestamp);
+    const totalDuration = (endTimeCalc - startTimeCalc) / (1000 * 60); // 分钟
     
     trackStats.value = {
       point_count: trackData.length,
@@ -953,6 +1077,246 @@ onMounted(() => {
   }
 });
 
+// 获取密集上客区域数据
+const fetchPickupClusters = async () => {
+  try {
+    isLoading.value = true;
+    dataStatus.value = '正在加载密集上客区域数据...';
+    
+    const response = await axios.get(`${API_BASE_URL}/taxi/heatmap-data-cluster`, {
+      params: {
+        max_points: 50 // 限制只获取最密集的50个上客区域
+      }
+    });
+    
+    if (response.data && response.data.length > 0) {
+      // 清除之前的标记
+      clearPickupClusterMarkers();
+      
+      // 添加新的标记
+      response.data.forEach((point, index) => {
+        // 创建自定义图标
+        const size = Math.min(50, Math.max(20, Math.sqrt(point.count) * 0.8));
+        const label = new BMapGL.Label(`上客点 #${index+1}\n${point.count}次`, {
+          position: new BMapGL.Point(point.lng, point.lat),
+          offset: new BMapGL.Size(size/2 + 5, 0)
+        });
+        
+        label.setStyle({
+          color: '#fff',
+          backgroundColor: 'rgba(255, 0, 0, 0.8)',
+          border: '1px solid #fff',
+          padding: '2px 5px',
+          borderRadius: '3px',
+          fontSize: '12px',
+          fontWeight: 'bold',
+          zIndex: 3
+        });
+        
+        // 创建圆形标记
+        const circle = new BMapGL.Circle(
+          new BMapGL.Point(point.lng, point.lat),
+          size,
+          {
+            strokeColor: 'rgba(255, 0, 0, 0.8)',
+            strokeWeight: 2,
+            strokeOpacity: 0.8,
+            fillColor: 'rgba(255, 0, 0, 0.5)',
+            fillOpacity: 0.6
+          }
+        );
+        
+        map.addOverlay(circle);
+        map.addOverlay(label);
+        
+        pickupClusterMarkers.value.push(circle);
+        pickupClusterMarkers.value.push(label);
+      });
+      
+      // 调整地图视野以包含所有标记
+      const points = response.data.map(point => new BMapGL.Point(point.lng, point.lat));
+      map.setViewport(points);
+      
+      showPickupClusters.value = true;
+      dataStatus.value = `密集上客区域加载完成 (${response.data.length}个点)`;
+    } else {
+      dataStatus.value = '无可用的密集上客区域数据';
+    }
+  } catch (error) {
+    console.error('获取密集上客区域数据失败:', error);
+    dataStatus.value = `密集上客区域数据加载失败: ${error.message}`;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 清除密集上客区域标记
+const clearPickupClusterMarkers = () => {
+  pickupClusterMarkers.value.forEach(marker => {
+    map.removeOverlay(marker);
+  });
+  pickupClusterMarkers.value = [];
+  showPickupClusters.value = false;
+};
+
+// 按北京时间筛选热力图数据
+const fetchBeijingTimeHeatmap = async () => {
+  if (!beijingTimeStart.value || !beijingTimeEnd.value) {
+    alert('请选择起始和结束时间');
+    return;
+  }
+  
+  try {
+    isBeijingTimeLoading.value = true;
+    dataStatus.value = '正在加载北京时间热力图数据...';
+    
+    // 清除之前的热力图
+    clearBeijingTimeHeatmap();
+    
+    // 将北京时间转换为UTC时间（减8小时）
+    const startBJ = new Date(beijingTimeStart.value);
+    const endBJ = new Date(beijingTimeEnd.value);
+    const startUTC = new Date(startBJ.getTime() - 8 * 60 * 60 * 1000);
+    const endUTC = new Date(endBJ.getTime() - 8 * 60 * 60 * 1000);
+    
+    const startUtcStr = startUTC.toISOString().slice(0, 19).replace('T', ' ');
+    const endUtcStr = endUTC.toISOString().slice(0, 19).replace('T', ' ');
+    
+    // 获取热力图数据
+    const response = await axios.get(`${API_BASE_URL}/taxi/heatmap-data-utc`, {
+      params: {
+        start_utc: startUtcStr,
+        end_utc: endUtcStr,
+        max_points: 15000,
+        grid_size: 0.005
+      }
+    });
+    
+    if (response.data && response.data.length > 0) {
+      beijingTimeHeatmapPoints.value = processHeatmapData(response.data);
+      
+      // 创建新的热力图图层
+      createBeijingTimeHeatmap();
+      
+      // 获取统计信息
+      await fetchBeijingTimeStats(startUtcStr, endUtcStr);
+      
+      dataStatus.value = `北京时间热力图加载完成 (${response.data.length}个点)`;
+    } else {
+      dataStatus.value = '无可用的北京时间热力图数据';
+    }
+  } catch (error) {
+    console.error('获取北京时间热力图数据失败:', error);
+    dataStatus.value = `北京时间热力图数据加载失败: ${error.message}`;
+  } finally {
+    isBeijingTimeLoading.value = false;
+  }
+};
+
+// 创建北京时间热力图图层
+const createBeijingTimeHeatmap = () => {
+  if (!mapvglView || beijingTimeHeatmapPoints.value.length === 0) return;
+  
+  // 计算实际数据的最大count值
+  const maxCount = Math.max(...beijingTimeHeatmapPoints.value.map(point => point.count));
+  const dynamicMax = Math.max(maxCount * 1.2, 10); // 设置为最大值的1.2倍，最小为10
+  
+  // 创建热力图数据
+  const data = beijingTimeHeatmapPoints.value.map(point => ({
+    geometry: {
+      type: 'Point',
+      coordinates: [point.lng, point.lat]
+    },
+    properties: {
+      count: point.count
+    }
+  }));
+  
+  // 创建热力图图层
+  beijingTimeHeatmapLayer.value = new mapvgl.HeatmapLayer({
+    size: heatmapRadius.value * 80,
+    max: dynamicMax,
+    unit: 'm',
+    gradient: {
+      0.0: 'rgba(50, 50, 255, 0.0)',
+      0.1: 'rgba(50, 50, 255, 0.5)',
+      0.2: 'rgba(0, 100, 255, 0.6)',
+      0.3: 'rgba(0, 150, 255, 0.7)',
+      0.4: 'rgba(0, 200, 255, 0.8)',
+      0.5: 'rgba(0, 255, 255, 0.9)',
+      0.6: 'rgba(0, 255, 200, 0.9)',
+      0.7: 'rgba(0, 255, 100, 0.9)',
+      0.8: 'rgba(0, 255, 0, 0.9)',
+      0.9: 'rgba(255, 255, 0, 0.9)',
+      1.0: 'rgba(255, 0, 0, 1.0)'
+    },
+    opacity: heatmapIntensity.value / 100
+  });
+  
+  beijingTimeHeatmapLayer.value.setData(data);
+  mapvglView.addLayer(beijingTimeHeatmapLayer.value);
+  showBeijingTimeHeatmap.value = true;
+};
+
+// 清除北京时间热力图
+const clearBeijingTimeHeatmap = () => {
+  if (beijingTimeHeatmapLayer.value && mapvglView) {
+    mapvglView.removeLayer(beijingTimeHeatmapLayer.value);
+    beijingTimeHeatmapLayer.value = null;
+  }
+  beijingTimeHeatmapPoints.value = [];
+  beijingTimeStats.value = null;
+  showBeijingTimeHeatmap.value = false;
+};
+
+// 获取北京时间统计信息
+const fetchBeijingTimeStats = async (startUtc, endUtc) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/taxi/utc-time-stats`, {
+      params: {
+        start_utc: startUtc,
+        end_utc: endUtc
+      }
+    });
+    beijingTimeStats.value = response.data;
+  } catch (error) {
+    console.error('获取北京时间统计信息失败:', error);
+    beijingTimeStats.value = null;
+  }
+};
+
+// 设置预设北京时间
+const setPresetBeijingTime = (preset) => {
+  // 数据集日期：2013年9月12日
+  switch (preset) {
+    case 'morning_rush':
+      // 早高峰 (7:00-9:00)
+      beijingTimeStart.value = '2013-09-12T07:00';
+      beijingTimeEnd.value = '2013-09-12T09:00';
+      break;
+    case 'noon':
+      // 中午 (11:00-13:00)
+      beijingTimeStart.value = '2013-09-12T11:00';
+      beijingTimeEnd.value = '2013-09-12T13:00';
+      break;
+    case 'evening_rush':
+      // 晚高峰 (17:00-19:00)
+      beijingTimeStart.value = '2013-09-12T17:00';
+      beijingTimeEnd.value = '2013-09-12T19:00';
+      break;
+    case 'night':
+      // 夜间 (20:00-22:00)
+      beijingTimeStart.value = '2013-09-12T20:00';
+      beijingTimeEnd.value = '2013-09-12T22:00';
+      break;
+    case 'all_day':
+      // 全天 (00:00-23:59)
+      beijingTimeStart.value = '2013-09-12T00:00';
+      beijingTimeEnd.value = '2013-09-12T23:59';
+      break;
+  }
+};
+
 // 组件卸载
 onUnmounted(() => {
   // 清理MapVGL资源
@@ -977,6 +1341,8 @@ onUnmounted(() => {
   
   // 重置变量
   heatmapLayer = null;
+  clearPickupClusterMarkers();
+  clearBeijingTimeHeatmap();
 });
 </script>
 

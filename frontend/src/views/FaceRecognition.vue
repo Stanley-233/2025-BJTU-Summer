@@ -32,18 +32,21 @@ const { videoRef, hasPermission, recording, startCapture, countdown, isLoading }
 
 <style scoped>
 .console-layout {
+  background: rgba(255, 255, 255, 0);
   display: flex;
   height: calc(100vh - 92px);
 }
 .console-main {
   flex: 1;
   padding: 40px 56px;
-  background: #f8f9fa;
+  background: rgba(248, 249, 250, 0.5);
+  border-radius: 10px;
   box-shadow: 0 4px 24px rgba(79,55,138,0.10), 0 1.5px 6px rgba(0,0,0,0.08);
 }
 .face-recognition-main {
   display: flex;
   flex-direction: column;
+  background: rgba(255, 255, 255, 0.7);
 }
 .permission-tip {
   font-size: 18px;
