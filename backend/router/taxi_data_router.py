@@ -29,8 +29,7 @@ taxi_data_router = APIRouter()
 import os
 from pathlib import Path
 
-# 获取项目根目录
-DATA_DIR = "D:\\GitHub\\2025-BJTU-Summer\\backend\\cleaned_jn0912"
+
 
 class HeatmapPoint(BaseModel):
     lng: float
@@ -56,51 +55,50 @@ async def get_heatmap_data_utc(
     start_utc: Optional[str] = Query(None, description="起始UTC时间 (格式: YYYY-MM-DD HH:MM:SS)"),
     end_utc: Optional[str] = Query(None, description="结束UTC时间 (格式: YYYY-MM-DD HH:MM:SS)"),
     max_points: Optional[int] = Query(8000, description="最大返回点数"),  # 从10000改为8000
-    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)")  # 从0.001改为0.005
+    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)"),  # 从0.001改为0.005
+    db: Session = Depends(get_db)
 ):
     """获取热力图数据 - 基于UTC时间范围过滤，性能优化版本"""
     try:
-        trajectory_file = os.path.join(DATA_DIR, 'cleaned_taxi_trajectory.csv')
-        # 使用更小的分块大小和智能采样
-        chunk_size = 20000
-        sample_rate = 0.1  # 默认采样10%的数据
-        grid_dict = {}  # 网格聚合
+        # 构建SQL查询
+        query = """
+        SELECT latitude_bd09, longitude_bd09
+        FROM cleaned_taxi_trajectory
+        WHERE 1=1
+        """
         
-        processed_count = 0
-        max_process = 500000  # 最大处理数据量
+        params = {}
         
-        for chunk in pd.read_csv(trajectory_file, chunksize=chunk_size):
-            # 早期退出机制
-            if processed_count >= max_process:
-                break
-                
-            # 智能采样
-            if len(chunk) > chunk_size * 0.5:
-                chunk = chunk.sample(frac=sample_rate, random_state=42)
+        # 如果指定了时间范围，进行过滤
+        if start_utc and end_utc:
+            # 将UTC时间转换为本地时间（数据库中存储的是本地时间）
+            start_time = pd.to_datetime(start_utc) + pd.Timedelta(hours=8)
+            end_time = pd.to_datetime(end_utc) + pd.Timedelta(hours=8)
             
-            # 转换时间戳为UTC时间
-            chunk['timestamp'] = pd.to_datetime(chunk['timestamp'], format='%Y/%m/%d %H:%M:%S')
-            chunk['utc_time'] = chunk['timestamp'] - pd.Timedelta(hours=8)
+            query += " AND timestamp >= :start_time AND timestamp <= :end_time"
+            params['start_time'] = start_time.strftime('%Y/%m/%d %H:%M:%S')
+            params['end_time'] = end_time.strftime('%Y/%m/%d %H:%M:%S')
+        
+        # 限制查询数量并添加随机采样
+        query += " AND random() < 0.1 LIMIT 500000"
+        
+        # 执行查询
+        result = db.execute(text(query), params)
+        rows = result.fetchall()
+        
+        # 网格聚合处理
+        grid_dict = {}
+        for row in rows:
+            # 计算网格坐标
+            lat, lng = row[0], row[1]
+            grid_lat = round(lat / grid_size) * grid_size
+            grid_lng = round(lng / grid_size) * grid_size
+            grid_key = (grid_lat, grid_lng)
             
-            # 如果指定了时间范围，进行过滤
-            if start_utc and end_utc:
-                start_time = pd.to_datetime(start_utc)
-                end_time = pd.to_datetime(end_utc)
-                chunk = chunk[(chunk['utc_time'] >= start_time) & (chunk['utc_time'] <= end_time)]
-            
-            # 网格聚合处理
-            for _, row in chunk.iterrows():
-                # 计算网格坐标
-                grid_lat = round(row['latitude_bd09'] / grid_size) * grid_size
-                grid_lng = round(row['longitude_bd09'] / grid_size) * grid_size
-                grid_key = (grid_lat, grid_lng)
-                
-                if grid_key in grid_dict:
-                    grid_dict[grid_key] += 1
-                else:
-                    grid_dict[grid_key] = 1
-            
-            processed_count += len(chunk)
+            if grid_key in grid_dict:
+                grid_dict[grid_key] += 1
+            else:
+                grid_dict[grid_key] = 1
         
         # 转换为热力图点并限制数量
         heatmap_points = []
@@ -880,28 +878,41 @@ async def get_data_distribution(db: Session = Depends(get_db)):
 
 @taxi_data_router.get("/taxi/heatmap-data-fast", response_model=List[HeatmapPoint])
 async def get_heatmap_data_fast(
-    max_points: Optional[int] = Query(5000, description="最大返回点数")
+    max_points: Optional[int] = Query(5000, description="最大返回点数"),
+    db: Session = Depends(get_db)
 ):
-    """快速热力图数据 - 使用预处理的聚类数据"""
+    """快速热力图数据 - 使用聚类分析"""
     try:
-        cluster_file = os.path.join(DATA_DIR, 'cluster_analysis.json')
+        # 从数据库获取聚类数据
+        query = """
+        SELECT 
+            pick_up_cluster as cluster_id,
+            AVG(pick_up_latitude) as center_latitude,
+            AVG(pick_up_longitude) as center_longitude,
+            COUNT(*) as count
+        FROM taxi_od_clusters
+        WHERE pick_up_cluster IS NOT NULL
+        AND pick_up_cluster != '-1'
+        GROUP BY pick_up_cluster
+        ORDER BY count DESC
+        LIMIT :max_points
+        """
         
-        with open(cluster_file, 'r', encoding='utf-8') as f:
-            clusters = json.load(f)
+        result = db.execute(text(query), {"max_points": max_points})
+        rows = result.fetchall()
         
         heatmap_points = []
-        for cluster_id, cluster_info in clusters.items():
+        for row in rows:
+            cluster_id, center_latitude, center_longitude, count = row
             if cluster_id != "-1":  # 排除噪声点
                 point = HeatmapPoint(
-                    lng=cluster_info['center_longitude'],
-                    lat=cluster_info['center_latitude'],
-                    count=cluster_info['count']
+                    lng=float(center_longitude),
+                    lat=float(center_latitude),
+                    count=count
                 )
                 heatmap_points.append(point)
         
-        # 按权重排序并限制数量
-        heatmap_points.sort(key=lambda x: x.count, reverse=True)
-        return heatmap_points[:max_points]
+        return heatmap_points
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"读取快速热力图数据失败: {str(e)}")
@@ -915,8 +926,6 @@ async def get_trajectory_heatmap_data(
 ):
     """获取基于原始轨迹数据的热力图数据 - 性能优化版本"""
     try:
-        trajectory_file = os.path.join(DATA_DIR, 'cleaned_taxi_trajectory.csv')
-        
         # 使用随机采样来减少数据量
         query = """
         SELECT latitude_bd09, longitude_bd09
@@ -957,7 +966,7 @@ async def get_trajectory_heatmap_data(
         return heatmap_points[:max_points]
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"处理轨迹热力图数据失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取轨迹热力图数据失败: {str(e)}")
 
 @taxi_data_router.get("/taxi/trajectory-heatmap-data", response_model=List[HeatmapPoint])
 async def get_trajectory_heatmap_data(
@@ -1164,47 +1173,42 @@ async def get_heatmap_data_adaptive(
 @taxi_data_router.get("/taxi/heatmap-data-full-trajectory", response_model=List[HeatmapPoint])
 async def get_heatmap_data_full_trajectory(
     max_points: Optional[int] = Query(15000, description="最大返回点数"),
-    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)"),  # 从0.001改为0.005
-    sample_rate: Optional[float] = Query(0.15, description="数据采样率")  # 从0.2改为0.15
+    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)"),
+    sample_rate: Optional[float] = Query(0.15, description="数据采样率"),
+    db: Session = Depends(get_db)
 ):
-    """基于完整轨迹数据生成热力图 - 直接读取cleaned_taxi_trajectory.csv"""
+    """基于完整轨迹数据生成热力图"""
     try:
-        import numpy as np
-        trajectory_file = os.path.join(DATA_DIR, 'cleaned_taxi_trajectory.csv')
+        # 从数据库获取轨迹数据
+        query = """
+        SELECT latitude_bd09, longitude_bd09
+        FROM cleaned_taxi_trajectory
+        WHERE latitude_bd09 IS NOT NULL AND longitude_bd09 IS NOT NULL
+        AND random() < :sample_rate
+        LIMIT 1000000
+        """
+        
+        result = db.execute(text(query), {"sample_rate": sample_rate})
         
         # 网格聚合字典
         grid_dict = {}
-        chunk_size = 50000
-        processed_count = 0
-        max_process = 1000000  # 最大处理100万条数据
         
-        # 分块读取轨迹数据
-        for chunk in pd.read_csv(trajectory_file, chunksize=chunk_size):
-            if processed_count >= max_process:
-                break
+        # 处理查询结果
+        for row in result:
+            try:
+                lat = float(row[0])
+                lng = float(row[1])
                 
-            # 采样处理以提高性能
-            if len(chunk) > chunk_size * 0.3:
-                chunk = chunk.sample(frac=sample_rate, random_state=42)
-            
-            # 处理每个轨迹点
-            for _, row in chunk.iterrows():
-                try:
-                    lat = float(row['latitude_bd09'])
-                    lng = float(row['longitude_bd09'])
-                    
-                    # 网格聚合
-                    grid_lat = round(lat / grid_size) * grid_size
-                    grid_lng = round(lng / grid_size) * grid_size
-                    grid_key = (grid_lat, grid_lng)
-                    
-                    grid_dict[grid_key] = grid_dict.get(grid_key, 0) + 1
-                    
-                except (ValueError, KeyError) as e:
-                    # 跳过无效数据
-                    continue
-            
-            processed_count += len(chunk)
+                # 网格聚合
+                grid_lat = round(lat / grid_size) * grid_size
+                grid_lng = round(lng / grid_size) * grid_size
+                grid_key = (grid_lat, grid_lng)
+                
+                grid_dict[grid_key] = grid_dict.get(grid_key, 0) + 1
+                
+            except (ValueError, KeyError) as e:
+                # 跳过无效数据
+                continue
         
         # 转换为热力图点
         heatmap_points = []
@@ -1231,58 +1235,45 @@ async def get_heatmap_data_full_trajectory(
 async def get_heatmap_data_od(
     max_points: Optional[int] = Query(2000, description="最大返回点数"),
     use_pickup: Optional[bool] = Query(True, description="是否使用上车点（否则使用下车点）"),
-    grid_size: Optional[float] = Query(0.01, description="网格聚合大小(度)")
+    grid_size: Optional[float] = Query(0.01, description="网格聚合大小(度)"),
+    db: Session = Depends(get_db)
 ):
-    """基于OD数据生成热力图 - 使用cleaned_taxi_od.csv"""
+    """基于OD数据生成热力图"""
     try:
-        od_file = os.path.join(DATA_DIR, 'cleaned_taxi_od.csv')
+        # 选择使用上车点还是下车点
+        if use_pickup:
+            lat_col = "pick_up_latitude"
+            lng_col = "pick_up_longitude"
+        else:
+            lat_col = "drop_off_latitude"
+            lng_col = "drop_off_longitude"
         
-        # 分块读取OD数据
+        # 从数据库获取OD数据
+        query = f"""
+        SELECT {lat_col}, {lng_col}
+        FROM taxi_od_clusters
+        WHERE {lat_col} IS NOT NULL AND {lng_col} IS NOT NULL
+        LIMIT 200000
+        """
+        
+        result = db.execute(text(query))
+        
+        # 网格聚合处理
         grid_dict = {}
-        chunk_size = 10000
-        processed_count = 0
-        max_process = 200000  # 限制处理数据量
-        
-        for chunk in pd.read_csv(od_file, chunksize=chunk_size):
-            if processed_count >= max_process:
-                break
+        for row in result:
+            try:
+                lat = float(row[0])
+                lng = float(row[1])
                 
-            # 选择使用上车点还是下车点
-            if use_pickup:
-                lat_col = 'pick_up_latitude_bd09'
-                lng_col = 'pick_up_longitude_bd09'
-            else:
-                lat_col = 'drop_off_latitude_bd09'
-                lng_col = 'drop_off_longitude_bd09'
-            
-            # 检查列是否存在
-            if lat_col not in chunk.columns or lng_col not in chunk.columns:
-                # 尝试其他可能的列名
-                lat_cols = [col for col in chunk.columns if 'lat' in col.lower()]
-                lng_cols = [col for col in chunk.columns if 'lng' in col.lower() or 'lon' in col.lower()]
-                if lat_cols and lng_cols:
-                    lat_col = lat_cols[0 if use_pickup else -1]
-                    lng_col = lng_cols[0 if use_pickup else -1]
-                else:
-                    continue
-            
-            # 网格聚合处理
-            for _, row in chunk.iterrows():
-                try:
-                    lat = float(row[lat_col])
-                    lng = float(row[lng_col])
-                    
-                    # 网格聚合
-                    grid_lat = round(lat / grid_size) * grid_size
-                    grid_lng = round(lng / grid_size) * grid_size
-                    grid_key = (grid_lat, grid_lng)
-                    
-                    grid_dict[grid_key] = grid_dict.get(grid_key, 0) + 1
-                    
-                except (ValueError, KeyError) as e:
-                    continue
-            
-            processed_count += len(chunk)
+                # 网格聚合
+                grid_lat = round(lat / grid_size) * grid_size
+                grid_lng = round(lng / grid_size) * grid_size
+                grid_key = (grid_lat, grid_lng)
+                
+                grid_dict[grid_key] = grid_dict.get(grid_key, 0) + 1
+                
+            except (ValueError, KeyError) as e:
+                continue
         
         # 转换为热力图点
         heatmap_points = []
@@ -1305,44 +1296,38 @@ async def get_heatmap_data_od(
 @taxi_data_router.get("/taxi/heatmap-data-clusters", response_model=List[HeatmapPoint])
 async def get_heatmap_data_clusters(
     max_points: Optional[int] = Query(1000, description="最大返回点数"),
-    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)")
+    grid_size: Optional[float] = Query(0.005, description="网格聚合大小(度)"),
+    db: Session = Depends(get_db)
 ):
-    """基于聚类数据生成热力图 - 使用taxi_od_clusters.csv的上客点数据"""
+    """基于聚类数据生成热力图 - 使用上客点数据"""
     try:
-        cluster_file = os.path.join(DATA_DIR, 'taxi_od_clusters.csv')
+        # 从数据库获取聚类数据
+        query = """
+        SELECT pick_up_latitude, pick_up_longitude
+        FROM taxi_od_clusters
+        WHERE pick_up_latitude IS NOT NULL AND pick_up_longitude IS NOT NULL
+        LIMIT 200000
+        """
         
-        # 分块读取聚类数据以处理大文件
+        result = db.execute(text(query))
+        
+        # 网格聚合处理
         grid_dict = {}
-        chunk_size = 10000
-        processed_count = 0
-        max_process = 200000  # 限制处理数据量
-        
-        for chunk in pd.read_csv(cluster_file, chunksize=chunk_size):
-            if processed_count >= max_process:
-                break
+        for row in result:
+            try:
+                lat = float(row[0])
+                lng = float(row[1])
                 
-            # 检查必要的列是否存在
-            if 'pick_up_latitude' not in chunk.columns or 'pick_up_longitude' not in chunk.columns:
-                raise HTTPException(status_code=500, detail="数据文件中缺少pick_up_latitude或pick_up_longitude列")
-            
-            # 处理每个上客点
-            for _, row in chunk.iterrows():
-                try:
-                    lat = float(row['pick_up_latitude'])
-                    lng = float(row['pick_up_longitude'])
-                    
-                    # 网格聚合
-                    grid_lat = round(lat / grid_size) * grid_size
-                    grid_lng = round(lng / grid_size) * grid_size
-                    grid_key = (grid_lat, grid_lng)
-                    
-                    grid_dict[grid_key] = grid_dict.get(grid_key, 0) + 1
-                    
-                except (ValueError, KeyError) as e:
-                    # 跳过无效数据
-                    continue
-            
-            processed_count += len(chunk)
+                # 网格聚合
+                grid_lat = round(lat / grid_size) * grid_size
+                grid_lng = round(lng / grid_size) * grid_size
+                grid_key = (grid_lat, grid_lng)
+                
+                grid_dict[grid_key] = grid_dict.get(grid_key, 0) + 1
+                
+            except (ValueError, KeyError) as e:
+                # 跳过无效数据
+                continue
         
         # 转换为热力图点
         heatmap_points = []
