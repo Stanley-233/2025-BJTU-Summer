@@ -14,7 +14,7 @@
       <label>数据类型: </label>
       <select v-model="selectedDataType" @change="fetchData">
         <option value="speed">速度分析</option>
-        <option value="od">载客出租车数量分析</option>
+        <option value="taxi-weather">出租车与天气数据关系分析</option>
       </select>
     </div>
 
@@ -46,7 +46,6 @@ const startDate = ref('2013-09-12');
 const endDate = ref('2013-09-18');
 const loading = ref(true);
 const errorMessage = ref('');
-const prevODCount = ref(0); // 上一次的载客出租车数量
 
 // 返回上一页
 const back = () => {
@@ -58,9 +57,22 @@ const fetchData = async () => {
   loading.value = true;
   errorMessage.value = '';
 
+  // 清除之前的图表
+  const mainChartDom = document.getElementById('main-chart');
+  const mainChart = echarts.getInstanceByDom(mainChartDom);
+  if (mainChart) {
+    mainChart.clear();
+  }
+
+  const secondaryChartDom = document.getElementById('secondary-chart');
+  const secondaryChart = echarts.getInstanceByDom(secondaryChartDom);
+  if (secondaryChart) {
+    secondaryChart.clear();
+  }
+
   try {
     // 根据选择的数据类型调用不同的API
-    let url = `http://localhost:8000/${selectedDataType.value}-data`;
+    let url = `http://127.0.0.1:8000/${selectedDataType.value}-data`;
     if (startDate.value && endDate.value) {
       url += `?start_date=${startDate.value}&end_date=${endDate.value}`;
     }
@@ -78,16 +90,7 @@ const fetchData = async () => {
     }
 
     data.value = result;
-    if (selectedDataType.value === 'od' && data.value.length > 0) {
-      const currentODCount = data.value[data.value.length - 1].active_vehicles;
-      if (prevODCount.value > 0) {
-        const diffPercent = ((currentODCount - prevODCount.value) / prevODCount.value) * 100;
-        renderODDashboard(currentODCount, diffPercent);
-      } else {
-        renderODDashboard(currentODCount, 0);
-      }
-      prevODCount.value = currentODCount;
-    }
+    
     renderCharts();
   } catch (error) {
     errorMessage.value = `数据加载失败: ${error.message}`;
@@ -106,8 +109,8 @@ const renderCharts = () => {
   // 根据数据类型渲染不同的图表
   if (selectedDataType.value === 'speed') {
     renderSpeedCharts();
-  } else if (selectedDataType.value === 'od') {
-    renderODCharts();
+  } else if (selectedDataType.value === 'taxi-weather') {
+    renderTaxiWeatherCharts();
   }
 };
 
@@ -215,32 +218,85 @@ const renderSpeedCharts = () => {
   secondaryChart.setOption(secondaryOption);
 };
 
-// 渲染载客出租车数量图表
-const renderODCharts = () => {
-  // 主图表：载客出租车数量折线图
+// 渲染出租车与天气数据关系图表
+const renderTaxiWeatherCharts = () => {
   const mainChartDom = document.getElementById('main-chart');
   const mainChart = echarts.init(mainChartDom);
   const mainOption = {
     title: {
-      text: '载客出租车数量趋势'
+      text: '出租车与天气数据关系'
     },
     tooltip: {
-      trigger: 'axis'
+      trigger: 'axis',
+      formatter: function(params) {
+        let result = params[0].name + '<br/>';
+        params.forEach(item => {
+          result += `<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${item.color}"></span>`;
+          result += `${item.seriesName}: ${item.value}${item.seriesName === '温度' ? '°C' : item.seriesName === '湿度' ? '%' : item.seriesName === '风速' ? ' m/s' : ' 辆'}<br/>`;
+        });
+        return result;
+      }
     },
     xAxis: {
       type: 'category',
-      data: data.value.map(item => item.timestamp)
+      data: data.value.map(item => item.hour)
     },
-    yAxis: {
-      type: 'value',
-      name: '载客出租车数量'
-    },
-    series: [{
-      name: '载客出租车数量',
-      data: data.value.map(item => item.active_vehicles),
-      type: 'line',
-      smooth: true
-    }],
+    yAxis: [
+      {
+        type: 'value',
+        name: '载客出租车数量',
+        min: 0
+      },
+      {
+        type: 'value',
+        name: '天气数据',
+        splitLine: {
+          show: false
+        }
+      }
+    ],
+    series: [
+      {
+        name: '载客出租车数量',
+        data: data.value.map(item => item.active_taxis),
+        type: 'line',
+        smooth: true,
+        yAxisIndex: 0,
+        emphasis: {
+          focus: 'series'
+        }
+      },
+      {
+        name: '温度',
+        data: data.value.map(item => item.temperature),
+        type: 'line',
+        smooth: true,
+        yAxisIndex: 1,
+        emphasis: {
+          focus: 'series'
+        }
+      },
+      {
+        name: '湿度',
+        data: data.value.map(item => item.humidity),
+        type: 'line',
+        smooth: true,
+        yAxisIndex: 1,
+        emphasis: {
+          focus: 'series'
+        }
+      },
+      {
+        name: '风速',
+        data: data.value.map(item => item.wind_speed),
+        type: 'line',
+        smooth: true,
+        yAxisIndex: 1,
+        emphasis: {
+          focus: 'series'
+        }
+      }
+    ],
     dataZoom: [
       {
         type: 'slider',
@@ -251,38 +307,6 @@ const renderODCharts = () => {
     ]
   };
   mainChart.setOption(mainOption);
-};
-
-// 渲染载客出租车数量仪表盘
-const renderODDashboard = (currentODCount, diffPercent) => {
-  const dashboardChartDom = document.getElementById('secondary-chart');
-  const dashboardChart = echarts.init(dashboardChartDom);
-  const dashboardOption = {
-    title: {
-      text: '载客出租车数量实时情况',
-      left: 'center'
-    },
-    tooltip: {
-      formatter: '{a} <br/>{b} : {c} 辆<br/> 变化: {d}%'
-    },
-    series: [
-      {
-        name: '载客出租车数量',
-        type: 'gauge',
-        detail: {
-          formatter: '{value}'
-        },
-        data: [
-          {
-            value: currentODCount,
-            name: '当前数量',
-            d: diffPercent.toFixed(2)
-          }
-        ]
-      }
-    ]
-  };
-  dashboardChart.setOption(dashboardOption);
 };
 
 // 组件挂载时自动获取数据并渲染图表

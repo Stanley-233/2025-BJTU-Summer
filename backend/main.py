@@ -54,6 +54,12 @@ async def get_od_data(start_date: str = None, end_date: str = None):
     data = db.get_od_data(start_date, end_date)
     return data
 
+@app.get("/taxi-weather-data")
+async def get_taxi_weather_data(start_date: str = None, end_date: str = None):
+    db = DatabaseConnection()
+    data = db.get_taxi_weather_data(start_date, end_date)
+    return data
+
 
 if __name__ == "__main__":
     init_db()
