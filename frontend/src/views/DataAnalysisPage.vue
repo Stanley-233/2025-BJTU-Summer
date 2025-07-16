@@ -324,6 +324,11 @@ const switchTab = (tabKey) => {
     case 'trajectory':
       // 清除之前的轨迹显示
       clearVehicleTrack();
+      // 隐藏热力图以提供更清晰的轨迹查看体验
+      if (showHeatmap.value && heatmapLayer && mapvglView) {
+        mapvglView.removeLayer(heatmapLayer);
+        showHeatmap.value = false;
+      }
       break;
     case 'statistics':
       // 可以在这里刷新统计数据
@@ -741,17 +746,20 @@ const fetchUtcTimeStats = async (startUtc, endUtc) => {
 // 查询车辆轨迹
 const queryVehicleTrack = async () => {
   if (!vehicleId.value || !trackStartTime.value || !trackEndTime.value) {
-    alert('请输入车牌号和时间范围');
+    alert('请填写完整的查询条件');
     return;
   }
   
+  isTrackLoading.value = true;
+  
   try {
-    isTrackLoading.value = true;
+    const startTime = trackStartTime.value.replace('T', ' ') + ':00';
+    const endTime = trackEndTime.value.replace('T', ' ') + ':00';
     
-    const startUtc = new Date(trackStartTime.value).toISOString().slice(0, 19).replace('T', ' ');
-    const endUtc = new Date(trackEndTime.value).toISOString().slice(0, 19).replace('T', ' ');
+    const encodedStartTime = encodeURIComponent(startTime);
+    const encodedEndTime = encodeURIComponent(endTime);
     
-    const response = await axios.get(`${API_BASE_URL}/taxi/vehicle-track?vehicle_id=${vehicleId.value}&start_utc=${startUtc}&end_utc=${endUtc}`);
+    const response = await axios.get(`${API_BASE_URL}/taxi/vehicle-track?vehicle_id=${vehicleId.value}&start_time=${encodedStartTime}&end_time=${encodedEndTime}`);
     const trackData = response.data;
     
     if (trackData.length === 0) {
@@ -762,32 +770,66 @@ const queryVehicleTrack = async () => {
     // 清除之前的轨迹
     clearVehicleTrack();
     
-    // 创建轨迹点和线
-    const points = [];
-    trackData.forEach((point, index) => {
-      const bPoint = new BMapGL.Point(point.lng, point.lat);
-      points.push(bPoint);
-      
-      // 添加标记点
-      const marker = new BMapGL.Marker(bPoint);
-      const label = new BMapGL.Label(`${index + 1}`, {
-        offset: new BMapGL.Size(10, -10)
-      });
-      marker.setLabel(label);
-      map.addOverlay(marker);
-      vehicleMarkers.push(marker);
-    });
+    // 按时间排序确保轨迹连续性
+    trackData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
-    // 创建轨迹线
+    // 创建轨迹点
+    const points = trackData.map(point => new BMapGL.Point(point.lng, point.lat));
+    
+    // 创建优化的轨迹线
     vehiclePolyline = new BMapGL.Polyline(points, {
-      strokeColor: 'red',
-      strokeWeight: 3,
-      strokeOpacity: 0.8
+      strokeColor: '#FF4444',
+      strokeWeight: 4,
+      strokeOpacity: 0.8,
+      strokeStyle: 'solid'
     });
     map.addOverlay(vehiclePolyline);
     
+    // 只添加起点和终点标记（使用简单图标）
+    if (points.length > 0) {
+      // 起点标记（绿色圆点）
+      const startMarker = new BMapGL.Marker(points[0]);
+      const startLabel = new BMapGL.Label('起点', {
+        offset: new BMapGL.Size(10, -10)
+      });
+      startLabel.setStyle({
+        color: 'white',
+        backgroundColor: '#00AA00',
+        border: '1px solid white',
+        borderRadius: '3px',
+        padding: '2px 5px',
+        fontSize: '12px',
+        fontWeight: 'bold'
+      });
+      startMarker.setLabel(startLabel);
+      map.addOverlay(startMarker);
+      vehicleMarkers.push(startMarker);
+      
+      // 终点标记（红色圆点）
+      if (points.length > 1) {
+        const endMarker = new BMapGL.Marker(points[points.length - 1]);
+        const endLabel = new BMapGL.Label('终点', {
+          offset: new BMapGL.Size(10, -10)
+        });
+        endLabel.setStyle({
+          color: 'white',
+          backgroundColor: '#FF0000',
+          border: '1px solid white',
+          borderRadius: '3px',
+          padding: '2px 5px',
+          fontSize: '12px',
+          fontWeight: 'bold'
+        });
+        endMarker.setLabel(endLabel);
+        map.addOverlay(endMarker);
+        vehicleMarkers.push(endMarker);
+      }
+    }
+    
     // 调整地图视野
-    map.setViewport(points);
+    if (points.length > 0) {
+      map.setViewport(points);
+    }
     
     // 计算轨迹统计
     let totalDistance = 0;
@@ -795,9 +837,10 @@ const queryVehicleTrack = async () => {
       totalDistance += map.getDistance(points[i-1], points[i]);
     }
     
-    const startTime = new Date(trackData[0].timestamp);
-    const endTime = new Date(trackData[trackData.length - 1].timestamp);
-    const totalDuration = (endTime - startTime) / (1000 * 60); // 分钟
+    // 计算轨迹统计时直接使用返回的时间戳
+    const startTimeCalc = new Date(trackData[0].timestamp);
+    const endTimeCalc = new Date(trackData[trackData.length - 1].timestamp);
+    const totalDuration = (endTimeCalc - startTimeCalc) / (1000 * 60); // 分钟
     
     trackStats.value = {
       point_count: trackData.length,
