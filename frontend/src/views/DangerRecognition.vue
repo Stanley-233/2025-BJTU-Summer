@@ -285,7 +285,7 @@ function generateResultThumbnail(filePath) {
   justify-content: center;
   border-radius: 8px;
   overflow: hidden;
-  color: #fff;
+  color: #666;
   font-size: 16px;
   min-width: 180px;
   min-height: 180px;

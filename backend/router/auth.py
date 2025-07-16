@@ -353,9 +353,9 @@ def check_face_data(request: UserCheckFaceRequest, req: Request, session: Sessio
 
   if liveness_result.get("error_code") != 0:
     if liveness_result.get("error_code") == 216909:
-      add_face_spoofing_event(session, "活体检测失败: 两人同时出现", request.face_data)
+      add_unverified_user_event(session, "活体检测失败: 两人同时出现", request.face_data)
       raise HTTPException(status_code=406, detail="活体检测失败，有两人同时出现")
-    add_face_spoofing_event(session, "活体检测失败: 两人同时出现", request.face_data)
+    add_unverified_user_event(session, "活体检测失败: 两人同时出现", request.face_data)
     raise HTTPException(status_code=406, detail=f"活体检测失败：{liveness_result.get('error_msg', '未知错误')}")
 
   best_img = liveness_result.get("result").get("best_image")
