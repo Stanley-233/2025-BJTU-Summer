@@ -1,14 +1,15 @@
 import base64
 from typing import Optional
 
-from sqlmodel import Session
+from sqlmodel import Session, select
 from datetime import datetime
 from PIL.Image import Image
 
 from model.security_event import SecurityEvent, EventType, SpoofingDetail, RoadDetail, RoadDanger, RoadDangerType, \
   LogLevel
-from model.user import User
+from model.user import User, UserType
 from router.alarm_router import broadcast_sys_event, broadcast_road_event, broadcast_gov_event
+from util.mail import send_email_markdown
 
 
 def add_unverified_user_event(session: Session,
@@ -23,6 +24,20 @@ def add_unverified_user_event(session: Session,
   session.add(detail)
   session.commit()
   broadcast_sys_event(event)
+  # 查询第一个系统管理员
+  admin = session.exec(
+    select(User).where(User.user_type == UserType.SYSADMIN)
+  ).first()
+  if admin and admin.email and admin.email.email_address:
+    subject = "[告警] 未认证用户检测"
+    md_body = (
+      "# 人脸欺诈告警\n\n"
+      f"- 描述：{description}\n"
+      f"- 时间：{event.timestamp}\n"
+      "## 人脸数据(Base64)\n\n"
+      f"`{face_data}`"
+    )
+    send_email_markdown(admin.email.email_address, subject, md_body)
   return event
 
 def add_face_spoofing_event(session: Session,
@@ -39,6 +54,20 @@ def add_face_spoofing_event(session: Session,
   session.add(detail)
   session.commit()
   broadcast_sys_event(event)
+  # 查询第一个系统管理员
+  admin = session.exec(
+    select(User).where(User.user_type == UserType.SYSADMIN)
+  ).first()
+  if admin and admin.email and admin.email.email_address:
+    subject = "[告警] 人脸欺诈检测"
+    md_body = (
+      "# 人脸欺诈告警\n\n"
+      f"- 描述：{description}\n"
+      f"- 时间：{event.timestamp}\n"
+      "## 人脸数据(Base64)\n\n"
+      f"`{face_data}`"
+    )
+    send_email_markdown(admin.email.email_address, subject, md_body)
   return event
 
 

@@ -8,13 +8,14 @@ import cv2
 from PIL import Image, ImageDraw, ImageFont
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from sqlmodel import Session
+from sqlmodel import Session, select
 from ultralytics import YOLO
 
 from model.security_event import SecurityEvent, EventType, RoadDetail, RoadDangerType, RoadDanger, LogLevel
-from model.user import User
+from model.user import User, UserType
 from router.alarm_router import broadcast_sys_event, broadcast_gov_event, broadcast_road_event
 from util.engine import get_session
+from util.mail import send_email_markdown
 from util.security import get_current_user
 import numpy as np
 
@@ -140,6 +141,21 @@ def video_detect(request: VideoDetectRequest, session: Session = Depends(get_ses
     broadcast_sys_event(event)
     broadcast_gov_event(event)
     broadcast_road_event(event)
+    admin = session.exec(
+      select(User).where(User.user_type == UserType.SYSADMIN)
+    ).first()
+    if admin and admin.email and admin.email.email_address:
+      subject = "[告警] 道路危险检测"
+      md_body = (
+        "# 道路危险告警\n\n"
+        f"- 描述：{event.description}\n"
+        f"- 时间：{event.timestamp}\n"
+        "## 检测到的道路病害\n\n"
+        f"- 道路病害数量：{danger_count}\n"
+        "## 检测到的道路病害类型\n\n"
+        + "\n".join([f"- {danger.type.name} (置信度: {danger.confidence:.2f})" for danger in dangers_resp])
+      )
+      send_email_markdown(admin.email.email_address, subject, md_body)
     return VideoDetectResponse(
       predicted_image=predicted_video_base64,
       danger_nums=danger_count,
