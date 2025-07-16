@@ -1,4 +1,5 @@
 # main.py
+import logging
 import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
@@ -46,12 +47,38 @@ async def say_hello(name: str):
 async def get_speed_data(start_date: str = None, end_date: str = None):
     db = DatabaseConnection()
     data = db.get_speed_data(start_date, end_date)
+    logging.info(f"Speed data: {data}")
     return data
 
-@app.get("/od-data")
-async def get_od_data(start_date: str = None, end_date: str = None):
+
+
+@app.get("/taxi-weather-data")
+async def get_taxi_weather_data(start_date: str = None, end_date: str = None):
     db = DatabaseConnection()
-    data = db.get_od_data(start_date, end_date)
+    data = db.get_taxi_weather_data(start_date, end_date)
+    logging.info(f"Taxi weather data: {data}")
+    return data
+
+
+@app.get("/combined-speed-data")
+async def get_combined_speed_data(start_date: str = None, end_date: str = None):
+    db = DatabaseConnection()
+
+    # 获取速度数据
+    speed_data = db.get_speed_data(start_date, end_date)
+
+    # 获取订单百分比数据
+    trip_data = db.get_trip_percentage_data(start_date, end_date)
+
+    return {
+        "speed": speed_data,
+        "trip_percentage": trip_data
+    }
+
+@app.get("/trip-percentage-data")
+async def get_trip_percentage_data(start_date: str = None, end_date: str = None):
+    db = DatabaseConnection()
+    data = db.get_trip_percentage_data(start_date, end_date)
     return data
 
 
