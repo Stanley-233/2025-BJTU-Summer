@@ -228,13 +228,15 @@ function generateResultThumbnail(filePath) {
 .danger-layout {
   display: flex;
   height: calc(100vh - 92px);
+  background: rgba(255, 255, 255, 0);
+  border-radius: 10px;
   min-height: 400px;
   margin-bottom: 20px;
 }
 
 .model-sidebar {
   width: 140px;
-  background: #f7f7fa;
+  background: rgba(247, 247, 250, 0.7);
   border-right: 2px solid #ede7f6;
   box-shadow: 2px 0 8px rgba(79, 55, 138, 0.04);
   display: flex;
@@ -261,7 +263,7 @@ function generateResultThumbnail(filePath) {
 .danger-main {
   flex: 1;
   padding: 40px 56px 32px 56px;
-  background: #f8f9fa;
+  background: rgba(248, 249, 250, 0.8);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -285,7 +287,7 @@ function generateResultThumbnail(filePath) {
   justify-content: center;
   border-radius: 8px;
   overflow: hidden;
-  color: #fff;
+  color: #666;
   font-size: 16px;
   min-width: 180px;
   min-height: 180px;

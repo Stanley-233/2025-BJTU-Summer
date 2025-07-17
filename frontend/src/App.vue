@@ -113,11 +113,11 @@ watch(isLogin, val => { if (val) startAlarmStream() })
 .app-bg {
   min-height: 100vh;
   width: 100vw;
-  background: #f5f5f5;
+  background: transparent;
 }
 .app-bar {
   width: 100%;
-  background: #f8f9fa;
+  background: rgba(248, 249, 250, 0.5);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   position: fixed;
   top: 0;
@@ -170,8 +170,12 @@ watch(isLogin, val => { if (val) startAlarmStream() })
   margin-right: 16px;
 }
 .main-content {
-  padding-top: 72px; /* 为固定顶部预留空间 */
+  /* 为固定顶部预留空间，并添加内边距、圆角及半透明背景 */
+  padding: 72px 24px 24px;
   max-width: 1200px;
   margin: 0 auto;
+  background: rgba(255,255,255,0);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0);
 }
 </style>

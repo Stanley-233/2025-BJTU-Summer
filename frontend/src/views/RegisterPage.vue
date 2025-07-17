@@ -1,25 +1,27 @@
 <template>
-  <div class="auth-container">
-    <h1 class="title">注册</h1>
-    <form @submit.prevent="onRegister" class="form">
-      <div class="form-group">
-        <label for="username">用户名</label>
-        <input id="username" v-model="username" type="text" required />
-      </div>
-      <div class="form-group">
-        <label for="email">邮箱</label>
-        <input id="email" v-model="email" type="email" required />
-      </div>
-      <div class="form-group">
-        <label for="password">密码</label>
-        <input id="password" v-model="password" type="password" required />
-      </div>
-      <div class="form-group">
-        <label for="confirm">确认密码</label>
-        <input id="confirm" v-model="confirm" type="password" required />
-      </div>
-      <button class="btn" type="submit">注册</button>
-    </form>
+  <div class="auth-layout">
+    <div class="auth-container">
+      <h1 class="title">注册</h1>
+      <form @submit.prevent="onRegister" class="form">
+        <div class="form-group">
+          <label for="username">用户名</label>
+          <input id="username" v-model="username" type="text" required />
+        </div>
+        <div class="form-group">
+          <label for="email">邮箱</label>
+          <input id="email" v-model="email" type="email" required />
+        </div>
+        <div class="form-group">
+          <label for="password">密码</label>
+          <input id="password" v-model="password" type="password" required />
+        </div>
+        <div class="form-group">
+          <label for="confirm">确认密码</label>
+          <input id="confirm" v-model="confirm" type="password" required />
+        </div>
+        <button class="btn" type="submit">注册</button>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -37,17 +39,21 @@ const { username, email, password, confirm, onRegister } = useRegisterPageViewMo
 </script>
 
 <style scoped>
+.auth-layout {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 92px);
+}
 .auth-container {
   width: 420px;
   max-width: 90vw;
   padding: 12px 32px 60px 32px;
-  background: #fff;
+  background: rgba(255,255,255,0.7);
   box-shadow: 0px 4px 24px 0px rgba(79, 55, 138, 0.10), 0px 1.5px 6px 0px rgba(0,0,0,0.08);
   border-radius: 20px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  margin: 0;
+  position: relative;
 }
 .title {
   font-size: 32px;
