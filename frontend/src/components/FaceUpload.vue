@@ -62,7 +62,7 @@ async function onUpload() {
       showGlobalBubble ? showGlobalBubble('人脸注册失败，请重试') : alert('人脸注册失败，请重试')
       return
     }
-    if( userInfo.face_data !== '') {
+    if( userInfo.face_data !== null) {
       await api.updateFaceDataUpdateFacePut({image: base64})
     }
     else {
